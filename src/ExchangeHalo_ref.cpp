@@ -26,6 +26,7 @@
 #include "Utils_MPI.hpp"
 #include "Geometry.hpp"
 #include "ExchangeHalo.hpp"
+#include "mytimer.hpp"
 #include <cstdlib>
 
 /*!

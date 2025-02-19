@@ -110,7 +110,7 @@ int main(int argc, char * argv[]) {
 
   // Check if QuickPath option is enabled.
   // If the running time is set to zero, we minimize all paths through the program
-  int numberOfMgLevels = 4; // Number of levels including first
+  const int numberOfMgLevels = 4; // Number of levels including first
 
 
   // Use this array for collecting timing information

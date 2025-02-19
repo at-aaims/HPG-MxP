@@ -11,11 +11,11 @@ project( hpgmp
 #
 # Options
 #
-option(HPGMP_ENABLE_CONTIGUOUS_ARRAYS "Enable contiguous arrays for better cache pre-fetch" OFF)
-option(HPGMP_ENABLE_CUBIC_RADICAL_SEARCH "Enable faster search for optimal 3D process grid" OFF)
+option(HPGMP_ENABLE_CONTIGUOUS_ARRAYS "Enable contiguous arrays for better cache pre-fetch" ON)
+option(HPGMP_ENABLE_CUBIC_RADICAL_SEARCH "Enable faster search for optimal 3D process grid" ON)
 option(HPGMP_ENABLE_DEBUG "Enable debug build" OFF)
 option(HPGMP_ENABLE_DETAILED_DEBUG "Enable detailed debug build" OFF)
-option(HPGMP_ENABLE_MPI "Enable MPI support" OFF)
+option(HPGMP_ENABLE_MPI "Enable MPI support" ON)
 option(HPGMP_ENABLE_LONG_LONG "Enable use of 'long long' type for global indices" ON)
 option(HPGMP_ENABLE_OPENMP "Enable OpenMP support" OFF)
 
@@ -94,10 +94,9 @@ if (HPGMP_ENABLE_DETAILED_DEBUG)
 endif ()
 
 if (HPGMP_ENABLE_MPI)
-    set(MPI_CXX_SKIP_MPICXX ON)
     find_package(MPI REQUIRED)
-    target_link_libraries(xhpgmp ${MPI_CXX_LIBRARIES})
-    target_link_libraries(xhpgmp_time ${MPI_CXX_LIBRARIES})
+    target_link_libraries(xhpgmp PRIVATE MPI::MPI_CXX)
+    target_link_libraries(xhpgmp_time PRIVATE MPI::MPI_CXX)
 else ()
     target_compile_definitions(xhpgmp PRIVATE HPGMP_NO_MPI)
     target_compile_definitions(xhpgmp_time PRIVATE HPGMP_NO_MPI)

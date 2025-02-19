@@ -100,7 +100,7 @@ int ValidGMRES(int argc, char **argv, comm_type comm, int numberOfMgLevels, bool
     double time_tic = mytimer();
     int ierr = GMRES(A, data, b, x, restart_length, MaxIters, tolerance, refNumIters, refResNorm, refResNorm0, true, verbose, test_data);
     refSolveTime = (mytimer() - time_tic);
-    if (ierr != 0) fail = 1;
+    fail = ierr;
 
     test_data.refNumIters = refNumIters;
     test_data.refResNorm0 = refResNorm0;
@@ -127,7 +127,7 @@ int ValidGMRES(int argc, char **argv, comm_type comm, int numberOfMgLevels, bool
     double time_tic = mytimer();
     int ierr = GMRES_IR(A, A_lo, data, data_lo, b, x, restart_length, MaxIters, tolerance, optNumIters, optResNorm, optResNorm0, true, verbose, test_data);
     optSolveTime = (mytimer() - time_tic);
-    if (ierr != 0) fail = 1;
+    fail = ierr;
 
     test_data.optNumIters = optNumIters;
     test_data.optResNorm0 = optResNorm0;
@@ -138,7 +138,7 @@ int ValidGMRES(int argc, char **argv, comm_type comm, int numberOfMgLevels, bool
     HPGMP_fout << "  Optimized Iteration count " << optNumIters << endl;
   }
   if (optResNorm/optResNorm0 > tolerance) {
-    fail = 1;
+    fail = 3;
     if (A.geom->rank == 0) {
       HPGMP_fout << " opt GMRES did not converege: normr = " << optResNorm << " / " << optResNorm0 << " = " << optResNorm/optResNorm0 << "(tol = " << tolerance << ")" << endl;
     }

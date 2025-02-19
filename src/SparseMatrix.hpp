@@ -141,8 +141,8 @@ public:
   SC  *d_Unzvals;   //!< values of matrix entries
 
   // TODO: remove
-  Vector<SC> x; // nrow
-  Vector<SC> y; // ncol
+  //Vector<SC> x; // nrow
+  //Vector<SC> y; // ncol
 #endif
 
   double time1, time2;
@@ -276,8 +276,8 @@ inline void DeleteMatrix(SparseMatrix_type & A) {
     A.mgData = 0;
   }
 
-  DeleteVector (A.x);
-  DeleteVector (A.y);
+  //DeleteVector (A.x);
+  //DeleteVector (A.y);
 
 #ifdef HPGMP_WITH_CUDA
   cudaFree (A.d_row_ptr);

@@ -478,7 +478,16 @@ int GMRES_IR(const SparseMatrix_type & A, const SparseMatrix_type2 & A_lo,
   DeleteDenseMatrix(ss);
   DeleteMultiVector(Q);
 
-  return ((converged && !IS_NAN(normr)) ? 0 : 1);
+  //return ((converged && !IS_NAN(normr)) ? 0 : 1);
+  if(!converged) {
+      HPGMP_fout << "GMRES-IR did not converge!\n";
+      return 1;
+  } else if (IS_NAN(normr)) {
+      HPGMP_fout << "GMRES-IR resulted in NaN!\n";
+      return 2;
+  } else {
+      return 0;
+  }
 }
 
 
