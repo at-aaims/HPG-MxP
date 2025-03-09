@@ -73,7 +73,7 @@ int ComputeGS_Forward_ref(const SparseMatrix_type & A, const Vector_type & r, Ve
   scalar_type * const xv = x.values;
 
   // workspace
-  Vector_type b = A.x; // nrow
+  Vector_type b = A.workx; // nrow
   scalar_type * const d_bv = b.d_values;
   scalar_type * const d_xv = x.d_values;
 
@@ -175,6 +175,7 @@ int ComputeGS_Forward_ref(const SparseMatrix_type & A, const Vector_type & r, Ve
       printf( " Failed cusparseDcsrmv for GS\n" );
     }
     #endif
+
   #elif defined(HPGMP_WITH_HIP)
   if (hipSuccess != hipMemcpy(d_bv, r.d_values, nrow*sizeof(scalar_type), hipMemcpyDeviceToDevice)) {
     printf( " Failed to memcpy d_r\n" );
@@ -189,11 +190,7 @@ int ComputeGS_Forward_ref(const SparseMatrix_type & A, const Vector_type & r, Ve
   rocsparse_create_dnvec_descr(&vecY, nrow, (void*)d_bv, rocsparse_compute_type);
   TICK();
   if (rocsparse_status_success !=
-      #if ROCM_VERSION >= 50400
-      rocsparse_spmv_ex
-      #else
       rocsparse_spmv
-      #endif
           (A.rocsparseHandle, rocsparse_operation_none,
            &mone, A.descrU, vecX, &one, vecY,
            rocsparse_compute_type, rocsparse_spmv_alg_default,

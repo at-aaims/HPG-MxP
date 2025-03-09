@@ -158,11 +158,7 @@ int ComputeSPMV_ref(const SparseMatrix_type & A, Vector_type & x, Vector_type & 
   rocsparse_create_dnvec_descr(&vecX, ncol, (void*)d_xv, rocsparse_compute_type);
   rocsparse_create_dnvec_descr(&vecY, nrow, (void*)d_yv, rocsparse_compute_type);
   if (rocsparse_status_success !=
-      #if ROCM_VERSION >= 50400
-      rocsparse_spmv_ex
-      #else
       rocsparse_spmv
-      #endif
           (A.rocsparseHandle, rocsparse_operation_none,
            &one, A.descrA, vecX, &zero, vecY,
            rocsparse_compute_type, rocsparse_spmv_alg_default,
@@ -175,7 +171,7 @@ int ComputeSPMV_ref(const SparseMatrix_type & A, Vector_type & x, Vector_type & 
   }
   #endif
   
-  #ifdef HPGMP_DEBUG
+#ifdef HPGMP_DEBUG
   scalar_type * tv = (scalar_type *)malloc(nrow * sizeof(scalar_type));
   #if defined(HPGMP_WITH_CUDA)
   if (cudaSuccess != cudaMemcpy(tv, d_yv, nrow*sizeof(scalar_type), cudaMemcpyDeviceToHost)) {
@@ -221,7 +217,7 @@ int ComputeSPMV_ref(const SparseMatrix_type & A, Vector_type & x, Vector_type & 
     HPGMP_fout << A.geom->rank << " : SpMV(" << nrow << " x " << ncol << "): error = " << enorm << " (x=" << xnorm << ", y=" << ynorm << ", t=" << tnorm << ")" << std::endl;
   }
   free(tv);
-  #endif
+#endif
 
   return 0;
 }

@@ -140,8 +140,10 @@ public:
   int *d_Ucol_idx;
   SC  *d_Unzvals;   //!< values of matrix entries
 
+  // workspace vector
+  Vector<SC> workx; // nrow
+
   // TODO: remove
-  //Vector<SC> x; // nrow
   //Vector<SC> y; // ncol
 #endif
 
@@ -276,7 +278,7 @@ inline void DeleteMatrix(SparseMatrix_type & A) {
     A.mgData = 0;
   }
 
-  //DeleteVector (A.x);
+  DeleteVector (A.workx);
   //DeleteVector (A.y);
 
 #ifdef HPGMP_WITH_CUDA

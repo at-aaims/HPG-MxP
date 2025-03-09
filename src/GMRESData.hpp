@@ -23,7 +23,6 @@
 #ifndef GMRESDATA_HPP
 #define GMRESDATA_HPP
 
-#include "SparseMatrix.hpp"
 #include "Vector.hpp"
 
 template <class SC, class PSC = SC>

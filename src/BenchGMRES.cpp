@@ -82,6 +82,12 @@ int BenchGMRES(int argc, char **argv, comm_type comm, int numberOfMgLevels, bool
 
   Vector_type b, x;
   SetupProblem("bench_",argc, argv, comm, numberOfMgLevels, verbose, geom, A, data, A_lo, data_lo, b, x, test_data);
+#ifdef HPGMP_DEBUG
+  MPI_Barrier(comm);
+  if(geom->rank == 0) {
+      std::cout << "BenchGMRES: Set up problem." << std::endl;
+  }
+#endif
 
 
   // =====================================================================
@@ -96,14 +102,32 @@ int BenchGMRES(int argc, char **argv, comm_type comm, int numberOfMgLevels, bool
 
     // load vector with random values
     FillRandomVector(x_overlap);
+#ifdef HPGMP_DEBUG
+    MPI_Barrier(comm);
+    if(geom->rank == 0) {
+        std::cout << "BenchGMRES: Initialized x,b vectors and filled random x." << std::endl;
+    }
+#endif
 
     int ierr = 0;
     int numberOfCalls = 10;
     double t_begin = mytimer();
     for (int i=0; i< numberOfCalls; ++i) {
       ierr = ComputeSPMV_ref(A, x_overlap, b_computed); // b_computed = A*x_overlap
+#ifdef HPGMP_DEBUG
+      MPI_Barrier(comm);
+      if(geom->rank == 0) {
+          std::cout << "BenchGMRES: Completed SPMV ref once." << std::endl;
+      }
+#endif
       if (ierr) HPGMP_fout << "Error in call to SpMV: " << ierr << ".\n" << endl;
       ierr = ComputeMG_ref(A, b_computed, x_overlap); // b_computed = Minv*y_overlap
+#ifdef HPGMP_DEBUG
+      MPI_Barrier(comm);
+      if(geom->rank == 0) {
+          std::cout << "BenchGMRES: Completed MG ref once." << std::endl;
+      }
+#endif
       if (ierr) HPGMP_fout << "Error in call to MG: " << ierr << ".\n" << endl;
     }
     test_data.SpmvMgTime = (mytimer() - t_begin)/((double) numberOfCalls);  // Total time divided by number of calls.
@@ -123,9 +147,9 @@ int BenchGMRES(int argc, char **argv, comm_type comm, int numberOfMgLevels, bool
   int niters = 0;
   scalar_type normr (0.0);
   scalar_type normr0 (0.0);
-  scalar_type tolerance = 0.0;
-  int restart_length = test_data.restart_length;
-  bool precond = true;
+  const scalar_type tolerance = 0.0;
+  const int restart_length = test_data.restart_length;
+  const bool precond = true;
   test_data.maxNumIters = maxIters;
 
   int num_flops = 4;
@@ -143,6 +167,12 @@ int BenchGMRES(int argc, char **argv, comm_type comm, int numberOfMgLevels, bool
     //warmup
     ZeroVector(x); // Zero out x
     GMRES_IR(A, A_lo, data, data_lo, b, x, restart_length, maxIters, tolerance, niters, normr, normr0, precond, verbose, test_data);
+#ifdef HPGMP_DEBUG
+    MPI_Barrier(comm);
+    if(geom->rank == 0) {
+        std::cout << "BenchGMRES: Completed warmup GMRES-IR run." << std::endl;
+    }
+#endif
     if (verbose && A.geom->rank==0) {
       HPGMP_fout << "Warm-up runs" << endl;
     }
@@ -158,7 +188,14 @@ int BenchGMRES(int argc, char **argv, comm_type comm, int numberOfMgLevels, bool
       ZeroVector(x); // Zero out x
 
       double time_tic = mytimer();
-      int ierr = GMRES_IR(A, A_lo, data, data_lo, b, x, restart_length, maxIters, tolerance, niters, normr, normr0, precond, verbose, test_data);
+      int ierr = GMRES_IR(A, A_lo, data, data_lo, b, x,
+                          restart_length, maxIters, tolerance, niters, normr, normr0, precond, verbose, test_data);
+#ifdef HPGMP_DEBUG
+      MPI_Barrier(comm);
+      if(geom->rank == 0) {
+          std::cout << "BenchGMRES: Completed one benchmark GMRES-IR run." << std::endl;
+      }
+#endif
       double time_toc = (mytimer() - time_tic);
       time_solve_total += time_toc;
       if (i == 0) {
@@ -192,8 +229,9 @@ int BenchGMRES(int argc, char **argv, comm_type comm, int numberOfMgLevels, bool
     if (verbose && A.geom->rank==0) {
       double flops = test_data.flops[0];
       HPGMP_fout << "  Accumulated Time " << time_solve_total << " seconds." << endl;
-      HPGMP_fout << "  Final Gflop/s    " << flops/1000000000.0 << "/" << time_solve_total << " = " << (flops/1000000000.0)/time_solve_total
-                << " (n = " << A.totalNumberOfRows << ")" << endl;
+      HPGMP_fout << "  Final Gflop/s    " << flops/1000000000.0 << "/" << time_solve_total << " = "
+                 << (flops/1000000000.0)/time_solve_total
+                 << " (n = " << A.totalNumberOfRows << ")" << endl;
     }
     test_data.optTotalFlops = test_data.flops[0];
     test_data.optTotalTime = time_solve_total;

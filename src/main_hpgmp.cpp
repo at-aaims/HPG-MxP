@@ -30,8 +30,6 @@
 #include <fstream>
 #include <iostream>
 #include <cstdlib>
-using std::endl;
-
 #include <vector>
 
 #include "hpgmp.hpp"
@@ -39,9 +37,8 @@ using std::endl;
 #include "SetupProblem.hpp"
 #include "ReportResults.hpp"
 #include "Geometry.hpp"
-#include "SparseMatrix.hpp"
+//#include "SparseMatrix.hpp"
 #include "Vector.hpp"
-#include "GMRESData.hpp"
 
 #include "GMRESData.hpp"
 #include "ValidGMRES.hpp"
@@ -87,15 +84,11 @@ int main(int argc, char * argv[]) {
   //////////////////////////
   // Create Communicators //
   //////////////////////////
-  int sizeValidComm = 4;
+  int sizeValidComm = 8;
 #ifndef HPGMP_NO_MPI
   int color = 0;
   if (sizeValidComm > numRanks) {
-    #if 1
     sizeValidComm = numRanks;
-    #else
-    asseert(1);
-    #endif
   }
   if (myRank < sizeValidComm) {
     color = 1;
@@ -103,6 +96,9 @@ int main(int argc, char * argv[]) {
   MPI_Comm validation_comm = MPI_COMM_WORLD;
   MPI_Comm benchmark_comm = MPI_COMM_WORLD;
   MPI_Comm_split(MPI_COMM_WORLD, color, myRank, &validation_comm);
+# ifdef HPGMP_DEBUG
+  std::cout << "main: created split validation comm." << std::endl;
+# endif
 #else
   comm_type validation_comm = 0;
   comm_type benchmark_comm = 0;
@@ -113,8 +109,13 @@ int main(int argc, char * argv[]) {
   const int numberOfMgLevels = 4; // Number of levels including first
 
 
+#ifdef HPGMP_DEBUG
+  const bool verbose = true;
+#else
+  const bool verbose = false;
+#endif
+
   // Use this array for collecting timing information
-  bool verbose = false;
   TestGMRESData_type test_data;
   test_data.times = NULL;
   test_data.flops = NULL;
@@ -131,6 +132,9 @@ int main(int argc, char * argv[]) {
   test_data.tolerance = tolerance;
   test_data.restart_length = restart_length;
   if (myRank < sizeValidComm) {
+#ifdef HPGMP_DEBUG
+      std::cout << "main: Starting validation.." << std::endl;
+#endif
     global_failure = ValidGMRES<TestGMRESData_type, scalar_type, scalar_type2, project_type>
                          (argc, argv, validation_comm, numberOfMgLevels, verbose, test_data);
   }

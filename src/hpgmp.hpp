@@ -60,4 +60,6 @@ extern int HPGMP_Init_Params(int * argc_p, char ** *argv_p, HPGMP_Params & param
 extern int HPGMP_Init(int * argc_p, char ** *argv_p);
 extern int HPGMP_Finalize(void);
 
+#define IS_NAN(a) (std::isinf(a) || std::isnan(a) || !(a == a))
+
 #endif // HPGMP_HPP

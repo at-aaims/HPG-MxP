@@ -265,7 +265,8 @@ int GMRES_IR(const SparseMatrix_type & A, const SparseMatrix_type2 & A_lo,
         // CGS2
         // first orthogonalization
         GetMultiVector(Q, 0, k-1, P);
-        START_T(); ComputeGEMVT (nrow, k,  one, P, Qk, zero_pr, h, A.isGemvOptimized); STOP_T(t1); // h = Q(1:k)'*q(k+1), mul and add in proj_type
+        // h = Q(1:k)'*q(k+1), mul and add in proj_type
+        START_T(); ComputeGEMVT (nrow, k,  one, P, Qk, zero_pr, h, A.isGemvOptimized); STOP_T(t1);
         START_T(); ComputeGEMV  (nrow, k, -one, P, h,  one,    Qk, A.isGemvOptimized); STOP_T(t2); // q(k+1) = q(k+1) - Q(1:k)*h
         t1_comp += h.time1; t1_comm += h.time2;
         for(int i = 0; i < k; i++) {

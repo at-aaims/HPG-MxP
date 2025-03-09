@@ -141,6 +141,9 @@ and the ``option()`` commands therein.
 These options may be changed with ``ccmake`` command or given directly
 to the ``cmake`` invocation with the ``-D`` prefix.
 
+An example CMake line for an AMD MI200 system is
+cmake -DHPGMP_ENABLE_HIP=ON -DROCM_PATH=$ROCM_PATH -DCMAKE_HIP_ARCHITECTURES="gfx90a" -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=installs/gmp-base ..
+
 -------------------------------
 Configuration based on Autoconf
 -------------------------------

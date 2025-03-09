@@ -9,6 +9,8 @@ Revision: 0.1
 
 Date: May 5, 2023
 
+This version is developed and maintained by Aditya Kashi at Oak Ridge National Laboratory.
+
 ## Introduction ##
 
 HPG-MxP is a software package that performs a fixed number of multigrid preconditioned

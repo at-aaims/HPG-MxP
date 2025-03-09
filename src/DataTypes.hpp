@@ -9,12 +9,11 @@
  #include <cusparse.h>
 #elif defined(HPGMP_WITH_HIP)
  #include <hip/hip_runtime_api.h>
- #include <rocm_version.h>
+ #include <rocm-core/rocm_version.h>
  #define ROCM_VERSION ROCM_VERSION_MAJOR * 10000 + ROCM_VERSION_MINOR * 100 + ROCM_VERSION_PATCH
- #include <rocblas.h>
- #include <rocsparse.h>
+ #include <rocblas/rocblas.h>
+ #include <rocsparse/rocsparse.h>
 #endif
 
-#define IS_NAN(a) (std::isinf(a) || std::isnan(a) || !(a == a))
 
 #endif

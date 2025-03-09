@@ -20,6 +20,8 @@
  HPGMP routine
  */
 
+#include <iostream>
+
 #include "hpgmp.hpp"
 #include "GenerateGeometry.hpp"
 #include "Geometry.hpp"
@@ -52,8 +54,8 @@ void SetupProblem(const char *title, int argc, char ** argv, comm_type comm, int
 
   HPGMP_Params params;
   HPGMP_Init_Params(title, &argc, &argv, params, comm);
-  int size = params.comm_size; // Number of MPI processes
-  int rank = params.comm_rank; // My process ID
+  const int size = params.comm_size; // Number of MPI processes
+  const int rank = params.comm_rank; // My process ID
   test_data.runningTime = params.runningTime;
 
   local_int_t nx = (local_int_t)params.nx;
@@ -63,6 +65,12 @@ void SetupProblem(const char *title, int argc, char ** argv, comm_type comm, int
   //////////////////////////////////////////////////////////
   // Construct the geometry and linear system
   GenerateGeometry(size, rank, params.numThreads, params.pz, params.zl, params.zu, nx, ny, nz, params.npx, params.npy, params.npz, geom);
+#ifdef HPGMP_DEBUG
+  MPI_Barrier(comm);
+  if (rank == 0) {
+      std::cout << "   SetupProblem: generated geometry." << std::endl;
+  }
+#endif
   int ierr = CheckAspectRatio(0.125, geom->npx, geom->npy, geom->npz, "process grid", rank==0);
 
 
@@ -72,11 +80,23 @@ void SetupProblem(const char *title, int argc, char ** argv, comm_type comm, int
   Vector_type xexact;
   double setup_time = mytimer();
   SetupMatrix(numberOfMgLevels, A, geom, data, &b, &x, &xexact, init_vect, comm);
+#ifdef HPGMP_DEBUG
+  MPI_Barrier(comm);
+  if (rank == 0) {
+      std::cout << "   SetupProblem: set up DP matrix." << std::endl;
+  }
+#endif
 
   // Setup single-precision A 
   init_vect = false;
   SetupMatrix(numberOfMgLevels, A2, geom, data2, &b, &x, &xexact, init_vect, comm);
   setup_time = mytimer() - setup_time; // Capture total time of setup
+#ifdef HPGMP_DEBUG
+  MPI_Barrier(comm);
+  if (rank == 0) {
+      std::cout << "   SetupProblem: set up LP matrix." << std::endl;
+  }
+#endif
   //times[9] = setup_time; // Save it for reporting
   test_data.SetupTime = setup_time;
 
@@ -84,10 +104,22 @@ void SetupProblem(const char *title, int argc, char ** argv, comm_type comm, int
   // Call user-tunable set up function for A
   double opt_time = mytimer();
   OptimizeProblem(A, data, b, x, xexact);
+#ifdef HPGMP_DEBUG
+  MPI_Barrier(comm);
+  if (rank == 0) {
+      std::cout << "   SetupProblem: Optimized DP problem." << std::endl;
+  }
+#endif
 
   // Call user-tunable set up function for A2
   OptimizeProblem(A2, data, b, x, xexact);
   opt_time = mytimer() - opt_time; // Capture total time of setup
+#ifdef HPGMP_DEBUG
+  MPI_Barrier(comm);
+  if (rank == 0) {
+      std::cout << "   SetupProblem: Optimized LP problem." << std::endl;
+  }
+#endif
   //times[7] = opt_time;
   test_data.OptimizeTime = opt_time;
 

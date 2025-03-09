@@ -61,6 +61,7 @@ int ComputeDotProduct_ref(const local_int_t n, const Vector_type & x, const Vect
   output_scalar_type local_result (0.0);
 
 #if defined(HPGMP_DEBUG)
+  using input_scalar_type = typename Vector_type::scalar_type;
   input_scalar_type * xv = x.values;
   input_scalar_type * yv = y.values;
   if (yv==xv) {

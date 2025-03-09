@@ -21,7 +21,7 @@
  */
 
 // Compile this routine only if running with MPI
-#if !defined(HPGMP_NO_MPI) & !defined(HPGMP_WITH_CUDA) & !defined(HPGMP_WITH_HIP)
+#if !defined(HPGMP_NO_MPI) // & !defined(HPGMP_WITH_CUDA) & !defined(HPGMP_WITH_HIP)
 #include <mpi.h>
 #include "Utils_MPI.hpp"
 #include "Geometry.hpp"
