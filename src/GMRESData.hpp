@@ -23,6 +23,7 @@
 #ifndef GMRESDATA_HPP
 #define GMRESDATA_HPP
 
+#include <array>
 #include "Vector.hpp"
 
 template <class SC, class PSC = SC>
@@ -78,6 +79,9 @@ inline void DeleteGMRESData(GMRESData_type & data) {
 template<class SC>
 class TestGMRESData {
 public:
+  static constexpr int n_fl_ops = 4;     ///< Number of numerical operations for which flops are counted in GMRES
+  static constexpr int n_timed_ops = 12; ///< Number of operations which are timed in GMRES
+
   int restart_length;     //!< restart length
   SC tolerance;           //!< tolerance = reference residual norm 
   double runningTime;     //!<
@@ -111,18 +115,19 @@ public:
   double optTotalFlops; //
   double optTotalTime;  //
   //!< flop counts and time for total, dot, axpy, ortho, spmv, reduce, precond
-  double *flops;        //!< accumulated in GMRES
-  double *times;        //!< accumulated in GMRES
-  double *times_comp;   //!< accumulated in GMRES
-  double *times_comm;   //!< accumulated in GMRES
-  double *ref_flops;    //!< record from output of reference GMRES
-  double *ref_times;    //!< record from output of reference GMRES
-  double *opt_flops;    //!< record from output of optimized GMRES
-  double *opt_times;    //!< record from output of optimized GMRES
-  double *ref_times_comp; //!< record from output of reference GMRES
-  double *ref_times_comm; //!< record from output of reference GMRES
-  double *opt_times_comp; //!< record from output of optimized GMRES
-  double *opt_times_comm; //!< record from output of optimized GMRES
+  std::array<double,n_fl_ops> flops;        //!< accumulated in GMRES, temporary workspace
+  std::array<double,n_timed_ops> times;        //!< accumulated in GMRES, temporary workspace
+  std::array<double,n_timed_ops> times_comp;   //!< accumulated in GMRES, temporary workspace
+  std::array<double,n_timed_ops> times_comm;   //!< accumulated in GMRES, temporary workspace
+
+  std::array<double,n_fl_ops> ref_flops;    //!< record from output of reference GMRES
+  std::array<double,n_timed_ops> ref_times;    //!< record from output of reference GMRES
+  std::array<double,n_fl_ops> opt_flops;    //!< record from output of optimized GMRES
+  std::array<double,n_timed_ops> opt_times;    //!< record from output of optimized GMRES
+  std::array<double,n_timed_ops> ref_times_comp; //!< record from output of reference GMRES
+  std::array<double,n_timed_ops> ref_times_comm; //!< record from output of reference GMRES
+  std::array<double,n_timed_ops> opt_times_comp; //!< record from output of optimized GMRES
+  std::array<double,n_timed_ops> opt_times_comm; //!< record from output of optimized GMRES
 };
 
 #endif // CGDATA_HPP

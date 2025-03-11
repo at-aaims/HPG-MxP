@@ -107,12 +107,12 @@ int TestGMRES(SparseMatrix_type & A, SparseMatrix_type2 & A_lo, GMRESData_type &
   bool verbose = true;
   scalar_type tolerance = 1.0e-12; // Set tolerance to reasonable value for grossly scaled diagonal terms
 
-  int num_flops = 4;
-  int num_times = 10;
-  test_data.flops = (double*)malloc(num_flops * sizeof(double));
-  test_data.times = (double*)malloc(num_times * sizeof(double));
-  test_data.times_comp = (double*)malloc(num_times * sizeof(double));
-  test_data.times_comm = (double*)malloc(num_times * sizeof(double));
+  constexpr int num_flops = TestGMRESData_type::n_fl_ops;
+  constexpr int num_times = TestGMRESData_type::n_timed_ops;
+  //test_data.flops = (double*)malloc(num_flops * sizeof(double));
+  //test_data.times = (double*)malloc(num_times * sizeof(double));
+  //test_data.times_comp = (double*)malloc(num_times * sizeof(double));
+  //test_data.times_comm = (double*)malloc(num_times * sizeof(double));
   for (int i=0; i<num_flops; i++) test_data.flops[i] = 0.0;
   for (int i=0; i<num_times; i++) test_data.times[i] = 0.0;
   for (int i=0; i<num_times; i++) test_data.times_comp[i] = 0.0;

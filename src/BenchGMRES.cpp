@@ -59,8 +59,8 @@ void test_mg_spmv_ref(MPI_Comm comm, const Geometry *const geom, const SparseMat
 
   @see GMRES()
  */
-template<class TestGMRESSData_type, class scalar_type, class scalar_type2, class project_type>
-int BenchGMRES(int argc, char **argv, comm_type comm, int numberOfMgLevels, bool verbose, bool runReference, TestGMRESSData_type & test_data) {
+template<class TestGMRESDataType, class scalar_type, class scalar_type2, class project_type>
+int BenchGMRES(int argc, char **argv, comm_type comm, int numberOfMgLevels, bool verbose, bool runReference, TestGMRESDataType & test_data) {
 
   typedef Vector<scalar_type> Vector_type;
   typedef SparseMatrix<scalar_type> SparseMatrix_type;
@@ -93,7 +93,7 @@ int BenchGMRES(int argc, char **argv, comm_type comm, int numberOfMgLevels, bool
 #endif
 
   // Record execution time of reference SpMV and MG kernels for reporting times
-  test_mg_spmv_ref<TestGMRESSData_type, SparseMatrix_type, Vector_type>(comm, geom, A, test_data);
+  test_mg_spmv_ref<TestGMRESDataType, SparseMatrix_type, Vector_type>(comm, geom, A, test_data);
 
   // =====================================================================
   // Benchmark parameters
@@ -110,13 +110,16 @@ int BenchGMRES(int argc, char **argv, comm_type comm, int numberOfMgLevels, bool
   const int restart_length = test_data.restart_length;
   const bool precond = true;
   test_data.maxNumIters = maxIters;
+    
+  constexpr int n_fl_ops = TestGMRESDataType::n_fl_ops;
+  constexpr int n_timed_ops = TestGMRESDataType::n_timed_ops;
 
-  const int num_flops = 4;
-  const int num_times = 12;
-  test_data.flops = (double*)malloc(num_flops * sizeof(double));
-  test_data.times = (double*)malloc(num_times * sizeof(double));
-  test_data.times_comp = (double*)malloc(num_times * sizeof(double));
-  test_data.times_comm = (double*)malloc(num_times * sizeof(double));
+  //const int num_flops = 4;
+  //const int num_times = 12;
+  //test_data.flops = (double*)malloc(num_flops * sizeof(double));
+  //test_data.times = (double*)malloc(num_times * sizeof(double));
+  //test_data.times_comp = (double*)malloc(num_times * sizeof(double));
+  //test_data.times_comm = (double*)malloc(num_times * sizeof(double));
 
   // =====================================================================
   // Run optimized GMRES (here, we are calling GMRES_IR) for a fixed number of iterations
@@ -139,10 +142,13 @@ int BenchGMRES(int argc, char **argv, comm_type comm, int numberOfMgLevels, bool
     //benchmark runs
     test_data.numOfMGCalls = 0;
     test_data.numOfSPCalls = 0;
-    for (int i=0; i<num_flops; i++) test_data.flops[i] = 0.0;
-    for (int i=0; i<num_times; i++) test_data.times[i] = 0.0;
-    for (int i=0; i<num_times; i++) test_data.times_comp[i] = 0.0;
-    for (int i=0; i<num_times; i++) test_data.times_comm[i] = 0.0;
+    for (int i=0; i < n_fl_ops; i++)
+        test_data.flops[i] = 0.0;
+    for (int i=0; i < n_timed_ops; i++) {
+        test_data.times[i] = 0.0;
+        test_data.times_comp[i] = 0.0;
+        test_data.times_comm[i] = 0.0;
+    }
     for (int i=0; i< numberOfGmresCalls; ++i) {
       ZeroVector(x); // Zero out x
 
@@ -213,15 +219,15 @@ int BenchGMRES(int argc, char **argv, comm_type comm, int numberOfMgLevels, bool
 
     test_data.optNumOfMGCalls = test_data.numOfMGCalls;
     test_data.optNumOfSPCalls = test_data.numOfSPCalls;
-    test_data.opt_flops = (double*)malloc(num_flops * sizeof(double));
-    test_data.opt_times = (double*)malloc(num_times * sizeof(double));
-    for (int i=0; i<num_flops; i++) test_data.opt_flops[i] = test_data.flops[i];
-    for (int i=0; i<num_times; i++) test_data.opt_times[i] = test_data.times[i];
+    //test_data.opt_flops = (double*)malloc(num_flops * sizeof(double));
+    //test_data.opt_times = (double*)malloc(num_times * sizeof(double));
+    for (int i=0; i<n_fl_ops; i++) test_data.opt_flops[i] = test_data.flops[i];
+    for (int i=0; i<n_timed_ops; i++) test_data.opt_times[i] = test_data.times[i];
 
-    test_data.opt_times_comp = (double*)malloc(num_times * sizeof(double));
-    test_data.opt_times_comm = (double*)malloc(num_times * sizeof(double));
-    for (int i=0; i<num_times; i++) test_data.opt_times_comp[i] = test_data.times_comp[i];
-    for (int i=0; i<num_times; i++) test_data.opt_times_comm[i] = test_data.times_comm[i];
+    //test_data.opt_times_comp = (double*)malloc(num_times * sizeof(double));
+    //test_data.opt_times_comm = (double*)malloc(num_times * sizeof(double));
+    for (int i=0; i<n_timed_ops; i++) test_data.opt_times_comp[i] = test_data.times_comp[i];
+    for (int i=0; i<n_timed_ops; i++) test_data.opt_times_comm[i] = test_data.times_comm[i];
   }
 
   // =====================================================================
@@ -235,10 +241,10 @@ int BenchGMRES(int argc, char **argv, comm_type comm, int numberOfMgLevels, bool
 
     //benchmark runs
     time_solve_total = 0.0;
-    for (int i=0; i<num_flops; i++) test_data.flops[i] = 0.0;
-    for (int i=0; i<num_times; i++) test_data.times[i] = 0.0;
-    for (int i=0; i<num_times; i++) test_data.times_comp[i] = 0.0;
-    for (int i=0; i<num_times; i++) test_data.times_comm[i] = 0.0;
+    for (int i=0; i<n_fl_ops; i++) test_data.flops[i] = 0.0;
+    for (int i=0; i<n_timed_ops; i++) test_data.times[i] = 0.0;
+    for (int i=0; i<n_timed_ops; i++) test_data.times_comp[i] = 0.0;
+    for (int i=0; i<n_timed_ops; i++) test_data.times_comm[i] = 0.0;
     for (int i=0; i< numberOfGmresCalls; ++i) {
       ZeroVector(x); // Zero out x
 
@@ -267,15 +273,15 @@ int BenchGMRES(int argc, char **argv, comm_type comm, int numberOfMgLevels, bool
 
     test_data.refNumOfMGCalls = test_data.numOfMGCalls;
     test_data.refNumOfSPCalls = test_data.numOfSPCalls;
-    test_data.ref_flops = (double*)malloc(num_flops * sizeof(double));
-    test_data.ref_times = (double*)malloc(num_times * sizeof(double));
-    for (int i=0; i<num_flops; i++) test_data.ref_flops[i] = test_data.flops[i];
-    for (int i=0; i<num_times; i++) test_data.ref_times[i] = test_data.times[i];
+    //test_data.ref_flops = (double*)malloc(num_flops * sizeof(double));
+    //test_data.ref_times = (double*)malloc(num_times * sizeof(double));
+    for (int i=0; i<n_fl_ops; i++) test_data.ref_flops[i] = test_data.flops[i];
+    for (int i=0; i<n_timed_ops; i++) test_data.ref_times[i] = test_data.times[i];
 
-    test_data.ref_times_comp = (double*)malloc(num_times * sizeof(double));
-    test_data.ref_times_comm = (double*)malloc(num_times * sizeof(double));
-    for (int i=0; i<num_times; i++) test_data.ref_times_comp[i] = test_data.times_comp[i];
-    for (int i=0; i<num_times; i++) test_data.ref_times_comm[i] = test_data.times_comm[i];
+    //test_data.ref_times_comp = (double*)malloc(num_times * sizeof(double));
+    //test_data.ref_times_comm = (double*)malloc(num_times * sizeof(double));
+    for (int i=0; i<n_timed_ops; i++) test_data.ref_times_comp[i] = test_data.times_comp[i];
+    for (int i=0; i<n_timed_ops; i++) test_data.ref_times_comm[i] = test_data.times_comm[i];
   } else {
     test_data.refTotalFlops = 0.0;
     test_data.refTotalTime  = 0.0;

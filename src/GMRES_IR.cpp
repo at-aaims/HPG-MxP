@@ -435,25 +435,23 @@ int GMRES_IR(const SparseMatrix_type & A, const SparseMatrix_type2 & A_lo,
 
   // Store times
   double tt = mytimer() - t_begin;
-  if (test_data.times != NULL) {
-    test_data.times[0]  += tt;       // Total time. All done...
-    test_data.times[1]  += t1 + t1_; // dot-product time
-    test_data.times[2]  += t2;       // WAXPBY time
-    test_data.times[3]  += t6;       // Ortho
-    test_data.times[4]  += t3;       // SPMV time
-    test_data.times[5]  += t4;       // AllReduce time
-    test_data.times[6]  += t5;       // preconditioner apply time
-    test_data.times[7]  += t7;       // > SpTRSV for GS
-    test_data.times[8]  += t8;       // > SpMV for GS
-    test_data.times[9]  += t9;       // > Restrict for GS
-    test_data.times[10] += t10;      // > Prolong for GS
-    test_data.times[11] += t11;      // Vector update time
+  test_data.times[0]  += tt;       // Total time. All done...
+  test_data.times[1]  += t1 + t1_; // dot-product time
+  test_data.times[2]  += t2;       // WAXPBY time
+  test_data.times[3]  += t6;       // Ortho
+  test_data.times[4]  += t3;       // SPMV time
+  test_data.times[5]  += t4;       // AllReduce time
+  test_data.times[6]  += t5;       // preconditioner apply time
+  test_data.times[7]  += t7;       // > SpTRSV for GS
+  test_data.times[8]  += t8;       // > SpMV for GS
+  test_data.times[9]  += t9;       // > Restrict for GS
+  test_data.times[10] += t10;      // > Prolong for GS
+  test_data.times[11] += t11;      // Vector update time
 
-    test_data.times_comp[1] += t1_comp; // dot-product time
-    test_data.times_comm[1] += t1_comm; // dot-product time
-    test_data.times_comm[2] += t3_1;     // > SPMV local copy
-    test_data.times_comm[3] += t3_2;     // > SPMV halo exchange
-  }
+  test_data.times_comp[1] += t1_comp; // dot-product time
+  test_data.times_comm[1] += t1_comm; // dot-product time
+  test_data.times_comm[2] += t3_1;     // > SPMV local copy
+  test_data.times_comm[3] += t3_2;     // > SPMV halo exchange
   double flops_tot = flops + flops_gmg + flops_spmv + flops_orth;
   if (verbose && A.geom->rank==0) {
     HPGMP_fout << " > nnz(A)  : " << A.totalNumberOfNonzeros << std::endl;
@@ -468,12 +466,10 @@ int GMRES_IR(const SparseMatrix_type & A, const SparseMatrix_type2 & A_lo,
                                << (flops_tot  / 1000000000.0) / tt << " Gflop/s" << std::endl;
     HPGMP_fout << std::endl;
   }
-  if (test_data.flops != NULL) {
-    test_data.flops[0] += flops_tot;
-    test_data.flops[1] += flops_gmg;
-    test_data.flops[2] += flops_spmv;
-    test_data.flops[3] += flops_orth;
-  }
+  test_data.flops[0] += flops_tot;
+  test_data.flops[1] += flops_gmg;
+  test_data.flops[2] += flops_spmv;
+  test_data.flops[3] += flops_orth;
   DeleteDenseMatrix(H);
   DeleteDenseMatrix(t);
   DeleteDenseMatrix(h);

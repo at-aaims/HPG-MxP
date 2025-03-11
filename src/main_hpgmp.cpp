@@ -135,8 +135,8 @@ int main(int argc, char * argv[]) {
 
   // Use this array for collecting timing information
   TestGMRESData_type test_data;
-  test_data.times = NULL;
-  test_data.flops = NULL;
+  //test_data.times = NULL;
+  //test_data.flops = NULL;
   test_data.validation_nprocs = sizeValidComm;
 
 
