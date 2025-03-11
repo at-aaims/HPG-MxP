@@ -215,12 +215,14 @@ int GMRES_IR(const SparseMatrix_type & A, const SparseMatrix_type2 & A_lo,
     CopyVector(r_hi, Qj);
 
     // do forward GS instead of symmetric GS
-    bool symmetric = false;
+    const bool symmetric = false;
 
     // Start restart cycle
     global_int_t k = 1;
     SetMatrixValue(t, 0, 0, normr);
-    while (k <= restart_length && normr/normr0 > tolerance && !IS_NAN(normr)) { // Use ">" to exit when res=zero (continuing will cause NaN)
+    while (k <= restart_length && normr/normr0 > tolerance && !IS_NAN(normr))
+    {
+      // Use ">" to exit when res=zero (continuing will cause NaN)
       GetVector(Q, k-1, Qkm1);
       GetVector(Q, k,   Qk);
 
@@ -409,8 +411,8 @@ int GMRES_IR(const SparseMatrix_type & A, const SparseMatrix_type2 & A_lo,
       test_data.numOfMGCalls++;
       t7 += z.time1; t8 += z.time2; t9 += z.time3; t10 += z.time4;
 
-      // mixed-precision
-      TICK(); ComputeWAXPBY(nrow, one_hi, x_hi, one_hi, z_hi, x_hi, A.isWaxpbyOptimized); flops += (itwo*Nrow); TOCK(t11); // x += z
+      // (mixed-precision) x += z
+      TICK(); ComputeWAXPBY(nrow, one_hi, x_hi, one_hi, z_hi, x_hi, A.isWaxpbyOptimized); flops += (itwo*Nrow); TOCK(t11);
       #else
       ComputeGEMV (nrow, k-1, one, Q, t, zero, r, A.isGemvOptimized); flops += (itwo*Nrow*(k-ione)); // r = Q*t
 

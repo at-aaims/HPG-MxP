@@ -15,6 +15,7 @@ option(HPGMP_ENABLE_CONTIGUOUS_ARRAYS "Enable contiguous arrays for better cache
 option(HPGMP_ENABLE_CUBIC_RADICAL_SEARCH "Enable faster search for optimal 3D process grid" ON)
 option(HPGMP_ENABLE_DEBUG "Enable debug build" OFF)
 option(HPGMP_ENABLE_DETAILED_DEBUG "Enable detailed debug build" OFF)
+option(HPGMP_VERBOSE "Print more messages (low-cost)" OFF)
 option(HPGMP_ENABLE_MPI "Enable MPI support" ON)
 option(HPGMP_GPU_AWARE_MPI "Enable GPU-aware MPI support" ON)
 option(HPGMP_ENABLE_LONG_LONG "Enable use of 'long long' type for global indices" ON)
@@ -117,6 +118,9 @@ endif ()
 
 if (HPGMP_ENABLE_DEBUG)
     target_compile_definitions(hpgmp PUBLIC HPGMP_DEBUG)
+endif ()
+if (HPGMP_VERBOSE)
+    target_compile_definitions(hpgmp PUBLIC HPGMP_VERBOSE)
 endif ()
 
 if (HPGMP_ENABLE_DETAILED_DEBUG)

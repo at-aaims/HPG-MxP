@@ -96,8 +96,10 @@ int main(int argc, char * argv[]) {
   MPI_Comm validation_comm = MPI_COMM_WORLD;
   MPI_Comm benchmark_comm = MPI_COMM_WORLD;
   MPI_Comm_split(MPI_COMM_WORLD, color, myRank, &validation_comm);
-# ifdef HPGMP_DEBUG
-  std::cout << "main: created split validation comm." << std::endl;
+# ifdef HPGMP_VERBOSE
+  if (myRank == 0) {
+      std::cout << "main: created split validation comm." << std::endl;
+  }
 # endif
 #else
   comm_type validation_comm = 0;
@@ -107,6 +109,22 @@ int main(int argc, char * argv[]) {
   // Check if QuickPath option is enabled.
   // If the running time is set to zero, we minimize all paths through the program
   const int numberOfMgLevels = 4; // Number of levels including first
+ 
+  std::string working_precision = "double", inner_precision = "double", project_precision = "double";
+  if(std::is_same<scalar_type,float>::value) {
+      working_precision = "float";
+  }
+  if(std::is_same<scalar_type2,float>::value) {
+      inner_precision = "float";
+  }
+  if(std::is_same<project_type,float>::value) {
+      project_precision = "float";
+  }
+  if(myRank == 0) {
+      std::cout << "Running HPG-MxP benchmark with working precision " << working_precision
+                << ",\n  inner precision " << inner_precision
+                << " and projection precision " << project_precision << "." << std::endl;
+  }
 
 
 #ifdef HPGMP_DEBUG

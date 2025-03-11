@@ -74,9 +74,6 @@ int ValidGMRES(const int argc, char **argv, comm_type comm, const int numberOfMg
   GMRESData_type2 data_lo;
 
   Vector_type b, x;
-#ifdef HPGMP_DEBUG
-  std::cout << "ValidGMRES: Setting up validation problem.." << std::endl;
-#endif
   SetupProblem("valid_", argc, argv, comm, numberOfMgLevels, verbose, geom, A, data, A_lo, data_lo, b, x, test_data);
 
   //////////////////////////////////////////////////////////
@@ -128,7 +125,7 @@ int ValidGMRES(const int argc, char **argv, comm_type comm, const int numberOfMg
     ZeroVector(x);
 
     double time_tic = mytimer();
-#ifdef HPGMP_DEBUG
+#ifdef HPGMP_VERBOSE
     MPI_Barrier(comm);
     if(A.geom->rank == 0) {
         std::cout << "ValidGMRES: Starting optimized GMRES-IR" << std::endl;
@@ -142,9 +139,11 @@ int ValidGMRES(const int argc, char **argv, comm_type comm, const int numberOfMg
     test_data.optResNorm0 = optResNorm0;
     test_data.optResNorm  = optResNorm;
   }
-  if (verbose && A.geom->rank==0) {
+  if (A.geom->rank==0) {
       std::cout << "ValidGMRES:  Optimized iteration time  " << optSolveTime << " seconds,\n" 
                 << "             optimized iteration count = " << optNumIters << std::endl;
+  }
+  if (verbose && A.geom->rank==0) {
       HPGMP_fout << "  Optimized Iteration time  " << optSolveTime << " seconds." << std::endl;
       HPGMP_fout << "  Optimized Iteration count " << optNumIters << std::endl;
   }
@@ -171,7 +170,7 @@ int ValidGMRES(const int argc, char **argv, comm_type comm, const int numberOfMg
     total_validation_time = (mytimer() - total_validation_time);
     HPGMP_fout << " Total validation time : " << total_validation_time << " seconds." << std::endl;
   }
-#ifdef HPGMP_DEBUG
+#ifdef HPGMP_VERBOSE
   MPI_Barrier(comm);
   if(A.geom->rank == 0) {
       std::cout << "ValidGMRES: Completed optimized GMRES-IR." << std::endl;
