@@ -42,6 +42,10 @@ using std::endl;
 #include "BenchGMRES.hpp"
 #include "mytimer.hpp"
 
+/// Record execution time of reference SpMV and MG kernels for reporting times
+template<class TestGMRESDataType, class SparseMatrixType, class VectorType>
+void test_mg_spmv_ref(MPI_Comm comm, const Geometry *const geom, const SparseMatrixType& A, TestGMRESDataType& test_data);
+
 /*!
   Benchmark the optimized GMRES implementation
 
@@ -55,8 +59,6 @@ using std::endl;
 
   @see GMRES()
  */
-
-
 template<class TestGMRESSData_type, class scalar_type, class scalar_type2, class project_type>
 int BenchGMRES(int argc, char **argv, comm_type comm, int numberOfMgLevels, bool verbose, bool runReference, TestGMRESSData_type & test_data) {
 
@@ -68,7 +70,7 @@ int BenchGMRES(int argc, char **argv, comm_type comm, int numberOfMgLevels, bool
   typedef SparseMatrix<scalar_type2> SparseMatrix_type2;
   typedef GMRESData<scalar_type2, project_type> GMRESData_type2;
 
-  double total_benchmark_time = mytimer();
+  const double benchmark_begin_time = mytimer();
 
   //////////////////////////////////////////////////////////
   // Setup problem
@@ -85,63 +87,20 @@ int BenchGMRES(int argc, char **argv, comm_type comm, int numberOfMgLevels, bool
 #ifdef HPGMP_DEBUG
   MPI_Barrier(comm);
   if(geom->rank == 0) {
-      std::cout << "BenchGMRES: Set up problem." << std::endl;
+      std::cout << "BenchGMRES: Set up problem. Running time = " << test_data.runningTime
+          << std::endl;
   }
 #endif
 
-
-  // =====================================================================
   // Record execution time of reference SpMV and MG kernels for reporting times
-  {
-    local_int_t nrow = A.localNumberOfRows;
-    local_int_t ncol = A.localNumberOfColumns;
-
-    Vector_type x_overlap, b_computed;
-    InitializeVector(x_overlap, ncol, A.comm);  // Overlapped copy of x vector
-    InitializeVector(b_computed, nrow, A.comm); // Computed RHS vector
-
-    // load vector with random values
-    FillRandomVector(x_overlap);
-#ifdef HPGMP_DEBUG
-    MPI_Barrier(comm);
-    if(geom->rank == 0) {
-        std::cout << "BenchGMRES: Initialized x,b vectors and filled random x." << std::endl;
-    }
-#endif
-
-    int ierr = 0;
-    int numberOfCalls = 10;
-    double t_begin = mytimer();
-    for (int i=0; i< numberOfCalls; ++i) {
-      ierr = ComputeSPMV_ref(A, x_overlap, b_computed); // b_computed = A*x_overlap
-#ifdef HPGMP_DEBUG
-      MPI_Barrier(comm);
-      if(geom->rank == 0) {
-          std::cout << "BenchGMRES: Completed SPMV ref once." << std::endl;
-      }
-#endif
-      if (ierr) HPGMP_fout << "Error in call to SpMV: " << ierr << ".\n" << endl;
-      ierr = ComputeMG_ref(A, b_computed, x_overlap); // b_computed = Minv*y_overlap
-#ifdef HPGMP_DEBUG
-      MPI_Barrier(comm);
-      if(geom->rank == 0) {
-          std::cout << "BenchGMRES: Completed MG ref once." << std::endl;
-      }
-#endif
-      if (ierr) HPGMP_fout << "Error in call to MG: " << ierr << ".\n" << endl;
-    }
-    test_data.SpmvMgTime = (mytimer() - t_begin)/((double) numberOfCalls);  // Total time divided by number of calls.
-
-    DeleteVector(x_overlap);
-    DeleteVector(b_computed);
-  }
+  test_mg_spmv_ref<TestGMRESSData_type, SparseMatrix_type, Vector_type>(comm, geom, A, test_data);
 
   // =====================================================================
   // Benchmark parameters
-  int numberOfGmresCalls = 10;
-  int maxIters = 300;
+  int numberOfGmresCalls = 3;
+  const int maxIters = 300;
   //double minOfficialTime = 1800; // Any official benchmark result must run at least this many seconds
-  double minOfficialTime = 120; // for testing..
+  const double minOfficialTime = 120; // for testing..
   test_data.minOfficialTime = minOfficialTime;
 
   int niters = 0;
@@ -152,8 +111,8 @@ int BenchGMRES(int argc, char **argv, comm_type comm, int numberOfMgLevels, bool
   const bool precond = true;
   test_data.maxNumIters = maxIters;
 
-  int num_flops = 4;
-  int num_times = 12;
+  const int num_flops = 4;
+  const int num_times = 12;
   test_data.flops = (double*)malloc(num_flops * sizeof(double));
   test_data.times = (double*)malloc(num_times * sizeof(double));
   test_data.times_comp = (double*)malloc(num_times * sizeof(double));
@@ -187,7 +146,7 @@ int BenchGMRES(int argc, char **argv, comm_type comm, int numberOfMgLevels, bool
     for (int i=0; i< numberOfGmresCalls; ++i) {
       ZeroVector(x); // Zero out x
 
-      double time_tic = mytimer();
+      const double time_tic = mytimer();
       int ierr = GMRES_IR(A, A_lo, data, data_lo, b, x,
                           restart_length, maxIters, tolerance, niters, normr, normr0, precond, verbose, test_data);
 #ifdef HPGMP_DEBUG
@@ -196,28 +155,37 @@ int BenchGMRES(int argc, char **argv, comm_type comm, int numberOfMgLevels, bool
           std::cout << "BenchGMRES: Completed one benchmark GMRES-IR run." << std::endl;
       }
 #endif
-      double time_toc = (mytimer() - time_tic);
+      const double time_toc = (mytimer() - time_tic);
       time_solve_total += time_toc;
       if (i == 0) {
+        if (A.geom->rank==0) {
+            std::cout << "BenchGMRES: Time taken by first solve = " << time_toc << std::endl;
+            std::cout << "BenchGMRES: Iterations taken by first solve = " << niters << std::endl;
+        }
+        // Get correct number of iterations
+        const int numberOfGmresCalls_min = test_data.runningTime >= 0.0 ?
+            ceil(test_data.runningTime / time_toc) : ceil(test_data.minOfficialTime / time_toc);
+        if (numberOfGmresCalls_min > numberOfGmresCalls) {
+            numberOfGmresCalls = numberOfGmresCalls_min;
+        }
+
         if (test_data.runningTime >= 0.0) {
-          int numberOfGmresCalls_min = ceil(test_data.runningTime / time_toc);
-          if (numberOfGmresCalls_min > numberOfGmresCalls) {
             if (verbose && A.geom->rank==0) {
               HPGMP_fout << " numberOfGmresCalls = runningTime / time_toc = "
                         << test_data.runningTime << " / " << time_toc << " = " << numberOfGmresCalls << endl;
+              std::cout << "BenchGMRES: numberOfGmresCalls = runningTime / time_toc = "
+                        << test_data.runningTime << " / " << time_toc << " = " << numberOfGmresCalls << endl;
             }
-          }
         } else {
-          int numberOfGmresCalls_min = ceil(test_data.minOfficialTime / time_toc);
-          if (numberOfGmresCalls_min > numberOfGmresCalls) {
-            numberOfGmresCalls = numberOfGmresCalls_min;
-            HPGMP_fout << " numberOfGmresCalls = minOfficialTime / time_toc = "
+            if (verbose && A.geom->rank==0) {
+              HPGMP_fout << " numberOfGmresCalls = minOfficialTime / time_toc = "
                       << test_data.minOfficialTime << " / " << time_toc << " = " << numberOfGmresCalls << endl;
-          }
+            }
         }
       }
 
-      if (ierr) HPGMP_fout << "Error in call to GMRES-IR: " << ierr << ".\n" << endl;
+      if (ierr)
+          HPGMP_fout << "Error in call to GMRES-IR: " << ierr << ".\n" << endl;
       if (verbose && A.geom->rank==0)
       {
         HPGMP_fout << "Call [" << i << " / " << numberOfGmresCalls << "] Number of GMRES-IR Iterations ["
@@ -268,9 +236,9 @@ int BenchGMRES(int argc, char **argv, comm_type comm, int numberOfMgLevels, bool
     for (int i=0; i< numberOfGmresCalls; ++i) {
       ZeroVector(x); // Zero out x
 
-      double time_tic = mytimer();
+      const double time_tic = mytimer();
       int ierr = GMRES(A, data, b, x, restart_length, maxIters, tolerance, niters, normr, normr0, precond, verbose, test_data);
-      double time_toc = (mytimer() - time_tic);
+      const double time_toc = (mytimer() - time_tic);
       time_solve_total += time_toc;
 
       if (ierr) HPGMP_fout << "Error in call to GMRES: " << ierr << ".\n" << endl;
@@ -319,7 +287,7 @@ int BenchGMRES(int argc, char **argv, comm_type comm, int numberOfMgLevels, bool
   DeleteVector(b);
 
   if (verbose && A.geom->rank==0) {
-    total_benchmark_time = (mytimer() - total_benchmark_time);
+    const auto total_benchmark_time = (mytimer() - benchmark_begin_time);
     HPGMP_fout << " Total benchmark time : " << total_benchmark_time << " seconds." << endl;
   }
   return 0;
@@ -345,3 +313,43 @@ template
 int BenchGMRES< TestGMRESData<double>, double, float, float >
   (int, char**, comm_type, int, bool, bool, TestGMRESData<double>&);
 
+
+template<class TestGMRESDataType, class SparseMatrixType, class VectorType>
+void test_mg_spmv_ref(MPI_Comm comm, const Geometry *const geom, const SparseMatrixType& A, TestGMRESDataType& test_data)
+{
+    const local_int_t nrow = A.localNumberOfRows;
+    const local_int_t ncol = A.localNumberOfColumns;
+
+    VectorType x_overlap, b_computed;
+    InitializeVector(x_overlap, ncol, A.comm);  // Overlapped copy of x vector
+    InitializeVector(b_computed, nrow, A.comm); // Computed RHS vector
+
+    // load vector with random values
+    FillRandomVector(x_overlap);
+#ifdef HPGMP_DEBUG
+    MPI_Barrier(comm);
+    if(geom->rank == 0) {
+        std::cout << "test_mg_spmv: Initialized x,b vectors and filled random x." << std::endl;
+    }
+#endif
+
+    int ierr = 0;
+    const int numberOfCalls = 10;
+    const double t_begin = mytimer();
+    for (int i=0; i< numberOfCalls; ++i) {
+      ierr = ComputeSPMV_ref(A, x_overlap, b_computed); // b_computed = A*x_overlap
+      if (ierr) HPGMP_fout << "Error in call to SpMV: " << ierr << ".\n" << endl;
+      ierr = ComputeMG_ref(A, b_computed, x_overlap); // b_computed = Minv*y_overlap
+      if (ierr) HPGMP_fout << "Error in call to MG: " << ierr << ".\n" << endl;
+    }
+#ifdef HPGMP_DEBUG
+    MPI_Barrier(comm);
+    if(geom->rank == 0) {
+        std::cout << "test_mg_spmv: Completed SpMV and MG refs." << std::endl;
+    }
+#endif
+    test_data.SpmvMgTime = (mytimer() - t_begin)/((double) numberOfCalls);  // Total time divided by number of calls.
+
+    DeleteVector(x_overlap);
+    DeleteVector(b_computed);
+}

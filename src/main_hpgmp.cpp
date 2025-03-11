@@ -126,15 +126,12 @@ int main(int argc, char * argv[]) {
   // Validation phase //
   //////////////////////
   int global_failure = 0;
-  int restart_length = 40;
-  scalar_type tolerance = 1e-9;
+  const int restart_length = 40;
+  const scalar_type tolerance = 1e-9;
 
   test_data.tolerance = tolerance;
   test_data.restart_length = restart_length;
   if (myRank < sizeValidComm) {
-#ifdef HPGMP_DEBUG
-      std::cout << "main: Starting validation.." << std::endl;
-#endif
     global_failure = ValidGMRES<TestGMRESData_type, scalar_type, scalar_type2, project_type>
                          (argc, argv, validation_comm, numberOfMgLevels, verbose, test_data);
   }

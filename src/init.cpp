@@ -180,6 +180,9 @@ HPGMP_Init_Params(const char *title, int * argc_p, char ** *argv_p, HPGMP_Params
     sprintf( fname, "%shpgmp%04d%02d%02dT%02d%02d%02d_%d.txt", title,
         1900 + ptm->tm_year, ptm->tm_mon+1, ptm->tm_mday, ptm->tm_hour, ptm->tm_min, ptm->tm_sec, params.comm_rank );
     HPGMP_fout.open(fname);
+    if (params.comm_rank == 0) {
+        std::cout << title << ": running time = " << params.runningTime << std::endl;
+    }
 #else
     HPGMP_fout.open(NULLDEVICE);
 #endif
