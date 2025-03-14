@@ -67,7 +67,6 @@ int ComputeSPMV_ref(const SparseMatrix_type & A, Vector_type & x, Vector_type & 
   const global_int_t nnz = A.localNumberOfNonzeros;
 
   const local_int_t nrow = A.localNumberOfRows;
-  scalar_type * const xv = x.values;
   scalar_type * const d_xv = x.d_values;
   scalar_type * const d_yv = y.d_values;
 
@@ -79,7 +78,9 @@ int ComputeSPMV_ref(const SparseMatrix_type & A, Vector_type & x, Vector_type & 
   }
 #endif
 
-#if defined(HPGMP_DEBUG)
+#if 0 //defined(HPGMP_DEBUG)
+#error "Expensive debug!"
+  scalar_type * const xv = x.values;
   scalar_type * const yv = y.values;
 
   #ifndef HPGMP_NO_OPENMP
@@ -97,7 +98,7 @@ int ComputeSPMV_ref(const SparseMatrix_type & A, Vector_type & x, Vector_type & 
   }
 #endif
 
-  #if defined(HPGMP_WITH_CUDA)
+#if defined(HPGMP_WITH_CUDA)
   cusparseStatus_t status;
   #if CUDA_VERSION >= 11000
   cudaDataType computeType;
@@ -148,7 +149,7 @@ int ComputeSPMV_ref(const SparseMatrix_type & A, Vector_type & x, Vector_type & 
      printf( " Failed cusparseDcsrmv for SpMV\n" );
   }
   #endif
-  #elif defined(HPGMP_WITH_HIP)
+#elif defined(HPGMP_WITH_HIP)
   rocsparse_datatype rocsparse_compute_type = rocsparse_datatype_f64_r;
   if (std::is_same<scalar_type, float>::value) {
     rocsparse_compute_type = rocsparse_datatype_f32_r;
@@ -169,9 +170,9 @@ int ComputeSPMV_ref(const SparseMatrix_type & A, Vector_type & x, Vector_type & 
   {
     printf( " Failed rocsparse_spmv\n" );
   }
-  #endif
+#endif
   
-#ifdef HPGMP_DEBUG
+#if 0 // HPGMP_DEBUG
   scalar_type * tv = (scalar_type *)malloc(nrow * sizeof(scalar_type));
   #if defined(HPGMP_WITH_CUDA)
   if (cudaSuccess != cudaMemcpy(tv, d_yv, nrow*sizeof(scalar_type), cudaMemcpyDeviceToHost)) {

@@ -28,6 +28,7 @@
 #include <iostream>
 #include <vector>
 #include <math.h>
+#include <stdexcept>
 using std::endl;
 
 #include "hpgmp.hpp"
@@ -153,7 +154,7 @@ int BenchGMRES(int argc, char **argv, comm_type comm, int numberOfMgLevels, bool
       ZeroVector(x); // Zero out x
 
       const double time_tic = mytimer();
-      int ierr = GMRES_IR(A, A_lo, data, data_lo, b, x,
+      const int ierr = GMRES_IR(A, A_lo, data, data_lo, b, x,
                           restart_length, maxIters, tolerance, niters, normr, normr0, precond, verbose, test_data);
 #ifdef HPGMP_VERBOSE
       MPI_Barrier(comm);
@@ -192,8 +193,12 @@ int BenchGMRES(int argc, char **argv, comm_type comm, int numberOfMgLevels, bool
         }
       }
 
-      if (ierr)
-          HPGMP_fout << "Error in call to GMRES-IR: " << ierr << ".\n" << endl;
+      if (ierr > 1) {
+          HPGMP_fout << "NaN Error in call to GMRES-IR: " << ierr << ".\n" << endl;
+          if (A.geom->rank==0)
+              std::cout << "NaN Error in call to GMRES-IR!\n" << endl;
+          throw std::runtime_error("Bench GMRES-IR nan'd out!");
+      }
       if (A.geom->rank==0)
       {
           std::cout << "Call [" << i << " / " << numberOfGmresCalls << "] Number of GMRES-IR Iterations ["
@@ -249,16 +254,24 @@ int BenchGMRES(int argc, char **argv, comm_type comm, int numberOfMgLevels, bool
       ZeroVector(x); // Zero out x
 
       const double time_tic = mytimer();
-      int ierr = GMRES(A, data, b, x, restart_length, maxIters, tolerance, niters, normr, normr0, precond, verbose, test_data);
+      const int ierr = GMRES(A, data, b, x, restart_length, maxIters, tolerance, niters, normr, normr0, precond, verbose, test_data);
       const double time_toc = (mytimer() - time_tic);
       time_solve_total += time_toc;
 
-      if (ierr) HPGMP_fout << "Error in call to GMRES: " << ierr << ".\n" << endl;
-      if (verbose && A.geom->rank==0) {
+      if (ierr == 2) {
+          HPGMP_fout << "NaN Error in call to GMRES: " << ierr << ".\n" << endl;
+          if (A.geom->rank==0)
+              std::cout << "NaN Error in call to GMRES!" << std::endl;
+      }
+      if (A.geom->rank==0) {
         HPGMP_fout << "Call [" << i << " / " << numberOfGmresCalls << "]";
         HPGMP_fout << " Number of GMRES Iterations [" << niters <<"] Scaled Residual [" << normr/normr0 << "]" << endl;
         HPGMP_fout << " Time        " << time_toc << endl;
         HPGMP_fout << " Time/itr    " << time_toc / niters << endl;
+        std::cout << " BenchGMRES reference Call [" << i << " / " << numberOfGmresCalls << "]";
+        std::cout << " Number of GMRES Iterations [" << niters <<"] Scaled Residual [" << normr/normr0 << "]" << endl;
+        std::cout << "     Time        " << time_toc << endl;
+        std::cout << "     Time/itr    " << time_toc / niters << endl;
       }
     }
     if (verbose && A.geom->rank==0)

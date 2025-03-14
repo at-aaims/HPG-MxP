@@ -27,6 +27,7 @@
 #include <fstream>
 #include <iostream>
 #include <vector>
+#include <stdexcept>
 #include "hpgmp.hpp"
 
 #include "SetupProblem.hpp"
@@ -98,20 +99,35 @@ int ValidGMRES(const int argc, char **argv, comm_type comm, const int numberOfMg
     ZeroVector(x);
 
     const double time_tic = mytimer();
-    int ierr = GMRES(A, data, b, x, restart_length, MaxIters, tolerance, refNumIters, refResNorm, refResNorm0, true, verbose, test_data);
+    const int ierr = GMRES(A, data, b, x, restart_length, MaxIters, tolerance,
+                           refNumIters, refResNorm, refResNorm0, true, verbose, test_data);
     refSolveTime = (mytimer() - time_tic);
     fail = ierr;
+    if (ierr && A.geom->rank == 0) {
+        std::cout << " ValidGMRES: Error in call to ref GMRES: " << ierr << ".\n" << std::endl;
+        if (A.geom->rank == 0)
+            throw std::runtime_error("Ref GMRES did not converge to specified tolerence!");
+    }
 
     test_data.refNumIters = refNumIters;
     test_data.refResNorm0 = refResNorm0;
     test_data.refResNorm  = refResNorm;
   }
-  if (verbose && A.geom->rank==0) {
+  if (A.geom->rank==0) {
     HPGMP_fout << "  Reference Iteration time  " << refSolveTime << " seconds." << std::endl;
     HPGMP_fout << "  Reference Iteration count " << refNumIters << std::endl;
+    std::cout << " ValidGMRES: Reference initial norm = " << refResNorm0 << std::endl;
+    std::cout << " ValidGMRES: Reference final norm = " << refResNorm << std::endl;
+    std::cout << " ValidGMRES: Reference Iteration time  " << refSolveTime << " seconds." << std::endl;
+    std::cout << " ValidGMRES: Reference Iteration count " << refNumIters << std::endl;
   }
   if (A.geom->rank == 0 && refResNorm/refResNorm0 > tolerance) {
-    HPGMP_fout << " ref GMRES did not converege: normr = " << refResNorm << " / " << refResNorm0 << " = " << refResNorm/refResNorm0 << "(tol = " << tolerance << ")" << std::endl;
+    HPGMP_fout << " ref GMRES did not converege: normr = "
+        << refResNorm << " / " << refResNorm0 << " = " << refResNorm/refResNorm0
+        << "(tol = " << tolerance << ")" << std::endl;
+    std::cout << " ValidGMRES: ref GMRES did not converege: normr = "
+        << refResNorm << " / " << refResNorm0 << " = " << refResNorm/refResNorm0
+        << "(tol = " << tolerance << ")" << std::endl;
   }
 
 
@@ -131,16 +147,24 @@ int ValidGMRES(const int argc, char **argv, comm_type comm, const int numberOfMg
         std::cout << "ValidGMRES: Starting optimized GMRES-IR" << std::endl;
     }
 #endif
-    int ierr = GMRES_IR(A, A_lo, data, data_lo, b, x, restart_length, MaxIters, tolerance, optNumIters, optResNorm, optResNorm0, true, verbose, test_data);
+    const int ierr = GMRES_IR(A, A_lo, data, data_lo, b, x, restart_length, MaxIters, tolerance,
+                              optNumIters, optResNorm, optResNorm0, true, verbose, test_data);
     optSolveTime = (mytimer() - time_tic);
     fail = ierr;
+    if (ierr) {
+        if(A.geom->rank == 0)
+            std::cout << " ValidGMRES: Error in call to opt GMRES-IR: " << ierr << ".\n" << std::endl;
+        throw std::runtime_error("Opt GMRES did not converge to specified tolerence!");
+    }
 
     test_data.optNumIters = optNumIters;
     test_data.optResNorm0 = optResNorm0;
     test_data.optResNorm  = optResNorm;
   }
   if (A.geom->rank==0) {
-      std::cout << "ValidGMRES:  Optimized iteration time  " << optSolveTime << " seconds,\n" 
+      std::cout << " ValidGMRES: Optimized initial residual norm  " << optResNorm0 << "\n";
+      std::cout << " ValidGMRES: Optimized final residual norm = " << optResNorm << std::endl
+                << "             Optimized iteration time  " << optSolveTime << " seconds,\n" 
                 << "             optimized iteration count = " << optNumIters << std::endl;
   }
   if (verbose && A.geom->rank==0) {
@@ -150,7 +174,12 @@ int ValidGMRES(const int argc, char **argv, comm_type comm, const int numberOfMg
   if (optResNorm/optResNorm0 > tolerance) {
     fail = 3;
     if (A.geom->rank == 0) {
-      HPGMP_fout << " opt GMRES did not converege: normr = " << optResNorm << " / " << optResNorm0 << " = " << optResNorm/optResNorm0 << "(tol = " << tolerance << ")" << std::endl;
+      HPGMP_fout << " opt GMRES did not converege: normr = "
+          << optResNorm << " / " << optResNorm0 << " = " << optResNorm/optResNorm0
+          << "(tol = " << tolerance << ")" << std::endl;
+      std::cout << " ValidGMRES: opt GMRES did not converege: normr = "
+          << optResNorm << " / " << optResNorm0 << " = " << optResNorm/optResNorm0
+          << "(tol = " << tolerance << ")" << std::endl;
     }
   }
 

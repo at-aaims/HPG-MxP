@@ -21,7 +21,7 @@
  */
 
 // Compile this routine only if running with MPI
-#if !defined(HPGMP_NO_MPI) // & !defined(HPGMP_WITH_CUDA) & !defined(HPGMP_WITH_HIP)
+#if !defined(HPGMP_NO_MPI) //&& !defined(HPGMP_WITH_CUDA) && !defined(HPGMP_WITH_HIP)
 #include <mpi.h>
 #include "Utils_MPI.hpp"
 #include "Geometry.hpp"
@@ -37,7 +37,6 @@
  */
 template<class SparseMatrix_type, class Vector_type>
 void ExchangeHalo_ref(const SparseMatrix_type & A, Vector_type & x) {
-
   typedef typename SparseMatrix_type::scalar_type scalar_type;
   MPI_Datatype MPI_SCALAR_TYPE = MpiTypeTraits<scalar_type>::getType ();
 

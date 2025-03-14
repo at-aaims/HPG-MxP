@@ -21,7 +21,10 @@
  */
 
 // Compile this routine only if running with MPI
-#if !defined(HPGMP_NO_MPI) & (defined(HPGMP_WITH_CUDA) | defined(HPGMP_WITH_HIP))
+#if !defined(HPGMP_NO_MPI) && !(defined(HPGMP_WITH_CUDA) || defined(HPGMP_WITH_HIP))
+
+#error "ExchangeHalo GPU version does not work!"
+
 #include <mpi.h>
 #include "Utils_MPI.hpp"
 #include "Geometry.hpp"
@@ -54,20 +57,19 @@ __global__ void dHaloGather(int totalToBeSent, double *d_x, double *d_sendBuffer
 
 template<class SparseMatrix_type, class Vector_type>
 void ExchangeHalo_ref(const SparseMatrix_type & A, Vector_type & x) {
-
   typedef typename SparseMatrix_type::scalar_type scalar_type;
   MPI_Datatype MPI_SCALAR_TYPE = MpiTypeTraits<scalar_type>::getType ();
 
   // Extract Matrix pieces
-  local_int_t localNumberOfRows = A.localNumberOfRows;
-  local_int_t localNumberOfCols = A.localNumberOfColumns;
-  int num_neighbors = A.numberOfSendNeighbors;
-  local_int_t * receiveLength = A.receiveLength;
-  local_int_t * sendLength = A.sendLength;
-  int * neighbors = A.neighbors;
+  const local_int_t localNumberOfRows = A.localNumberOfRows;
+  const local_int_t localNumberOfCols = A.localNumberOfColumns;
+  const int num_neighbors = A.numberOfSendNeighbors;
+  const local_int_t * receiveLength = A.receiveLength;
+  const local_int_t * sendLength = A.sendLength;
+  const int * neighbors = A.neighbors;
   scalar_type * sendBuffer = A.sendBuffer;
-  local_int_t totalToBeSent = A.totalToBeSent;
-  local_int_t * elementsToSend = A.elementsToSend;
+  const local_int_t totalToBeSent = A.totalToBeSent;
+  const local_int_t * elementsToSend = A.elementsToSend;
 
   scalar_type * const xv = x.values;
   scalar_type * const d_xv = x.d_values;
@@ -83,18 +85,19 @@ void ExchangeHalo_ref(const SparseMatrix_type & A, Vector_type & x) {
   //  wait call below.
   //
 
-  int MPI_MY_TAG = 99;
+  const int MPI_MY_TAG = 99;
 
   MPI_Request * request = new MPI_Request[num_neighbors];
 
   //
   // Externals are at end of locals
   //
-  #ifdef HPGMP_USE_GPU_AWARE_MPI
+#ifdef HPGMP_USE_GPU_AWARE_MPI
   scalar_type * x_external = (scalar_type *) d_xv + localNumberOfRows;
-  #else
+#else
+#error "Require GPU-aware MPI!"
   scalar_type * x_external = (scalar_type *) xv + localNumberOfRows;
-  #endif
+#endif
 
   // Post receives first
   // TODO: Thread this loop

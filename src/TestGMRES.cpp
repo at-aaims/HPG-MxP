@@ -73,6 +73,9 @@ int TestGMRES(SparseMatrix_type & A, SparseMatrix_type2 & A_lo, GMRESData_type &
   CopyVector(origDiagA2, exagDiagA2);
   CopyVector(b, origB);
 
+  constexpr float scale_factor = 1.0e6;
+  //constexpr float scale_factor = 1e3;
+
   // TODO: This should be moved to somewhere-else, e.g., SetupProblem
   if (test_diagonal_exaggeration) {
     // Modify the matrix diagonal to greatly exaggerate diagonal values.
@@ -81,15 +84,15 @@ int TestGMRES(SparseMatrix_type & A, SparseMatrix_type2 & A_lo, GMRESData_type &
     for (local_int_t i=0; i< A.localNumberOfRows; ++i) {
       global_int_t globalRowID = A.localToGlobalMap[i];
       if (globalRowID<9) {
-        scalar_type scale = (globalRowID+2)*1.0e6;
-        scalar_type2 scale2 = (globalRowID+2)*1.0e6;
+        scalar_type scale = (globalRowID+2)*scale_factor;
+        scalar_type2 scale2 = (globalRowID+2)*scale_factor;
         ScaleVectorValue(exaggeratedDiagA, i, scale);
         ScaleVectorValue(exagDiagA2, i, scale2);
         ScaleVectorValue(b, i, scale);
       } else {
-        ScaleVectorValue(exaggeratedDiagA, i, 1.0e6);
-        ScaleVectorValue(exagDiagA2, i, 1.0e6);
-        ScaleVectorValue(b, i, 1.0e6);
+        ScaleVectorValue(exaggeratedDiagA, i, scale_factor);
+        ScaleVectorValue(exagDiagA2, i, scale_factor);
+        ScaleVectorValue(b, i, scale_factor);
       }
     }
     ReplaceMatrixDiagonal(A, exaggeratedDiagA);

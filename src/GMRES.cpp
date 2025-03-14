@@ -167,7 +167,8 @@ int GMRES(const SparseMatrix_type & A, GMRESData_type & data, const Vector_type 
       TICK();
       if (doPreconditioning) {
         z.time1 = z.time2 = z.time3 = z.time4 = 0.0;
-        ComputeMG(A, Qkm1, z, symmetric); flops_gmg += (2*numSpMVs_MG*A.totalNumberOfMGNonzeros); // Apply preconditioner
+        ComputeMG(A, Qkm1, z, symmetric);
+        flops_gmg += (2*numSpMVs_MG*A.totalNumberOfMGNonzeros); // Apply preconditioner
         t7 += z.time1; t8 += z.time2; t9 += z.time3; t10 += z.time4;
       } else {
         CopyVector(Qkm1, z);              // copy r to z (no preconditioning)
@@ -338,7 +339,12 @@ int GMRES(const SparseMatrix_type & A, GMRESData_type & data, const Vector_type 
   DeleteDenseMatrix(ss);
   DeleteMultiVector(Q);
 
-  return ((converged && !IS_NAN(normr)) ? 0 : 1);
+  if(IS_NAN(normr)) {
+      return 2;
+  } else if (!converged) {
+      return 1;
+  } else
+      return 0;
 }
 
 

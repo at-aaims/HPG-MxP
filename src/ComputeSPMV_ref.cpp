@@ -49,7 +49,7 @@
 */
 template<class SparseMatrix_type, class Vector_type>
 int ComputeSPMV_ref(const SparseMatrix_type & A, Vector_type & x, Vector_type & y) {
-
+#error "Must not build SPMV ref."
   assert(x.localLength>=A.localNumberOfColumns); // Test vector lengths
   assert(y.localLength>=A.localNumberOfRows);
   typedef typename SparseMatrix_type::scalar_type scalar_type;
@@ -64,9 +64,9 @@ int ComputeSPMV_ref(const SparseMatrix_type & A, Vector_type & x, Vector_type & 
   }
 #endif
 
-  #ifndef HPGMP_NO_OPENMP
+#ifndef HPGMP_NO_OPENMP
   #pragma omp parallel for
-  #endif
+#endif
   for (local_int_t i=0; i< nrow; i++)  {
     scalar_type sum = 0.0;
     const scalar_type * const cur_vals = A.matrixValues[i];
