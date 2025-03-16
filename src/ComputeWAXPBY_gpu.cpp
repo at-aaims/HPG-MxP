@@ -22,6 +22,7 @@
 #if defined(HPGMP_WITH_CUDA) | defined(HPGMP_WITH_HIP)
 
 #include <cassert>
+#include <iostream>
 #ifndef HPGMP_NO_OPENMP
  #include <omp.h>
 #endif
@@ -68,11 +69,11 @@ int ComputeWAXPBY_ref(const local_int_t n,
   typedef typename VectorY_type::scalar_type scalarY_type;
   typedef typename VectorW_type::scalar_type scalarW_type;
 
+#if defined(HPGMP_DEBUG)
+
   scalarX_type * const xv = x.values;
   scalarY_type * const yv = y.values;
   scalarW_type * const wv = w.values;
-
-#if defined(HPGMP_DEBUG)
   if (alpha==1.0) {
     #ifndef HPGMP_NO_OPENMP
     #pragma omp parallel for
@@ -99,7 +100,7 @@ int ComputeWAXPBY_ref(const local_int_t n,
   if ((std::is_same<scalarX_type, double>::value && std::is_same<scalarY_type, double>::value && std::is_same<scalarW_type, double>::value) ||
       (std::is_same<scalarX_type, float >::value && std::is_same<scalarY_type, float >::value && std::is_same<scalarW_type, float >::value)) {
 
-    #if defined(HPGMP_WITH_CUDA)
+#if defined(HPGMP_WITH_CUDA)
     // Compute axpy on Nvidia GPU
     // w = x (assuming y is not w)
     if (cudaSuccess != cudaMemcpy(d_wv, d_xv, n*sizeof(scalarW_type), cudaMemcpyDeviceToDevice)) {
@@ -124,7 +125,7 @@ int ComputeWAXPBY_ref(const local_int_t n,
         printf( " Failed cublasDdot\n" );
       }
     }
-    #elif defined(HPGMP_WITH_HIP)
+#elif defined(HPGMP_WITH_HIP)
     // Compute axpy on Nvidia GPU
     // w = x (assuming y is not w)
     if (hipSuccess != hipMemcpy(d_wv, d_xv, n*sizeof(scalarW_type), hipMemcpyDeviceToDevice)) {
@@ -149,9 +150,9 @@ int ComputeWAXPBY_ref(const local_int_t n,
         printf( " Failed rocblas_ddot\n" );
       }
     }
-    #endif
+#endif
 
-    #ifdef HPGMP_DEBUG
+#ifdef HPGMP_DEBUG
     scalarW_type * tv = (scalarW_type *)malloc(n * sizeof(scalarW_type));
     #if defined(HPGMP_WITH_CUDA)
     if (cudaSuccess != cudaMemcpy(tv, d_wv, n*sizeof(scalarW_type), cudaMemcpyDeviceToHost)) {
@@ -199,9 +200,13 @@ int ComputeWAXPBY_ref(const local_int_t n,
 	        << ", x=" << xnorm << ", y=" << ynorm << ", w=" << wnorm << ")" << std::endl;
     }
     free(tv);
-    #endif
+#endif
   } else {
     HPGMP_vout << " Mixed-precision WAXPBY on host, since not supported on device" << std::endl;
+
+    scalarX_type * const xv = x.values;
+    scalarY_type * const yv = y.values;
+    scalarW_type * const wv = w.values;
 
     // copy Input vectors to Host
     #if defined(HPGMP_WITH_CUDA)
@@ -222,8 +227,10 @@ int ComputeWAXPBY_ref(const local_int_t n,
     #endif
 
     // WAXPBY on Host
-    for (local_int_t i=0; i<n; i++) wv[i] = scalarW_type(alpha) * scalarW_type(xv[i])
+    for (local_int_t i=0; i<n; i++) {
+        wv[i] = scalarW_type(alpha) * scalarW_type(xv[i])
                                           + scalarW_type(beta) * scalarW_type(yv[i]);
+    }
 
     // Copy output vector to Device
     #if defined(HPGMP_WITH_CUDA)

@@ -117,6 +117,7 @@ if (HPGMP_ENABLE_CUBIC_RADICAL_SEARCH)
 endif ()
 
 if (HPGMP_ENABLE_DEBUG)
+    message(WARNING "HPGMP debug mode is enabled!")
     target_compile_definitions(hpgmp PUBLIC HPGMP_DEBUG)
 endif ()
 if (HPGMP_VERBOSE)
@@ -183,6 +184,7 @@ endif ()
 
 if (HPGMP_ENABLE_BLAS)
     target_compile_definitions(hpgmp PUBLIC HPGMP_WITH_BLAS)
+    message(WARNING "CPU BLAS is enabled")
 endif ()
 
 add_executable( xhpgmp src/main_hpgmp.cpp )

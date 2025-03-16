@@ -131,6 +131,7 @@ int GMRES(const SparseMatrix_type & A, GMRESData_type & data, const Vector_type 
   double t_begin = mytimer();  // Start timing right away
   while (niters <= max_iter && !converged) {
     // p is of length ncols, copy x to p for sparse MV operation
+    // In HIP/Cuda builds, this copies only device buffers.
     CopyVector(x, p);
     TICK(); ComputeSPMV(A, p, Ap); TOCK(t3); flops_spmv += (2*A.totalNumberOfNonzeros); // Ap = A*p
     TICK(); ComputeWAXPBY(nrow, one, b, -one, Ap, r, A.isWaxpbyOptimized); TOCK(t11); flops += (itwo*Nrow); // r = b - Ax (x stored in p)
@@ -180,9 +181,8 @@ int GMRES(const SparseMatrix_type & A, GMRESData_type & data, const Vector_type 
 
 
       // orthogonalize z against Q(:,0:k-1), using dots
-      bool use_mgs = false;
       TICK();
-      if (use_mgs) {
+#if 0
         // MGS2
         for (int j = 0; j < k; j++) {
           // get j-th column of Q
@@ -200,10 +200,12 @@ int GMRES(const SparseMatrix_type & A, GMRESData_type & data, const Vector_type 
           SetMatrixValue(H, j, k-1, alpha);
         }
         flops_orth += (ifour*k*Nrow);
-      } else {
+#endif
         // CGS2
         GetMultiVector(Q, 0, k-1, P);
+        // Computes GEMV^T and copies output h to host
         START_T(); ComputeGEMVT (nrow, k,  one, P, Qk, zero, h, A.isGemvOptimized); STOP_T(t1); // h = Q(1:k)'*q(k+1)
+        // Copies input h to device and Computes GEMV
         START_T(); ComputeGEMV  (nrow, k, -one, P, h,  one, Qk, A.isGemvOptimized); STOP_T(t2); // h = Q(1:k)'*q(k+1)
         t1_comp += h.time1; t1_comm += h.time2;
         for(int i = 0; i < k; i++) {
@@ -218,7 +220,8 @@ int GMRES(const SparseMatrix_type & A, GMRESData_type & data, const Vector_type 
           AddMatrixValue(H, i, k-1, h.values[i]);
         }
         flops_orth += (ifour*k*Nrow);
-      }
+        // end CGS2
+
       // beta = norm(Qk)
       START_T(); ComputeDotProduct(nrow, Qk, Qk, beta, t4, A.isDotProductOptimized); STOP_T(t1);
       flops_orth += (itwo*Nrow);
@@ -279,6 +282,7 @@ int GMRES(const SparseMatrix_type & A, GMRESData_type & data, const Vector_type 
     // > update x
     ComputeTRSM(k-1, one, H, t);
     if (doPreconditioning) {
+      // t is on host, so ComputeGEMV first copies it to device before computation
       ComputeGEMV(nrow, k-1, one, Q, t, zero, r, A.isGemvOptimized); flops += (itwo*Nrow*(k-ione)); // r = Q*t
 
       z.time1 = z.time2 = 0.0;

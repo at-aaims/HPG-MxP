@@ -40,14 +40,13 @@ int ComputeGEMV_ref(const local_int_t m, const local_int_t n,
   assert(x.m >= n); // Test vector lengths
   assert(x.n == 1);
   assert(y.localLength >= m);
-
+    
   // Input serial dense vector 
   scalarX_type * const xv = x.values;
 
+#if defined(HPGMP_DEBUG)
   scalarA_type * const Av = A.values;
   scalarY_type * const yv = y.values;
-
-#if defined(HPGMP_DEBUG)
   // GEMV on HOST CPU
   if (beta == zero) {
     for (local_int_t i = 0; i < m; i++) yv[i] = zero;
@@ -125,6 +124,9 @@ int ComputeGEMV_ref(const local_int_t m, const local_int_t n,
     #endif
   } else {
     HPGMP_vout << " Mixed-precision GEMV not supported" << std::endl;
+
+    scalarA_type * const Av = A.values;
+    scalarY_type * const yv = y.values;
 
     // Copy input matrix A from HOST CPU
     #if defined(HPGMP_WITH_CUDA)

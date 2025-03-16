@@ -26,6 +26,7 @@
 #include <fstream>
 #include <cassert>
 #include <cstdlib>
+#include <stdexcept>
 
 #ifdef HPGMP_WITH_BLAS
  #include "cblas.h"
@@ -138,21 +139,7 @@ inline void ZeroVector(Vector_type & v) {
   #endif
   return;
 }
-/*!
-  Multiply (scale) a specific vector entry by a given value.
 
-  @param[inout] v Vector to be modified
-  @param[in] index Local index of entry to scale
-  @param[in] value Value to scale by
- */
-template<class Vector_type>
-inline void ScaleVectorValue(Vector_type & v, local_int_t index, typename Vector_type::scalar_type value) {
-  typedef typename Vector_type::scalar_type scalar_type;
-  assert(index>=0 && index < v.localLength);
-  scalar_type * vv = v.values;
-  vv[index] *= value;
-  return;
-}
 /*!
   Multiply (scale) the vector by a given value.
 

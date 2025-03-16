@@ -36,6 +36,22 @@ using std::endl;
 #include "GMRES_IR.hpp"
 
 /*!
+  Multiply (scale) a specific vector entry by a given value.
+
+  @param[inout] v Vector to be modified
+  @param[in] index Local index of entry to scale
+  @param[in] value Value to scale by
+ */
+template<class Vector_type>
+inline void ScaleVectorValue(Vector_type & v, local_int_t index, typename Vector_type::scalar_type value) {
+  typedef typename Vector_type::scalar_type scalar_type;
+  assert(index>=0 && index < v.localLength);
+  scalar_type * vv = v.values;
+  vv[index] *= value;
+  return;
+}
+
+/*!
   Test the correctness of the Preconditined CG implementation by using a system matrix with a dominant diagonal.
 
   @param[in]    geom The description of the problem's geometry.
@@ -74,7 +90,6 @@ int TestGMRES(SparseMatrix_type & A, SparseMatrix_type2 & A_lo, GMRESData_type &
   CopyVector(b, origB);
 
   constexpr float scale_factor = 1.0e6;
-  //constexpr float scale_factor = 1e3;
 
   // TODO: This should be moved to somewhere-else, e.g., SetupProblem
   if (test_diagonal_exaggeration) {

@@ -49,7 +49,6 @@
 */
 template<class SparseMatrix_type, class Vector_type>
 int ComputeSPMV_ref(const SparseMatrix_type & A, Vector_type & x, Vector_type & y) {
-#error "Must not build SPMV ref."
   assert(x.localLength>=A.localNumberOfColumns); // Test vector lengths
   assert(y.localLength>=A.localNumberOfRows);
   typedef typename SparseMatrix_type::scalar_type scalar_type;

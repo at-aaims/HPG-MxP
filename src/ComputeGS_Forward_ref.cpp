@@ -20,7 +20,6 @@
  HPGMP routine
  */
 #if !defined(HPGMP_WITH_CUDA) & !defined(HPGMP_WITH_HIP)
-#error "CPU FGS is not to be used!"
 
 #ifndef HPGMP_NO_MPI
  #include "ExchangeHalo.hpp"
