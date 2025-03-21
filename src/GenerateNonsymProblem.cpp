@@ -44,7 +44,8 @@
 */
 
 template<class SparseMatrix_type, class Vector_type>
-void GenerateNonsymProblem(SparseMatrix_type & A, Vector_type * b, Vector_type * x, Vector_type * xexact, bool init_vect) {
+void GenerateNonsymProblem(DeviceCtx *const dctx, SparseMatrix_type & A,
+                           Vector_type * b, Vector_type * x, Vector_type * xexact, bool init_vect) {
 
   // The call to this reference version of GenerateProblem can be replaced with custom code.
   // However, the data structures must remain unchanged such that the CheckProblem function is satisfied.
@@ -52,7 +53,7 @@ void GenerateNonsymProblem(SparseMatrix_type & A, Vector_type * b, Vector_type *
   // specific nature of the sparsity pattern may not be explicitly used.
 
   #if 1
-  return GenerateNonsymProblem_v1_ref(A, b, x, xexact, init_vect);
+  return GenerateNonsymProblem_v1_ref(dctx, A, b, x, xexact, init_vect);
   #else
   return GenerateNonsymProblem_ref(A, b, x, xexact, init_vect);
   #endif
@@ -65,13 +66,13 @@ void GenerateNonsymProblem(SparseMatrix_type & A, Vector_type * b, Vector_type *
 
 // uniform
 template
-void GenerateNonsymProblem< SparseMatrix<double>, Vector<double> >(SparseMatrix<double>&, Vector<double>*, Vector<double>*, Vector<double>*, bool);
+void GenerateNonsymProblem< SparseMatrix<double>, Vector<double> >(DeviceCtx*, SparseMatrix<double>&, Vector<double>*, Vector<double>*, Vector<double>*, bool);
 
 template
-void GenerateNonsymProblem< SparseMatrix<float>, Vector<float> >(SparseMatrix<float>&, Vector<float>*, Vector<float>*, Vector<float>*, bool);
+void GenerateNonsymProblem< SparseMatrix<float>, Vector<float> >(DeviceCtx*, SparseMatrix<float>&, Vector<float>*, Vector<float>*, Vector<float>*, bool);
 
 
 // mixed
 template
-void GenerateNonsymProblem< SparseMatrix<float>, Vector<double> >(SparseMatrix<float>&, Vector<double>*, Vector<double>*, Vector<double>*, bool);
+void GenerateNonsymProblem< SparseMatrix<float>, Vector<double> >(DeviceCtx*, SparseMatrix<float>&, Vector<double>*, Vector<double>*, Vector<double>*, bool);
 

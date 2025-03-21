@@ -55,15 +55,15 @@
 template<class Vector_type, class output_scalar_type>
 int ComputeDotProduct_ref(const local_int_t n, const Vector_type & x, const Vector_type & y,
                           output_scalar_type & result, double & time_allreduce) {
-  assert(x.localLength>=n); // Test vector lengths
-  assert(y.localLength>=n);
+  assert(x.local_length()>=n); // Test vector lengths
+  assert(y.local_length()>=n);
 
   output_scalar_type local_result (0.0);
 
 #if defined(HPGMP_DEBUG)
   using input_scalar_type = typename Vector_type::scalar_type;
-  input_scalar_type * xv = x.values;
-  input_scalar_type * yv = y.values;
+  const input_scalar_type * xv = x.values();
+  const input_scalar_type * yv = y.values();
   if (yv==xv) {
     for (local_int_t i=0; i<n; i++) local_result += xv[i]*xv[i];
   } else {
@@ -72,15 +72,17 @@ int ComputeDotProduct_ref(const local_int_t n, const Vector_type & x, const Vect
 #endif
 
   using input_scalar_type = typename Vector_type::scalar_type; 
-  input_scalar_type* d_x = x.d_values;
-  input_scalar_type* d_y = y.d_values;
+  const input_scalar_type* d_x = x.d_values();
+  const input_scalar_type* d_y = y.d_values();
 
   #ifdef HPGMP_DEBUG
   output_scalar_type local_tmp = local_result;
   #endif
+  
+  auto handle = x.get_blas_handle();
+
   #if defined(HPGMP_WITH_CUDA)
   // Compute dot on Nvidia GPU
-  cublasHandle_t handle = x.handle;
   if (std::is_same<input_scalar_type, double>::value) {
     double double_result;
     if (CUBLAS_STATUS_SUCCESS != cublasDdot (handle, n, (double*)d_x, 1, (double*)d_y, 1, (double*)&double_result)) {
@@ -96,7 +98,6 @@ int ComputeDotProduct_ref(const local_int_t n, const Vector_type & x, const Vect
   }
   #elif defined(HPGMP_WITH_HIP)
   // Compute dot on AMD GPU
-  rocblas_handle handle = x.handle;
   if (std::is_same<input_scalar_type, double>::value) {
     double double_result;
     if (rocblas_status_success != rocblas_ddot (handle, n, (double*)d_x, 1, (double*)d_y, 1, (double*)&double_result)) {
@@ -115,13 +116,13 @@ int ComputeDotProduct_ref(const local_int_t n, const Vector_type & x, const Vect
 #ifndef HPGMP_NO_MPI
   // Use MPI's reduce function to collect all partial sums
   int size; // Number of MPI processes
-  MPI_Comm_size(x.comm, &size);
+  MPI_Comm_size(x.get_comm(), &size);
   double t0 = mytimer();
   if (size > 1) {
       MPI_Datatype MPI_SCALAR_TYPE = MpiTypeTraits<output_scalar_type>::getType ();
       MPI_Op MPI_SCALAR_SUM = MpiTypeTraits<output_scalar_type>::getSumOp ();
       output_scalar_type global_result (0.0);
-      MPI_Allreduce(&local_result, &global_result, 1, MPI_SCALAR_TYPE, MPI_SCALAR_SUM, x.comm);
+      MPI_Allreduce(&local_result, &global_result, 1, MPI_SCALAR_TYPE, MPI_SCALAR_SUM, x.get_comm());
       result = global_result;
   } else {
       result = local_result;

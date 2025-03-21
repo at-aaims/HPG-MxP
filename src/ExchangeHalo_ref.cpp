@@ -50,7 +50,7 @@ void ExchangeHalo_ref(const SparseMatrix_type & A, Vector_type & x) {
   local_int_t totalToBeSent = A.totalToBeSent;
   local_int_t * elementsToSend = A.elementsToSend;
 
-  scalar_type * const xv = x.values;
+  scalar_type * const xv = x.values();
 
   int size, rank; // Number of MPI processes, My process ID
   MPI_Comm_size(A.comm, &size);

@@ -36,6 +36,7 @@ using std::cin;
 using std::endl;
 
 #include <vector>
+#include <memory>
 
 #include "hpgmp.hpp"
 
@@ -94,7 +95,7 @@ int main(int argc, char * argv[]) {
 
   HPGMP_Params params;
   HPGMP_Init_Params(&argc, &argv, params, bench_comm);
-  int size = params.comm_size, rank = params.comm_rank; // Number of MPI processes, My process ID
+  const int size = params.comm_size, rank = params.comm_rank; // Number of MPI processes, My process ID
   if (rank == 0) HPGMP_fout << endl;
 #ifndef HPGMP_NO_MPI
   if (rank == 0) HPGMP_fout << "With MPI " << endl;
@@ -103,6 +104,8 @@ int main(int argc, char * argv[]) {
   if (rank == 0) HPGMP_fout << "With Cuda " << endl;
 #endif
   if (rank == 0) HPGMP_fout << endl;
+  
+  auto dctx = std::make_unique<DeviceCtx>(rank);
 
 #ifdef HPGMP_DETAILED_DEBUG
   if (size < 100 && rank==0) HPGMP_fout << "Process "<<rank<<" of "<<size<<" is alive with " << params.numThreads << " threads." <<endl;
@@ -156,7 +159,7 @@ int main(int argc, char * argv[]) {
   Vector_type b, x, xexact;
 
   int numberOfMgLevels = 4; // Number of levels including first
-  SetupMatrix(numberOfMgLevels, A, geom, data, &b, &x, &xexact, init_vect, bench_comm);
+  SetupMatrix(dctx.get(), numberOfMgLevels, A, geom, data, &b, &x, &xexact, init_vect, bench_comm);
 
   setup_time = mytimer() - setup_time; // Capture total time of setup
   times[9] = setup_time; // Save it for reporting
@@ -178,17 +181,14 @@ int main(int argc, char * argv[]) {
 
   // Call Reference SpMV and MG. Compute Optimization time as ratio of times in these routines
 
-  local_int_t nrow = A.localNumberOfRows;
-  local_int_t ncol = A.localNumberOfColumns;
+  const local_int_t nrow = A.localNumberOfRows;
+  const local_int_t ncol = A.localNumberOfColumns;
 
-  Vector_type x_overlap, b_computed;
-  InitializeVector(x_overlap, ncol, bench_comm);  // Overlapped copy of x vector
-  InitializeVector(b_computed, nrow, bench_comm); // Computed RHS vector
+  Vector_type b_computed(nrow, bench_comm, dctx.get()); // Computed RHS vector
 
 
   // Record execution time of reference SpMV and MG kernels for reporting times
   // First load vector with random values
-  FillRandomVector(x_overlap);
 
 
   //////////////////////////////
@@ -211,7 +211,7 @@ int main(int argc, char * argv[]) {
   init_vect = false;
   SparseMatrix_type2 A2;
   GMRESData_type2 data2;
-  SetupMatrix(numberOfMgLevels, A2, geom, data2, &b, &x, &xexact, init_vect, bench_comm);
+  SetupMatrix(dctx.get(), numberOfMgLevels, A2, geom, data2, &b, &x, &xexact, init_vect, bench_comm);
   setup_time = mytimer() - setup_time; // Capture total time of setup
 
   t7 = mytimer();
@@ -235,13 +235,6 @@ int main(int argc, char * argv[]) {
   // free
   //DeleteMatrix(A2);
   //DeleteMatrix(A);
-  DeleteVector(x);
-  DeleteVector(b);
-  DeleteVector(xexact);
-  DeleteVector(x_overlap);
-  DeleteVector(b_computed);
-  DeleteGMRESData(data);
-  DeleteGMRESData(data2);
   HPGMP_Finalize();
 #ifndef HPGMP_NO_MPI
   MPI_Finalize();

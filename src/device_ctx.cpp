@@ -1,0 +1,203 @@
+#include "device_ctx.hpp"
+
+#include <iostream>
+#include <cstdlib>
+#include <new>
+
+#ifdef HPGMP_WITH_HIP
+#define HPGMP_THROW_ON_ERROR(_expr, _msg) \
+    if(hipSuccess != (_expr)) { \
+        throw std::runtime_error(_msg); \
+    } \
+    static_assert(true, "dummy assert for semicolon")
+#define HPGMP_BLAS_THROW_ON_ERROR(_expr, _msg) \
+    if(rocblas_status_success != (_expr)) { \
+        throw std::runtime_error(_msg); \
+    } \
+    static_assert(true, "dummy assert for semicolon")
+#define HPGMP_SPARSE_THROW_ON_ERROR(_expr, _msg) \
+    if(rocsparse_status_success != (_expr)) { \
+        throw std::runtime_error(_msg); \
+    } \
+    static_assert(true, "dummy assert for semicolon")
+
+#define HPGMP_PRINT_ON_ERROR(_expr, _msg) \
+    if(hipSuccess != (_expr)) { \
+        std::cout << (_msg) << std::endl; \
+    } \
+    static_assert(true, "dummy assert for semicolon")
+#define HPGMP_BLAS_PRINT_ON_ERROR(_expr, _msg) \
+    if(rocblas_status_success != (_expr)) { \
+        std::cout << (_msg) << std::endl; \
+    } \
+    static_assert(true, "dummy assert for semicolon")
+#define HPGMP_SPARSE_PRINT_ON_ERROR(_expr, _msg) \
+    if(rocsparse_status_success != (_expr)) { \
+        std::cout << (_msg) << std::endl; \
+    } \
+    static_assert(true, "dummy assert for semicolon")
+#else
+#define HPGMP_THROW_ON_ERROR(_expr, _msg) static_assert(true, "dummy assert for semicolon")
+#endif
+
+DeviceCtx::DeviceCtx(const int process_rank) : rank_{process_rank}
+{
+#if defined(HPGMP_WITH_CUDA)
+    if(cudaSuccess != cudaStreamCreate(&halo_stream_)) {
+        throw HandleNotCreatedError("halo stream");
+    }
+    if(cudaSuccess != cudaStreamCreate(&compute_stream_)) {
+        throw HandleNotCreatedError("compute stream");
+    }
+    if (CUBLAS_STATUS_SUCCESS != cublasCreate(&blas_handle_)) {
+        throw HandleNotCreatedError("cublas");
+    }
+    if (CUSPARSE_STATUS_SUCCESS != cusparseCreate(&sparse_handle_)) {
+        throw HandleNotCreatedError("cusparse");
+    }
+#elif defined(HPGMP_WITH_HIP)
+    if(hipSuccess != hipStreamCreate(&halo_stream_)) {
+        throw HandleNotCreatedError("halo stream");
+    }
+    if(hipSuccess != hipStreamCreate(&compute_stream_)) {
+        throw HandleNotCreatedError("compute stream");
+    }
+    if (rocblas_status_success != rocblas_create_handle(&blas_handle_)) {
+        throw HandleNotCreatedError("rocblas");
+    }
+    if (rocsparse_status_success != rocsparse_create_handle(&sparse_handle_)) {
+        throw HandleNotCreatedError("rocsparse");
+    }
+#endif
+    if(rank_ == 0) {
+        std::cout << "Created device context." << std::endl;
+    }
+}
+  
+DeviceCtx::~DeviceCtx()
+{
+#if defined(HPGMP_WITH_CUDA)
+    cublasDestroy(blas_handle_);
+    cusparseDestroy(sparse_handle_);
+    cudaStreamDestroy(halo_stream_);
+    cudaStreamDestroy(compute_stream_);
+#elif defined(HPGMP_WITH_HIP)
+    HPGMP_BLAS_PRINT_ON_ERROR(rocblas_destroy_handle(blas_handle_), "rocblas handle destroy");
+    HPGMP_SPARSE_PRINT_ON_ERROR(rocsparse_destroy_handle(sparse_handle_),
+                                "rocsparse handle destroy");
+    HPGMP_PRINT_ON_ERROR(hipStreamDestroy(halo_stream_), "destroy halo stream");
+    HPGMP_PRINT_ON_ERROR(hipStreamDestroy(compute_stream_), "destroy compute stream");
+#endif
+    if(rank_ == 0) {
+        std::cout << "Destroyed device context." << std::endl;
+    }
+}
+
+void* DeviceCtx::device_alloc(const size_t bytes)
+{
+    void* ptr;
+#if defined(HPGMP_WITH_CUDA)
+    if(cudaSuccess != cudaMalloc(&ptr, bytes)) {
+        throw std::bad_alloc();
+    }
+#elif defined(HPGMP_WITH_HIP)
+    if(hipSuccess != hipMalloc(&ptr, bytes)) {
+        throw std::bad_alloc();
+    }
+#else
+    ptr = std::malloc(bytes);
+#endif
+    return ptr;
+}
+
+void DeviceCtx::device_free(void *ptr)
+{
+#if defined(HPGMP_WITH_CUDA)
+    if(cudaSuccess != cudaFree(ptr)) {
+        throw DeviceMemoryError("Could not cuda free!");
+    }
+#elif defined(HPGMP_WITH_HIP)
+    if(hipSuccess != hipFree(ptr)) {
+        throw DeviceMemoryError("Could not hip free!");
+    }
+#else
+    std::free(ptr);
+#endif
+}
+
+void* DeviceCtx::pinned_host_alloc(const size_t bytes)
+{
+    void* ptr;
+#if defined(HPGMP_WITH_CUDA)
+    if(cudaSuccess != cudaMallocHost(&ptr, bytes)) {
+        throw std::bad_alloc();
+    }
+#elif defined(HPGMP_WITH_HIP)
+    if(hipSuccess != hipHostMalloc(&ptr, bytes)) {
+        throw std::bad_alloc();
+    }
+#else
+    ptr = std::malloc(bytes);
+#endif
+    return ptr;
+}
+
+void DeviceCtx::pinned_host_free(void *ptr)
+{
+#if defined(HPGMP_WITH_CUDA)
+    if(cudaSuccess != cudaFreeHost(ptr)) {
+        throw DeviceMemoryError("Could not free Cuda pinned host memory!");
+    }
+#elif defined(HPGMP_WITH_HIP)
+    if(hipSuccess != hipHostFree(ptr)) {
+        throw DeviceMemoryError("Could not free HIP pinned host memory!");
+    }
+#else
+    std::free(ptr);
+#endif
+}
+
+void DeviceCtx::copy_host_to_device_sync(void *d_ptr, const void *h_ptr, size_t nbytes)
+{
+#if defined(HPGMP_WITH_CUDA)
+    if(cudaSuccess != cudaMemcpy(d_ptr, h_ptr, nbytes, cudaMemcpyHostToDevice)) {
+        throw HostDeviceCopyFailedError("H2D");
+    }
+#elif defined(HPGMP_WITH_HIP)
+    if(hipSuccess != hipMemcpy(d_ptr, h_ptr, nbytes, hipMemcpyHostToDevice)) {
+        throw HostDeviceCopyFailedError("H2D");
+    }
+#endif
+}
+
+void DeviceCtx::copy_device_to_host_sync(void *h_ptr, const void *d_ptr, size_t nbytes)
+{
+#if defined(HPGMP_WITH_CUDA)
+    if(cudaSuccess != cudaMemcpy(h_ptr, d_ptr, nbytes, cudaMemcpyDeviceToHost)) {
+        throw HostDeviceCopyFailedError("D2H");
+    }
+#elif defined(HPGMP_WITH_HIP)
+    if(hipSuccess != hipMemcpy(h_ptr, d_ptr, nbytes, hipMemcpyDeviceToHost)) {
+        throw HostDeviceCopyFailedError("D2H");
+    }
+#endif
+}
+
+void DeviceCtx::synchronize_compute_stream()
+{
+#if defined(HPGMP_WITH_CUDA)
+    cudaStreamSynchronize(compute_stream_);
+#elif defined(HPGMP_WITH_HIP)
+    HPGMP_THROW_ON_ERROR(hipStreamSynchronize(compute_stream_), "sync compute stream");
+#endif
+}
+
+void DeviceCtx::synchronize_halo_stream()
+{
+#if defined(HPGMP_WITH_CUDA)
+    cudaStreamSynchronize(halo_stream_);
+#elif defined(HPGMP_WITH_HIP)
+    HPGMP_THROW_ON_ERROR(hipStreamSynchronize(halo_stream_), "sync halo stream");
+#endif
+}
+

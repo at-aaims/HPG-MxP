@@ -41,7 +41,7 @@
 */
 
 template<class SparseMatrix_type>
-void GenerateNonsymCoarseProblem(const SparseMatrix_type & Af) {
+void GenerateNonsymCoarseProblem(DeviceCtx *const dctx, const SparseMatrix_type & Af) {
 
   typedef typename SparseMatrix_type::scalar_type scalar_type;
   typedef Vector<scalar_type> Vector_type;
@@ -57,7 +57,7 @@ void GenerateNonsymCoarseProblem(const SparseMatrix_type & Af) {
   assert(nxf%2==0); assert(nyf%2==0); assert(nzf%2==0); // Need fine grid dimensions to be divisible by 2
   nxc = nxf/2; nyc = nyf/2; nzc = nzf/2;
   local_int_t * f2cOperator = new local_int_t[Af.localNumberOfRows];
-  local_int_t localNumberOfRows = nxc*nyc*nzc; // This is the size of our subblock
+  const local_int_t localNumberOfRows = nxc*nyc*nzc; // This is the size of our subblock
   // If this assert fails, it most likely means that the local_int_t is set to int and should be set to long long
   assert(localNumberOfRows>0); // Throw an exception of the number of rows is less than zero (can happen if "int" overflows)
 
@@ -103,17 +103,17 @@ void GenerateNonsymCoarseProblem(const SparseMatrix_type & Af) {
   Vector_type * tmp;
   SparseMatrix_type * Ac = new SparseMatrix_type;
   InitializeSparseMatrix(*Ac, geomc, Af.comm);
-  GenerateNonsymProblem(*Ac, tmp, tmp, tmp, init_vect);
+  GenerateNonsymProblem(dctx, *Ac, tmp, tmp, tmp, init_vect);
   SetupHalo(*Ac);
-  Vector_type *rc = new Vector_type;
-  Vector_type *xc = new Vector_type;
-  Vector_type * Axf = new Vector_type;
-  InitializeVector(*rc, Ac->localNumberOfRows, Ac->comm);
-  InitializeVector(*xc, Ac->localNumberOfColumns, Ac->comm);
-  InitializeVector(*Axf, Af.localNumberOfColumns, Ac->comm);
+  Vector_type *rc = new Vector_type(Ac->localNumberOfRows, Ac->comm, dctx);
+  Vector_type *xc = new Vector_type(Ac->localNumberOfColumns, Ac->comm, dctx);
+  Vector_type * Axf = new Vector_type(Af.localNumberOfColumns, Ac->comm, dctx);
+  //InitializeVector(*rc, Ac->localNumberOfRows, Ac->comm);
+  //InitializeVector(*xc, Ac->localNumberOfColumns, Ac->comm);
+  //InitializeVector(*Axf, Af.localNumberOfColumns, Ac->comm);
   Af.Ac = Ac;
-  MGData_type * mgData = new MGData_type;
-  InitializeMGData(f2cOperator, rc, xc, Axf, *mgData);
+  MGData_type * mgData = new MGData_type(f2cOperator, rc, xc, Axf);
+  // NOTE: SparseMatrix Af takes ownership of mgData and deletes it when it's destroyed.
   Af.mgData = mgData;
 
   return;
@@ -125,8 +125,8 @@ void GenerateNonsymCoarseProblem(const SparseMatrix_type & Af) {
  * --------------- */
 
 template
-void GenerateNonsymCoarseProblem< SparseMatrix<double> >(SparseMatrix<double> const&);
+void GenerateNonsymCoarseProblem< SparseMatrix<double> >(DeviceCtx*, SparseMatrix<double> const&);
 
 template
-void GenerateNonsymCoarseProblem< SparseMatrix<float> >(SparseMatrix<float> const&);
+void GenerateNonsymCoarseProblem< SparseMatrix<float> >(DeviceCtx*, SparseMatrix<float> const&);
 

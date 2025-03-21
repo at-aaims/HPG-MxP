@@ -51,7 +51,7 @@ using std::endl;
 
 
 template<class SparseMatrix_type, class Vector_type>
-void GenerateNonsymProblem_v1_ref(SparseMatrix_type & A, Vector_type * b, Vector_type * x, Vector_type * xexact, bool init_vect) {
+void GenerateNonsymProblem_v1_ref(DeviceCtx *const dctx, SparseMatrix_type & A, Vector_type * b, Vector_type * x, Vector_type * xexact, bool init_vect) {
 
   typedef typename SparseMatrix_type::scalar_type matrix_scalar_type;
   typedef typename       Vector_type::scalar_type vector_scalar_type;
@@ -68,7 +68,7 @@ void GenerateNonsymProblem_v1_ref(SparseMatrix_type & A, Vector_type * b, Vector
   global_int_t giy0 = A.geom->giy0;
   global_int_t giz0 = A.geom->giz0;
 
-  local_int_t localNumberOfRows = nx*ny*nz; // This is the size of our subblock
+  const local_int_t localNumberOfRows = nx*ny*nz; // This is the size of our subblock
   // If this assert fails, it most likely means that the local_int_t is set to int and should be set to long long
   assert(localNumberOfRows>0); // Throw an exception of the number of rows is less than zero (can happen if int overflow)
   local_int_t numberOfNonzerosPerRow = 27; // We are approximating a 27-point finite element/volume/difference 3D stencil
@@ -89,12 +89,12 @@ void GenerateNonsymProblem_v1_ref(SparseMatrix_type & A, Vector_type * b, Vector
   vector_scalar_type * xv = 0;
   vector_scalar_type * xexactv = 0;
   if (init_vect) {
-    InitializeVector(*b, localNumberOfRows, A.comm);
-    InitializeVector(*x, localNumberOfRows, A.comm);
-    InitializeVector(*xexact, localNumberOfRows, A.comm);
-    bv = b->values; // Only compute exact solution if requested
-    xv = x->values; // Only compute exact solution if requested
-    xexactv = xexact->values; // Only compute exact solution if requested
+    b->initialize(localNumberOfRows, A.comm, dctx);
+    x->initialize(localNumberOfRows, A.comm, dctx);
+    xexact->initialize(localNumberOfRows, A.comm, dctx);
+    bv = b->values(); // Only compute exact solution if requested
+    xv = x->values(); // Only compute exact solution if requested
+    xexactv = xexact->values(); // Only compute exact solution if requested
   }
   A.localToGlobalMap.resize(localNumberOfRows);
 
@@ -257,13 +257,13 @@ void GenerateNonsymProblem_v1_ref(SparseMatrix_type & A, Vector_type * b, Vector
 
 // uniform
 template
-void GenerateNonsymProblem_v1_ref< SparseMatrix<double>, Vector<double> >(SparseMatrix<double>&, Vector<double>*, Vector<double>*, Vector<double>*, bool);
+void GenerateNonsymProblem_v1_ref< SparseMatrix<double>, Vector<double> >(DeviceCtx*, SparseMatrix<double>&, Vector<double>*, Vector<double>*, Vector<double>*, bool);
 
 template
-void GenerateNonsymProblem_v1_ref< SparseMatrix<float>, Vector<float> >(SparseMatrix<float>&, Vector<float>*, Vector<float>*, Vector<float>*, bool);
+void GenerateNonsymProblem_v1_ref< SparseMatrix<float>, Vector<float> >(DeviceCtx*, SparseMatrix<float>&, Vector<float>*, Vector<float>*, Vector<float>*, bool);
 
 
 // mixed
 template
-void GenerateNonsymProblem_v1_ref< SparseMatrix<float>, Vector<double> >(SparseMatrix<float>&, Vector<double>*, Vector<double>*, Vector<double>*, bool);
+void GenerateNonsymProblem_v1_ref< SparseMatrix<float>, Vector<double> >(DeviceCtx*, SparseMatrix<float>&, Vector<double>*, Vector<double>*, Vector<double>*, bool);
 

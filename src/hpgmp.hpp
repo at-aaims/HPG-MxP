@@ -62,4 +62,11 @@ extern int HPGMP_Finalize(void);
 
 #define IS_NAN(a) (std::isinf(a) || std::isnan(a) || !(a == a))
 
+#ifdef HPGMP_VERBOSE
+#define HPGMP_VERBOSE_PRINT(_msg) \
+    printf(_msg); printf("\n"); fflush(stdout)
+#else
+#define HPGMP_VERBOSE_PRINT(_msg)
+#endif
+
 #endif // HPGMP_HPP

@@ -46,12 +46,12 @@ int ComputeProlongation_ref(const SparseMatrix_type & Af, Vector_type & xf) {
   //scalar_type * xfv = xf.values;
   //scalar_type * xcv = Af.mgData->xc->values;
   //local_int_t * f2c = Af.mgData->f2cOperator;
-  local_int_t nc = Af.mgData->rc->localLength;
+  const local_int_t nc = Af.mgData->rc->local_length();
 
   const scalar_type one (1.0);
-  local_int_t n = xf.localLength;
-  scalar_type * d_xfv = xf.d_values;
-  scalar_type * d_xcv = Af.mgData->xc->d_values;
+  const local_int_t n = xf.local_length();
+  scalar_type * d_xfv = xf.d_values();
+  scalar_type * d_xcv = Af.mgData->xc->d_values();
 
   #if defined(HPGMP_WITH_CUDA)
     cusparseStatus_t status;
@@ -86,15 +86,15 @@ int ComputeProlongation_ref(const SparseMatrix_type & Af, Vector_type & xf) {
       status = cusparseDcsrmv(Af.cusparseHandle, CUSPARSE_OPERATION_TRANSPOSE,
                               nc, n, nc,
                               (const double*)&one, Af.mgData->descrR,
-                                                   (double*)Af.mgData->d_nzvals, Af.mgData->d_row_ptr, Af.mgData->d_col_idx,
-                                                   (double*)d_xcv,
+                              (double*)Af.mgData->d_nzvals, Af.mgData->d_row_ptr, Af.mgData->d_col_idx,
+                              (double*)d_xcv,
                               (const double*)&one, (double*)d_xfv);
     } else if (std::is_same<scalar_type, float>::value) {
       status = cusparseScsrmv(Af.cusparseHandle, CUSPARSE_OPERATION_TRANSPOSE,
                               nc, n, nc,
                               (const float*)&one, Af.mgData->descrR,
-                                                  (float*)Af.mgData->d_nzvals, Af.mgData->d_row_ptr, Af.mgData->d_col_idx,
-                                                  (float*)d_xcv,
+                              (float*)Af.mgData->d_nzvals, Af.mgData->d_row_ptr, Af.mgData->d_col_idx,
+                              (float*)d_xcv,
                               (const float*)&one, (float*)d_xfv);
     }
     if (CUSPARSE_STATUS_SUCCESS != status) {

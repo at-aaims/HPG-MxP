@@ -53,8 +53,8 @@ template<class Vector_type>
 int ComputeResidual(const local_int_t n, const Vector_type & v1, const Vector_type & v2, typename Vector_type::scalar_type & residual) {
 
   typedef typename Vector_type::scalar_type scalar_type;
-  scalar_type * v1v = v1.values;
-  scalar_type * v2v = v2.values;
+  const scalar_type * v1v = v1.values();
+  const scalar_type * v2v = v2.values();
   scalar_type local_residual (0.0);
 
 #ifndef HPGMP_NO_OPENMP
@@ -85,7 +85,7 @@ int ComputeResidual(const local_int_t n, const Vector_type & v1, const Vector_ty
   // Use MPI's reduce function to collect all partial sums
   scalar_type global_residual = 0;
   MPI_Datatype MPI_SCALAR_TYPE = MpiTypeTraits<scalar_type>::getType ();
-  MPI_Allreduce(&local_residual, &global_residual, 1, MPI_SCALAR_TYPE, MPI_MAX, v1.comm);
+  MPI_Allreduce(&local_residual, &global_residual, 1, MPI_SCALAR_TYPE, MPI_MAX, v1.get_comm());
   residual = global_residual;
 #else
   residual = local_residual;

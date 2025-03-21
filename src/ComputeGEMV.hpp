@@ -31,7 +31,7 @@
 template<class MultiVector_type, class Vector_type, class SerialDenseMatrix_type>
 int ComputeGEMV(const local_int_t m, const local_int_t n,
                 const typename MultiVector_type::scalar_type alpha, const MultiVector_type & A, const SerialDenseMatrix_type & x,
-                const typename      Vector_type::scalar_type beta,  const Vector_type & y,
+                const typename      Vector_type::scalar_type beta,  Vector_type & y,
                 bool & isOptimized);
 
 #endif // COMPUTE_GEMV

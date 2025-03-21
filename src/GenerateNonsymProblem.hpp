@@ -20,6 +20,6 @@
 #include "Vector.hpp"
 
 template<class SparseMatrix_type, class Vector_type>
-void GenerateNonsymProblem(SparseMatrix_type & A, Vector_type * b, Vector_type * x, Vector_type * xexact, bool init_vect = true);
+void GenerateNonsymProblem(DeviceCtx *dctx, SparseMatrix_type & A, Vector_type * b, Vector_type * x, Vector_type * xexact, bool init_vect = true);
 
 #endif // GENERATEPROBLEM_HPP

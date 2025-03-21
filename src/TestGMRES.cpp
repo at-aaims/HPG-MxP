@@ -45,8 +45,8 @@ using std::endl;
 template<class Vector_type>
 inline void ScaleVectorValue(Vector_type & v, local_int_t index, typename Vector_type::scalar_type value) {
   typedef typename Vector_type::scalar_type scalar_type;
-  assert(index>=0 && index < v.localLength);
-  scalar_type * vv = v.values;
+  assert(index>=0 && index < v.local_length());
+  scalar_type * vv = v.values();
   vv[index] *= value;
   return;
 }
@@ -76,13 +76,16 @@ int TestGMRES(SparseMatrix_type & A, SparseMatrix_type2 & A_lo, GMRESData_type &
 
   // Use this array for collecting timing information
   // Temporary storage for holding original diagonal and RHS
-  Vector_type origDiagA, exaggeratedDiagA, origB;
-  Vector_type2 origDiagA2, exagDiagA2;
-  InitializeVector(origDiagA, A.localNumberOfRows, A.comm);
-  InitializeVector(origDiagA2, A_lo.localNumberOfRows, A.comm);
-  InitializeVector(exaggeratedDiagA, A.localNumberOfRows, A.comm);
-  InitializeVector(exagDiagA2, A_lo.localNumberOfRows, A.comm);
-  InitializeVector(origB, A.localNumberOfRows, A.comm);
+  Vector_type origDiagA(A.localNumberOfRows, A.comm, x.get_device_context()),
+              exaggeratedDiagA(A.localNumberOfRows, A.comm, x.get_device_context()),
+              origB(A.localNumberOfRows, A.comm, x.get_device_context());
+  Vector_type2 origDiagA2(A_lo.localNumberOfRows, A.comm, x.get_device_context()),
+               exagDiagA2(A_lo.localNumberOfRows, A.comm, x.get_device_context());
+  //InitializeVector(origDiagA, A.localNumberOfRows, A.comm);
+  //InitializeVector(origDiagA2, A_lo.localNumberOfRows, A.comm);
+  //InitializeVector(exaggeratedDiagA, A.localNumberOfRows, A.comm);
+  //InitializeVector(exagDiagA2, A_lo.localNumberOfRows, A.comm);
+  //InitializeVector(origB, A.localNumberOfRows, A.comm);
   CopyMatrixDiagonal(A, origDiagA);
   CopyMatrixDiagonal(A_lo, origDiagA2);
   CopyVector(origDiagA, exaggeratedDiagA);
@@ -138,7 +141,7 @@ int TestGMRES(SparseMatrix_type & A, SparseMatrix_type2 & A_lo, GMRESData_type &
   for (int k=(test_noprecond ? 0 : 1); k<2; ++k)
   { // This loop tests both unpreconditioned and preconditioned runs
     for (int i=0; i< numberOfGmresCalls; ++i) {
-      ZeroVector(x); // Zero out x
+      x.fill_zero(); // Zero out x
 
       if (A.geom->rank==0) {
         HPGMP_fout << "Calling GMRES (all double) for testing: " << endl;
@@ -172,7 +175,7 @@ int TestGMRES(SparseMatrix_type & A, SparseMatrix_type2 & A_lo, GMRESData_type &
   for (int k=(test_noprecond ? 0 : 1); k<2; ++k)
   { // This loop tests both unpreconditioned and preconditioned runs
     for (int i=0; i< numberOfGmresCalls; ++i) {
-      ZeroVector(x); // Zero out x
+      x.fill_zero(); // Zero out x
 
       if (A.geom->rank==0) {
         HPGMP_fout << "Calling GMRES-IR for testing: " << endl;
@@ -203,11 +206,11 @@ int TestGMRES(SparseMatrix_type & A, SparseMatrix_type2 & A_lo, GMRESData_type &
   ReplaceMatrixDiagonal(A_lo, origDiagA2);//TODO again, probably funny casting here. 
   CopyVector(origB, b);
   // Delete vectors
-  DeleteVector(origDiagA);
-  DeleteVector(exaggeratedDiagA);
-  DeleteVector(origDiagA2);
-  DeleteVector(exagDiagA2);
-  DeleteVector(origB);
+  //DeleteVector(origDiagA);
+  //DeleteVector(exaggeratedDiagA);
+  //DeleteVector(origDiagA2);
+  //DeleteVector(exagDiagA2);
+  //DeleteVector(origB);
 
   return 0;
 }

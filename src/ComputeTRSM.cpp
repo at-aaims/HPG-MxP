@@ -30,12 +30,12 @@ int ComputeTRSM(const local_int_t n,
 
   typedef typename SerialDenseMatrix_type::scalar_type scalar_type;
 
-  assert(x.m >= n);
-  assert(x.n == 1); // one RHS
+  assert(x.n_rows() >= n);
+  assert(x.n_cols() == 1); // one RHS
 
-  const local_int_t m = U.m;
-  const scalar_type * const Uv = U.values;
-  scalar_type * xv = x.values;
+  const local_int_t m = U.n_rows();
+  const scalar_type * const Uv = U.values();
+  scalar_type * xv = x.values();
 
   for (local_int_t i = n-1; i >= 0; i--) {
     for (local_int_t j = i+1; j < n; j++)

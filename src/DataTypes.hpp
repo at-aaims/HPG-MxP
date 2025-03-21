@@ -15,5 +15,17 @@
  #include <rocsparse/rocsparse.h>
 #endif
 
+#if defined HPGMP_WITH_CUDA || defined HPGMP_WITH_HIP
+//#   define HALF_ROUND_STYLE 1         // round-to-nearest
+//#   define HALF_ROUND_TIES_TO_EVEN 1
+//#   include <half/half.hpp>
+//using half_float::half;               // This clashes with rocrand which uses __half.
+#include <hip/hip_fp16.h>
+using half = __half;
+#endif
+
+#if defined HPGMP_WITH_CUDA || defined HPGMP_WITH_HIP
+#define HPGMP_WITH_ACCELERATION 1
+#endif
 
 #endif

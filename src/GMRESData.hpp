@@ -25,55 +25,44 @@
 
 #include <array>
 #include "Vector.hpp"
+#include "SparseMatrix.hpp"
 
 template <class SC, class PSC = SC>
 class GMRESData {
 public:
   using scalar_type  = SC;
   using project_type = PSC;
+
+  /*!
+   * Constructor for the data structure of GMRES vectors.
+   *
+   * @param[in]  A    the data structure that describes the problem matrix and its structure
+   */
+  GMRESData(SparseMatrix<SC>& A, DeviceCtx *const dctx)
+      : r(A.localNumberOfRows, A.comm, dctx),
+      z(A.localNumberOfColumns, A.comm, dctx),
+      p(A.localNumberOfColumns, A.comm, dctx),
+      w(A.localNumberOfRows, A.comm, dctx),
+      Ap(A.localNumberOfRows, A.comm, dctx)
+    { }
+
+  GMRESData() { }
+
+  void initialize(SparseMatrix<SC>& A, DeviceCtx *const dctx)
+  {
+      r.initialize(A.localNumberOfRows, A.comm, dctx);
+      z.initialize(A.localNumberOfColumns, A.comm, dctx);
+      p.initialize(A.localNumberOfColumns, A.comm, dctx);
+      w.initialize(A.localNumberOfRows, A.comm, dctx);
+      Ap.initialize(A.localNumberOfRows, A.comm, dctx);
+  }
+
   Vector<SC> r; //!< pointer to residual vector
   Vector<SC> z; //!< pointer to preconditioned residual vector
   Vector<SC> p; //!< pointer to direction vector
   Vector<SC> w; //!< pointer to workspace
   Vector<SC> Ap; //!< pointer to Krylov vector
 };
-
-/*!
- Constructor for the data structure of GMRES vectors.
-
- @param[in]  A    the data structure that describes the problem matrix and its structure
- @param[out] data the data structure for GMRES  vectors that will be allocated to get it ready for use in GMRES iterations
- */
-template <class SparseMatrix_type, class GMRESData_type>
-inline void InitializeSparseGMRESData(SparseMatrix_type & A, GMRESData_type & data) {
-  local_int_t nrow = A.localNumberOfRows;
-  local_int_t ncol = A.localNumberOfColumns;
-  comm_type comm = A.comm;
-
-  InitializeVector(data.r,  nrow, comm);
-  InitializeVector(data.z,  ncol, comm);
-  InitializeVector(data.p,  ncol, comm);
-  InitializeVector(data.w,  nrow, comm);
-  InitializeVector(data.Ap, nrow, comm);
-  return;
-}
-
-/*!
- Destructor for the GMRES vectors data.
-
- @param[inout] data the GMRES vectors data structure whose storage is deallocated
- */
-template <class GMRESData_type>
-inline void DeleteGMRESData(GMRESData_type & data) {
-
-  DeleteVector (data.r);
-  DeleteVector (data.z);
-  DeleteVector (data.p);
-  DeleteVector (data.w);
-  DeleteVector (data.Ap);
-  return;
-}
-
 
 
 template<class SC>

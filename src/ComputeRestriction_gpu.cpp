@@ -48,15 +48,15 @@ int ComputeRestriction_ref(const SparseMatrix_type & A, const Vector_type & rf) 
   //scalar_type * rfv = rf.values;
   //scalar_type * rcv = A.mgData->rc->values;
   //local_int_t * f2c = A.mgData->f2cOperator;
-  local_int_t nc = A.mgData->rc->localLength;
+  local_int_t nc = A.mgData->rc->local_length();
 
   const scalar_type zero ( 0.0);
   const scalar_type  one ( 1.0);
   const scalar_type mone (-1.0);
-  local_int_t n = rf.localLength;
-  scalar_type * d_Axfv = A.mgData->Axf->d_values;
-  scalar_type * d_rfv  = rf.d_values;
-  scalar_type * d_rcv  = A.mgData->rc->d_values;
+  const local_int_t n = rf.local_length();
+  scalar_type * d_Axfv = A.mgData->Axf->d_values();
+  const scalar_type * d_rfv  = rf.d_values();
+  scalar_type * d_rcv  = A.mgData->rc->d_values();
   #if defined(HPGMP_WITH_CUDA)
     cusparseStatus_t status;
     #if CUDA_VERSION >= 11000
@@ -101,8 +101,8 @@ int ComputeRestriction_ref(const SparseMatrix_type & A, const Vector_type & rf) 
       if (CUSPARSE_STATUS_SUCCESS != cusparseDcsrmv(A.cusparseHandle, CUSPARSE_OPERATION_NON_TRANSPOSE,
                                                     nc, n, nc,
                                                     (const double*)&one,  A.mgData->descrR,
-                                                                          (double*)A.mgData->d_nzvals, A.mgData->d_row_ptr, A.mgData->d_col_idx,
-                                                                          (double*)d_rfv,
+                                                    (double*)A.mgData->d_nzvals, A.mgData->d_row_ptr, A.mgData->d_col_idx,
+                                                                          d_rfv,
                                                     (const double*)&zero, (double*)d_rcv)) {
         printf( " Failed cusparseDcsrmv\n" );
       }

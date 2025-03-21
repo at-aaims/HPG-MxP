@@ -39,20 +39,20 @@ int ComputeGEMVT_ref(const local_int_t m, const local_int_t n,
   typedef typename            Vector_type::scalar_type scalarX_type;
   typedef typename SerialDenseMatrix_type::scalar_type scalarY_type;
 
-  assert(x.localLength >= m); // Test vector lengths
-  assert(y.m >= n);
-  assert(y.n == 1);
+  assert(x.local_length() >= m); // Test vector lengths
+  assert(y.n_rows() >= n);
+  assert(y.n_cols() == 1);
 
   // Output serial dense vector 
-  scalarY_type * const yv = y.values;
+  scalarY_type * const yv = y.values();
 
 #if defined(HPGMP_DEBUG)
   const scalarA_type one  (1.0);
   const scalarA_type zero (0.0);
 
   // Input serial dense vector 
-  scalarA_type * const Av = A.values;
-  scalarX_type * const xv = x.values;
+  scalarA_type * const Av = A.values();
+  scalarX_type * const xv = x.values();
 
   // GEMV on HOST CPU
   if (beta == zero) {
@@ -74,15 +74,17 @@ int ComputeGEMVT_ref(const local_int_t m, const local_int_t n,
   }
 #endif
 
-  scalarA_type * const d_Av = A.d_values;
-  scalarX_type * const d_xv = x.d_values;
-  scalarY_type * const d_yv = y.d_values;
+  const scalarA_type * const d_Av = A.d_values();
+  const scalarX_type * const d_xv = x.d_values();
+  scalarY_type * const d_yv = y.d_values();
+  auto handle = x.get_blas_handle();
 
+  static_assert(std::is_same<scalarX_type, scalarY_type>::value, "! MxP GEMVT not supported!");
   double t0; TICK();
   #if defined(HPGMP_WITH_CUDA)
   // Perform GEMV on device
   if (std::is_same<scalarX_type, double>::value) {
-    if (CUBLAS_STATUS_SUCCESS != cublasDgemv(x.handle, CUBLAS_OP_T,
+    if (CUBLAS_STATUS_SUCCESS != cublasDgemv(handle, CUBLAS_OP_T,
                                              m, n,
                                              (double*)&alpha, (double*)d_Av, m,
                                                               (double*)d_xv, 1,
@@ -90,7 +92,7 @@ int ComputeGEMVT_ref(const local_int_t m, const local_int_t n,
       printf( " Failed cublasDgemv\n" );
     }
   } else if (std::is_same<scalarX_type, float>::value) {
-    if (CUBLAS_STATUS_SUCCESS != cublasSgemv(x.handle, CUBLAS_OP_T,
+    if (CUBLAS_STATUS_SUCCESS != cublasSgemv(handle, CUBLAS_OP_T,
                                              m, n,
                                              (float*)&alpha, (float*)d_Av, m,
                                                              (float*)d_xv, 1,
@@ -98,17 +100,11 @@ int ComputeGEMVT_ref(const local_int_t m, const local_int_t n,
       printf( " Failed cublasSgemv\n" );
     }
   }
-  TIME(y.time1);
 
-  // Copy input serial dense vector to host
-  TICK();
-  if (cudaSuccess != cudaMemcpy(yv, d_yv, n*sizeof(scalarX_type), cudaMemcpyDeviceToHost)) {
-    printf( " Failed to memcpy d_x\n" );
-  }
   #elif defined(HPGMP_WITH_HIP)
   // Perform GEMV on device
   if (std::is_same<scalarX_type, double>::value) {
-    if (rocblas_status_success != rocblas_dgemv(x.handle, rocblas_operation_transpose,
+    if (rocblas_status_success != rocblas_dgemv(handle, rocblas_operation_transpose,
                                                 m, n,
                                                 (double*)&alpha, (double*)d_Av, m,
                                                                  (double*)d_xv, 1,
@@ -116,7 +112,7 @@ int ComputeGEMVT_ref(const local_int_t m, const local_int_t n,
       printf( " Failed rocblas_dgemv\n" );
     }
   } else if (std::is_same<scalarX_type, float>::value) {
-    if (rocblas_status_success != rocblas_sgemv(x.handle, rocblas_operation_transpose,
+    if (rocblas_status_success != rocblas_sgemv(handle, rocblas_operation_transpose,
                                                 m, n,
                                                 (float*)&alpha, (float*)d_Av, m,
                                                                 (float*)d_xv, 1,
@@ -124,23 +120,23 @@ int ComputeGEMVT_ref(const local_int_t m, const local_int_t n,
       printf( " Failed rocblas_sgemv\n" );
     }
   }
-  TIME(y.time1);
-
-  // Copy output serial dense vector to host
-  TICK();
-  if (hipSuccess != hipMemcpy(yv, d_yv, n*sizeof(scalarX_type), hipMemcpyDeviceToHost)) {
-    printf( " Failed to memcpy d_x\n" );
-  }
   #endif
+  
+  TIME(y.time1);
+  
+  TICK();
+
+  // Copy input serial dense vector to host
+  y.update_host_mirror();
 
 #ifndef HPGMP_NO_MPI
   // Use MPI's reduce function to collect all partial sums
   int size; // Number of MPI processes
-  MPI_Comm_size(A.comm, &size);
+  MPI_Comm_size(A.get_comm(), &size);
   if (size > 1) {
       MPI_Datatype MPI_SCALAR_TYPE = MpiTypeTraits<scalarY_type>::getType ();
       MPI_Op MPI_SCALAR_SUM = MpiTypeTraits<scalarY_type>::getSumOp ();
-      MPI_Allreduce(MPI_IN_PLACE, yv, n, MPI_SCALAR_TYPE, MPI_SCALAR_SUM, A.comm);
+      MPI_Allreduce(MPI_IN_PLACE, yv, n, MPI_SCALAR_TYPE, MPI_SCALAR_SUM, A.get_comm());
   }
   TIME(y.time2);
 #else

@@ -48,10 +48,11 @@ using std::endl;
 */
 
 template<class SparseMatrix_type, class SparseMatrix_type2, class GMRESData_type, class GMRESData_type2, class Vector_type, class TestGMRESData_type>
-void SetupProblem(const char *title, int argc, char ** argv, comm_type comm, int numberOfMgLevels, bool verbose,
-                  Geometry * geom, SparseMatrix_type & A, GMRESData_type & data, SparseMatrix_type2 & A2, GMRESData_type2 & data2,
-                  Vector_type & b, Vector_type & x, TestGMRESData_type & test_data) {
-
+void SetupProblem(const char *title, int argc, char ** argv, comm_type comm, DeviceCtx *const dctx,
+                  int numberOfMgLevels, bool verbose, Geometry * geom, SparseMatrix_type & A,
+                  GMRESData_type & data, SparseMatrix_type2 & A2, GMRESData_type2 & data2,
+                  Vector_type & b, Vector_type & x, TestGMRESData_type & test_data)
+{
   HPGMP_Params params;
   HPGMP_Init_Params(title, &argc, &argv, params, comm);
   const int size = params.comm_size; // Number of MPI processes
@@ -79,8 +80,8 @@ void SetupProblem(const char *title, int argc, char ** argv, comm_type comm, int
   bool init_vect = true;
   Vector_type xexact;
   double setup_time = mytimer();
-  SetupMatrix(numberOfMgLevels, A, geom, data, &b, &x, &xexact, init_vect, comm);
-#ifdef HPGMP_DEBUG
+  SetupMatrix(dctx, numberOfMgLevels, A, geom, data, &b, &x, &xexact, init_vect, comm);
+#ifdef HPGMP_VERBOSE
   MPI_Barrier(comm);
   if (rank == 0) {
       std::cout << "   SetupProblem: set up DP matrix." << std::endl;
@@ -89,9 +90,9 @@ void SetupProblem(const char *title, int argc, char ** argv, comm_type comm, int
 
   // Setup single-precision A 
   init_vect = false;
-  SetupMatrix(numberOfMgLevels, A2, geom, data2, &b, &x, &xexact, init_vect, comm);
+  SetupMatrix(dctx, numberOfMgLevels, A2, geom, data2, &b, &x, &xexact, init_vect, comm);
   setup_time = mytimer() - setup_time; // Capture total time of setup
-#ifdef HPGMP_DEBUG
+#ifdef HPGMP_VERBOSE
   MPI_Barrier(comm);
   if (rank == 0) {
       std::cout << "   SetupProblem: set up LP matrix." << std::endl;
@@ -104,7 +105,7 @@ void SetupProblem(const char *title, int argc, char ** argv, comm_type comm, int
   // Call user-tunable set up function for A
   double opt_time = mytimer();
   OptimizeProblem(A, data, b, x, xexact);
-#ifdef HPGMP_DEBUG
+#ifdef HPGMP_VERBOSE
   MPI_Barrier(comm);
   if (rank == 0) {
       std::cout << "   SetupProblem: Optimized DP problem." << std::endl;
@@ -114,7 +115,7 @@ void SetupProblem(const char *title, int argc, char ** argv, comm_type comm, int
   // Call user-tunable set up function for A2
   OptimizeProblem(A2, data, b, x, xexact);
   opt_time = mytimer() - opt_time; // Capture total time of setup
-#ifdef HPGMP_DEBUG
+#ifdef HPGMP_VERBOSE
   MPI_Barrier(comm);
   if (rank == 0) {
       std::cout << "   SetupProblem: Optimized LP problem." << std::endl;
@@ -127,8 +128,6 @@ void SetupProblem(const char *title, int argc, char ** argv, comm_type comm, int
     HPGMP_fout << " Setup    Time     " << setup_time << " seconds." << endl;
     HPGMP_fout << " Optimize Time     " << opt_time << " seconds." << endl;
   }
-
-  //DeleteVector(xexact);
 }
 
 
@@ -139,17 +138,17 @@ void SetupProblem(const char *title, int argc, char ** argv, comm_type comm, int
 // uniform
 template
 void SetupProblem< SparseMatrix<double>, SparseMatrix<double>, GMRESData<double>, GMRESData<double>, Vector<double>, TestGMRESData<double> >
- (const char*, int, char**, comm_type, int, bool, Geometry*, SparseMatrix<double>&, GMRESData<double>&, SparseMatrix<double>&, GMRESData<double>&,
+ (const char*, int, char**, comm_type, DeviceCtx*, int, bool, Geometry*, SparseMatrix<double>&, GMRESData<double>&, SparseMatrix<double>&, GMRESData<double>&,
   Vector<double>&, Vector<double>&, TestGMRESData<double>&);
 
 template
 void SetupProblem< SparseMatrix<float>, SparseMatrix<float>, GMRESData<float>, GMRESData<float>, Vector<float>, TestGMRESData<float> >
- (const char*, int, char**, comm_type, int, bool, Geometry*, SparseMatrix<float>&, GMRESData<float>&, SparseMatrix<float>&, GMRESData<float>&,
+ (const char*, int, char**, comm_type, DeviceCtx*, int, bool, Geometry*, SparseMatrix<float>&, GMRESData<float>&, SparseMatrix<float>&, GMRESData<float>&,
   Vector<float>&, Vector<float>&, TestGMRESData<float>&);
 
 // mixed
 template
 void SetupProblem< SparseMatrix<double>, SparseMatrix<float>, GMRESData<double>, GMRESData<float>, Vector<double>, TestGMRESData<double> >
- (const char*, int, char**, comm_type, int, bool, Geometry*, SparseMatrix<double>&, GMRESData<double>&, SparseMatrix<float>&, GMRESData<float>&,
+ (const char*, int, char**, comm_type, DeviceCtx*, int, bool, Geometry*, SparseMatrix<double>&, GMRESData<double>&, SparseMatrix<float>&, GMRESData<float>&,
   Vector<double>&, Vector<double>&, TestGMRESData<double>&);
 

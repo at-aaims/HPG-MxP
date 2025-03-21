@@ -45,53 +45,68 @@
 */
 template<class SparseMatrix_type, class Vector_type>
 int ComputeMG_ref(const SparseMatrix_type & A, const Vector_type & r, Vector_type & x, bool symmetric) {
-  assert(x.localLength==A.localNumberOfColumns); // Make sure x contain space for halo values
+  assert(x.local_length()==A.localNumberOfColumns); // Make sure x contain space for halo values
 
   // initialize x to zero
   double t0 = 0.0;
-  ZeroVector(x);
+  x.fill_zero();
 
   int ierr = 0;
   if (A.mgData!=0) { // Go to next coarse level if defined
-    int numberOfPresmootherSteps = A.mgData->numberOfPresmootherSteps;
+    const int numberOfPresmootherSteps = A.mgData->numberOfPresmootherSteps;
     if (symmetric) {
-      for (int i=0; i< numberOfPresmootherSteps; ++i) ierr += ComputeSYMGS_ref(A, r, x);
+      for (int i=0; i< numberOfPresmootherSteps; ++i)
+          ierr += ComputeSYMGS_ref(A, r, x);
     } else {
-      for (int i=0; i< numberOfPresmootherSteps; ++i) ierr += ComputeGS_Forward_ref(A, r, x);
+      for (int i=0; i< numberOfPresmootherSteps; ++i)
+          ierr += ComputeGS_Forward_ref(A, r, x);
     }
-    if (ierr!=0) return ierr;
+    if (ierr!=0)
+        return ierr;
 
     // Compute residual vector
     TICK();
     double time1 = x.time1, time2 = x.time2;
-    ierr = ComputeSPMV_ref(A, x, *A.mgData->Axf); if (ierr!=0) return ierr;
+    ierr = ComputeSPMV_ref(A, x, *A.mgData->Axf);
+    if (ierr!=0)
+        return ierr;
     x.time1 = time1; x.time2 = time2;
     TOCK(x.time1);
 
     // Restriction operation
     TICK();
-    ierr = ComputeRestriction_ref(A, r);  if (ierr!=0) return ierr;
+    ierr = ComputeRestriction_ref(A, r);
+    if (ierr!=0)
+        return ierr;
     TOCK(x.time3);
 
     // MG on coarser-grid
-    A.mgData->xc->time1 = A.mgData->xc->time2 = 0.0; A.mgData->xc->time3 = A.mgData->xc->time4 = 0.0;
-    ierr = ComputeMG_ref(*A.Ac,*A.mgData->rc, *A.mgData->xc, symmetric);  if (ierr!=0) return ierr;
+    A.mgData->xc->time1 = A.mgData->xc->time2 = 0.0;
+    A.mgData->xc->time3 = A.mgData->xc->time4 = 0.0;
+    ierr = ComputeMG_ref(*A.Ac,*A.mgData->rc, *A.mgData->xc, symmetric);
+    if (ierr!=0)
+        return ierr;
     x.time1 += A.mgData->xc->time1; x.time2 += A.mgData->xc->time2;
     x.time3 += A.mgData->xc->time3; x.time4 += A.mgData->xc->time4;
 
     // Prolongation operation
     TICK();
-    ierr = ComputeProlongation_ref(A, x);  if (ierr!=0) return ierr;
+    ierr = ComputeProlongation_ref(A, x);
+    if (ierr!=0)
+        return ierr;
     TOCK(x.time4);
 
     // Post-smoothing
-    int numberOfPostsmootherSteps = A.mgData->numberOfPostsmootherSteps;
+    const int numberOfPostsmootherSteps = A.mgData->numberOfPostsmootherSteps;
     if (symmetric) {
-      for (int i=0; i< numberOfPostsmootherSteps; ++i) ierr += ComputeSYMGS_ref(A, r, x);
+      for (int i=0; i< numberOfPostsmootherSteps; ++i)
+          ierr += ComputeSYMGS_ref(A, r, x);
     } else {
-      for (int i=0; i< numberOfPostsmootherSteps; ++i) ierr += ComputeGS_Forward_ref(A, r, x);
+      for (int i=0; i< numberOfPostsmootherSteps; ++i)
+          ierr += ComputeGS_Forward_ref(A, r, x);
     }
-    if (ierr!=0) return ierr;
+    if (ierr!=0)
+        return ierr;
   }
   else {
     // coarsest grid

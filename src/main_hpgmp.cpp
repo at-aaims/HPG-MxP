@@ -31,6 +31,7 @@
 #include <iostream>
 #include <cstdlib>
 #include <vector>
+#include <memory>
 
 #include "hpgmp.hpp"
 
@@ -38,6 +39,7 @@
 #include "ReportResults.hpp"
 #include "Geometry.hpp"
 //#include "SparseMatrix.hpp"
+#include "device_ctx.hpp"
 #include "Vector.hpp"
 
 #include "GMRESData.hpp"
@@ -80,6 +82,8 @@ int main(int argc, char * argv[]) {
   MPI_Comm_rank(MPI_COMM_WORLD, &myRank);
   MPI_Comm_size(MPI_COMM_WORLD, &numRanks);
 #endif
+
+  auto ctx = std::make_unique<DeviceCtx>(myRank);
 
   //////////////////////////
   // Create Communicators //
@@ -151,7 +155,7 @@ int main(int argc, char * argv[]) {
   test_data.restart_length = restart_length;
   if (myRank < sizeValidComm) {
     global_failure = ValidGMRES<TestGMRESData_type, scalar_type, scalar_type2, project_type>
-                         (argc, argv, validation_comm, numberOfMgLevels, verbose, test_data);
+                         (argc, argv, validation_comm, ctx.get(), numberOfMgLevels, verbose, test_data);
   }
 
 
@@ -161,7 +165,7 @@ int main(int argc, char * argv[]) {
   {
     bool runReference = true;
     BenchGMRES<TestGMRESData_type, scalar_type, scalar_type2, project_type>
-        (argc, argv, benchmark_comm, numberOfMgLevels, verbose, runReference, test_data);
+        (argc, argv, benchmark_comm, ctx.get(), numberOfMgLevels, verbose, runReference, test_data);
 #ifndef HPGMP_NO_MPI
     MPI_Barrier(MPI_COMM_WORLD);
 #endif
@@ -182,7 +186,7 @@ int main(int argc, char * argv[]) {
     GMRESData_type2 data2;
 
     Vector_type b, x;
-    SetupProblem("report_", argc, argv, benchmark_comm, numberOfMgLevels, verbose, geom, A, data, A2, data2, b, x, test_data);
+    SetupProblem("report_", argc, argv, benchmark_comm, ctx.get(), numberOfMgLevels, verbose, geom, A, data, A2, data2, b, x, test_data);
 
 
     // Report results to YAML file
@@ -193,11 +197,6 @@ int main(int argc, char * argv[]) {
     DeleteMatrix(A2);
     DeleteGeometry(*geom);
     delete geom;
-
-    DeleteGMRESData(data);
-    DeleteGMRESData(data2);
-    DeleteVector(x);
-    DeleteVector(b);
   }
 
   HPGMP_Finalize();

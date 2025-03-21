@@ -8,6 +8,9 @@ project( hpgmp
     LANGUAGES CXX HIP
     DESCRIPTION "High Performance Conjugate Gradient Benchmark (HPGMP) " )
 
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_EXTENSIONS OFF)
+
 #
 # Options
 #
@@ -23,6 +26,8 @@ option(HPGMP_ENABLE_OPENMP "Enable OpenMP support" OFF)
 option(HPGMP_ENABLE_CUDA "Enable CUDA support" OFF)
 option(HPGMP_ENABLE_HIP "Enable HIP support" OFF)
 option(CMAKE_DEBUG "Enable CMake script debugging" OFF)
+
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -ggdb")
 
 if (HPGMP_ENABLE_HIP)
     #enable_language(HIP)
@@ -41,6 +46,7 @@ if (HPGMP_ENABLE_HIP)
     find_package(hip REQUIRED)
     find_package(rocblas REQUIRED)
     find_package(rocsparse REQUIRED)
+    find_package(rocrand REQUIRED)
     #find_package(ROCM 0.7.3 QUIET CONFIG PATHS ${CMAKE_PREFIX_PATH} $ENV{ROCM_PATH})
     #if(NOT ROCM_FOUND)
     #    message(SEND_ERROR "ROCm not found!")
@@ -61,7 +67,7 @@ if (HPGMP_ENABLE_HIP)
 else()
 endif()
 
-set(device_sources src/ExchangeHalo_gpu.cpp
+set(device_sources src/Vector.dev.cpp src/ExchangeHalo_gpu.cpp
 )
 
 # Flag source files as device source files
@@ -74,13 +80,14 @@ if(HPGMP_ENABLE_HIP)
     add_library(hpgmp_device ${device_sources})
     target_link_libraries(hpgmp_device PRIVATE hip::device)
 elseif(HPGMP_ENABLE_CUDA)
-    message(WARNING "CUDA not really supported yet.")
+    message(SEND_ERROR "CUDA not really supported yet.")
 else()
     add_library(hpgmp_device ${device_sources})
 endif()
 
 
-add_library(hpgmp 
+add_library(hpgmp
+    src/device_ctx.cpp src/MultiVector.cpp
     src/GMRES.cpp src/GMRES_IR.cpp src/TestGMRES.cpp
     src/ComputeResidual.cpp src/GenerateGeometry.cpp
     src/ExchangeHalo.cpp src/ExchangeHalo_ref.cpp
@@ -140,8 +147,11 @@ if (HPGMP_ENABLE_MPI)
       target_compile_definitions(hpgmp PUBLIC HPGMP_USE_GPU_AWARE_MPI)
       target_compile_definitions(hpgmp_device PUBLIC HPGMP_USE_GPU_AWARE_MPI)
     endif()
+    message(STATUS "MPI found. Include directories: ${MPI_CXX_INCLUDE_DIRS}")
     target_link_libraries(hpgmp PUBLIC MPI::MPI_CXX ${GTL_LIB})
     target_link_libraries(hpgmp_device PUBLIC MPI::MPI_CXX ${GTL_LIB})
+    #target_include_directories(hpgmp PRIVATE ${MPI_C_INCLUDE_DIRS})
+    #target_include_directories(hpgmp_device PRIVATE ${MPI_C_INCLUDE_DIRS})
 else ()
     target_compile_definitions(hpgmp PUBLIC HPGMP_NO_MPI)
     target_compile_definitions(hpgmp_device PUBLIC HPGMP_NO_MPI)
@@ -174,9 +184,8 @@ if (HPGMP_ENABLE_HIP)
     target_compile_definitions(hpgmp PUBLIC HPGMP_WITH_HIP)
     target_compile_definitions(hpgmp_device PUBLIC HPGMP_WITH_HIP)
     target_compile_definitions(hpgmp PUBLIC HPGMP_USE_FENCE)
-    target_link_libraries(hpgmp PUBLIC hip::host)
-    target_link_libraries(hpgmp PUBLIC roc::rocblas)
-    target_link_libraries(hpgmp PUBLIC roc::rocsparse)
+    target_link_libraries(hpgmp PUBLIC hip::host roc::rocrand)
+    target_link_libraries(hpgmp PUBLIC roc::rocblas roc::rocsparse)
 else ()
     target_compile_definitions(hpgmp PUBLIC HPGMP_NO_HIP)
 endif ()

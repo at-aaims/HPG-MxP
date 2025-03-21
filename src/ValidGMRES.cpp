@@ -52,7 +52,7 @@
 
 
 template<class TestGMRESSData_type, class scalar_type, class scalar_type2, class project_type>
-int ValidGMRES(const int argc, char **argv, comm_type comm, const int numberOfMgLevels, const bool verbose, TestGMRESSData_type & test_data) {
+int ValidGMRES(const int argc, char **argv, comm_type comm, DeviceCtx *const dctx, const int numberOfMgLevels, const bool verbose, TestGMRESSData_type & test_data) {
 
   typedef Vector<scalar_type> Vector_type;
   typedef SparseMatrix<scalar_type> SparseMatrix_type;
@@ -75,14 +75,14 @@ int ValidGMRES(const int argc, char **argv, comm_type comm, const int numberOfMg
   GMRESData_type2 data_lo;
 
   Vector_type b, x;
-  SetupProblem("valid_", argc, argv, comm, numberOfMgLevels, verbose, geom, A, data, A_lo, data_lo, b, x, test_data);
+  SetupProblem("valid_", argc, argv, comm, dctx, numberOfMgLevels, verbose, geom, A, data, A_lo, data_lo, b, x, test_data);
 
   //////////////////////////////////////////////////////////
   // Solver Parameters
   const int MaxIters = 10000;
   const int restart_length = test_data.restart_length;
   const scalar_type tolerance = test_data.tolerance;
-  if (A.geom->rank == 0 && verbose) {
+  if (A.geom->rank == 0) {
       std::cout << " Validate GMRES( tol = " << tolerance << " and restart = " << restart_length << " ) <<" << std::endl;
     HPGMP_fout << std::endl << " >> In Validate GMRES( tol = " << tolerance << " and restart = " << restart_length << " ) <<" << std::endl;
   }
@@ -96,7 +96,7 @@ int ValidGMRES(const int argc, char **argv, comm_type comm, const int numberOfMg
   scalar_type refResNorm = 0.0;
   scalar_type refResNorm0 = 0.0;
   {
-    ZeroVector(x);
+    x.fill_zero();
 
     const double time_tic = mytimer();
     const int ierr = GMRES(A, data, b, x, restart_length, MaxIters, tolerance,
@@ -138,7 +138,7 @@ int ValidGMRES(const int argc, char **argv, comm_type comm, const int numberOfMg
   scalar_type optResNorm = 0.0;
   scalar_type optResNorm0 = 0.0;
   {
-    ZeroVector(x);
+    x.fill_zero();
 
     double time_tic = mytimer();
 #ifdef HPGMP_VERBOSE
@@ -190,11 +190,6 @@ int ValidGMRES(const int argc, char **argv, comm_type comm, const int numberOfMg
   DeleteGeometry(*geom);
   delete geom;
 
-  DeleteGMRESData(data);
-  DeleteGMRESData(data_lo);
-  DeleteVector(x);
-  DeleteVector(b);
-
   if (verbose && A.geom->rank==0) {
     total_validation_time = (mytimer() - total_validation_time);
     HPGMP_fout << " Total validation time : " << total_validation_time << " seconds." << std::endl;
@@ -216,12 +211,12 @@ int ValidGMRES(const int argc, char **argv, comm_type comm, const int numberOfMg
 
 // uniform version
 template
-int ValidGMRES<TestGMRESData<double>,  double, double, double > (int, char**, comm_type, int, bool, TestGMRESData<double>&);
+int ValidGMRES<TestGMRESData<double>,  double, double, double > (int, char**, comm_type, DeviceCtx*, int, bool, TestGMRESData<double>&);
 
 template
-int ValidGMRES< TestGMRESData<float>, float, float, float > (int, char**, comm_type, int, bool, TestGMRESData<float>&);
+int ValidGMRES< TestGMRESData<float>, float, float, float > (int, char**, comm_type, DeviceCtx*, int, bool, TestGMRESData<float>&);
 
 // mixed version
 template
-int ValidGMRES< TestGMRESData<double>, double, float, float > (int, char**, comm_type, int, bool, TestGMRESData<double>&);
+int ValidGMRES< TestGMRESData<double>, double, float, float > (int, char**, comm_type, DeviceCtx*, int, bool, TestGMRESData<double>&);
 

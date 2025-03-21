@@ -102,30 +102,21 @@ int GMRES(const SparseMatrix_type & A, GMRESData_type & data, const Vector_type 
   Vector_type & p = data.p; // Direction vector (in MPI mode ncol>=nrow)
   Vector_type & Ap = data.Ap;
 
-  SerialDenseMatrix_type H;
-  SerialDenseMatrix_type h;
-  SerialDenseMatrix_type t;
-  SerialDenseMatrix_type cs;
-  SerialDenseMatrix_type ss;
-  MultiVector_type Q;
-  MultiVector_type P;
-  Vector_type Qkm1;
-  Vector_type Qk;
-  Vector_type Qj;
-  InitializeMatrix(H,  restart_length+1, restart_length);
-  InitializeMatrix(h,  restart_length+1, 1);
-  InitializeMatrix(t,  restart_length+1, 1);
-  InitializeMatrix(cs, restart_length+1, 1);
-  InitializeMatrix(ss, restart_length+1, 1);
-  InitializeMultiVector(Q, nrow, restart_length+1, A.comm);
+  MultiVector_type Q(nrow, restart_length+1, A.comm, x.get_device_context());
+  SerialDenseMatrix_type H (restart_length+1, restart_length, x.get_device_context());
+  SerialDenseMatrix_type h (restart_length+1, 1, x.get_device_context());
+  SerialDenseMatrix_type t (restart_length+1, 1, x.get_device_context());
+  SerialDenseMatrix_type cs(restart_length+1, 1, x.get_device_context());
+  SerialDenseMatrix_type ss(restart_length+1, 1, x.get_device_context());
 
-  if (!doPreconditioning && A.geom->rank==0) HPGMP_fout << "WARNING: PERFORMING UNPRECONDITIONED ITERATIONS" << std::endl;
+  if (!doPreconditioning && A.geom->rank==0)
+      HPGMP_fout << "WARNING: PERFORMING UNPRECONDITIONED ITERATIONS" << std::endl;
 
   double flops = 0.0;
   double flops_gmg  = 0.0;
   double flops_spmv = 0.0;
   double flops_orth = 0.0;
-  global_int_t numSpMVs_MG = 1+(A.mgData->numberOfPresmootherSteps + A.mgData->numberOfPostsmootherSteps);
+  const global_int_t numSpMVs_MG = 1+(A.mgData->numberOfPresmootherSteps + A.mgData->numberOfPostsmootherSteps);
   niters = 0;
   bool converged = false;
   double t_begin = mytimer();  // Start timing right away
@@ -137,9 +128,10 @@ int GMRES(const SparseMatrix_type & A, GMRESData_type & data, const Vector_type 
     TICK(); ComputeWAXPBY(nrow, one, b, -one, Ap, r, A.isWaxpbyOptimized); TOCK(t11); flops += (itwo*Nrow); // r = b - Ax (x stored in p)
     TICK(); ComputeDotProduct(nrow, r, r, normr, t4, A.isDotProductOptimized); flops += (itwo*Nrow); TOCK(t11);
     normr = sqrt(normr);
-    GetVector(Q, 0, Qj);
+    auto Qj = Q.get_vector(0);
     CopyVector(r, Qj);
-    TICK(); ScaleVectorValue(Qj, one/normr); TOCK(t11); flops += Nrow;
+    TICK(); Qj.scale(one/normr); TOCK(t11); flops += Nrow;
+    HPGMP_VERBOSE_PRINT("GMRES: completed first vector scaling.");
 
     // Record initial residual for convergence testing
     if (niters == 0) normr0 = normr;
@@ -156,14 +148,15 @@ int GMRES(const SparseMatrix_type & A, GMRESData_type & data, const Vector_type 
     }
 
     // do forward GS instead of symmetric GS
-    bool symmetric = false;
+    const bool symmetric = false;
 
     // Start restart cycle
-    global_int_t k = 1;
-    SetMatrixValue(t, 0, 0, normr);
+    int k = 1;
+    t.set_value(0, 0, normr);
+    HPGMP_VERBOSE_PRINT("GMRES: Starting restart cycle..");
     while (k <= restart_length && normr/normr0 > tolerance) { // Use ">" to exit when res=zero (continuing will cause NaN)
-      GetVector(Q, k-1, Qkm1);
-      GetVector(Q, k,   Qk);
+      auto Qkm1 = Q.get_vector(k-1);
+      auto Qk = Q.get_vector(k);
 
       TICK();
       if (doPreconditioning) {
@@ -202,14 +195,17 @@ int GMRES(const SparseMatrix_type & A, GMRESData_type & data, const Vector_type 
         flops_orth += (ifour*k*Nrow);
 #endif
         // CGS2
-        GetMultiVector(Q, 0, k-1, P);
+        HPGMP_VERBOSE_PRINT("GMRES: Starting CGS2..");
+        auto P = Q.get_multi_vector(0, k-1);
         // Computes GEMV^T and copies output h to host
         START_T(); ComputeGEMVT (nrow, k,  one, P, Qk, zero, h, A.isGemvOptimized); STOP_T(t1); // h = Q(1:k)'*q(k+1)
+        HPGMP_VERBOSE_PRINT("GMRES: Completed first GEMV^T.");
         // Copies input h to device and Computes GEMV
         START_T(); ComputeGEMV  (nrow, k, -one, P, h,  one, Qk, A.isGemvOptimized); STOP_T(t2); // h = Q(1:k)'*q(k+1)
+        HPGMP_VERBOSE_PRINT("GMRES: Completed first GEMV.");
         t1_comp += h.time1; t1_comm += h.time2;
         for(int i = 0; i < k; i++) {
-          SetMatrixValue(H, i, k-1, h.values[i]);
+          H.set_value(i, k-1, h.values()[i]);
         }
         flops_orth += (ifour*k*Nrow);
         // reorthogonalize
@@ -217,7 +213,7 @@ int GMRES(const SparseMatrix_type & A, GMRESData_type & data, const Vector_type 
         START_T(); ComputeGEMV  (nrow, k, -one, P, h,  one, Qk, A.isGemvOptimized); STOP_T(t2); // h = Q(1:k)'*q(k+1)
         t1_comp += h.time1; t1_comm += h.time2;
         for(int i = 0; i < k; i++) {
-          AddMatrixValue(H, i, k-1, h.values[i]);
+          H.add_value(i, k-1, h.values()[i]);
         }
         flops_orth += (ifour*k*Nrow);
         // end CGS2
@@ -228,43 +224,43 @@ int GMRES(const SparseMatrix_type & A, GMRESData_type & data, const Vector_type 
       beta = sqrt(beta);
 
       // Qk = Qk / beta
-      START_T(); ScaleVectorValue(Qk, one/beta); STOP_T(t2);
+      START_T(); Qk.scale(one/beta); STOP_T(t2);
       flops_orth += (Nrow);
       TOCK(t6); // Ortho time
 
-      SetMatrixValue(H, k, k-1, beta);
+      H.set_value(k, k-1, beta);
 
       // Given's rotation
       for(int j = 0; j < k-1; j++){
-        double cj = GetMatrixValue(cs, j, 0);
-        double sj = GetMatrixValue(ss, j, 0);
-        double h1 = GetMatrixValue(H, j,   k-1);
-        double h2 = GetMatrixValue(H, j+1, k-1);
+        const double cj = cs.get_value(j, 0);
+        const double sj = ss.get_value(j, 0);
+        const double h1 = H.get_value(j,   k-1);
+        const double h2 = H.get_value(j+1, k-1);
 
-        SetMatrixValue(H, j+1, k-1, -sj * h1 + cj * h2);
-        SetMatrixValue(H, j,   k-1,  cj * h1 + sj * h2);
+        H.set_value(j+1, k-1, -sj * h1 + cj * h2);
+        H.set_value(j,   k-1,  cj * h1 + sj * h2);
       }
 
-      double f = GetMatrixValue(H, k-1, k-1);
-      double g = GetMatrixValue(H, k,   k-1);
+      const double f = H.get_value(k-1, k-1);
+      const double g = H.get_value(k,   k-1);
 
-      double f2 = f*f;
-      double g2 = g*g;
+      const double f2 = f*f;
+      const double g2 = g*g;
       double fg2 = f2 + g2;
-      double D1 = one / sqrt(f2*fg2);
-      double cj = f2*D1;
+      const double D1 = one / sqrt(f2*fg2);
+      const double cj = f2*D1;
       fg2 = fg2 * D1;
-      double sj = f*D1*g;
-      SetMatrixValue(H, k-1, k-1, f*fg2);
-      SetMatrixValue(H, k,   k-1, zero);
+      const double sj = f*D1*g;
+      H.set_value(k-1, k-1, f*fg2);
+      H.set_value(k,   k-1, zero);
 
-      double v1 = GetMatrixValue(t, k-1, 0);
-      double v2 = -v1*sj;
-      SetMatrixValue(t, k,   0, v2);
-      SetMatrixValue(t, k-1, 0, v1*cj);
+      const double v1 = t.get_value(k-1, 0);
+      const double v2 = -v1*sj;
+      t.set_value(k,   0, v2);
+      t.set_value(k-1, 0, v1*cj);
 
-      SetMatrixValue(ss, k-1, 0, sj);
-      SetMatrixValue(cs, k-1, 0, cj);
+      ss.set_value(k-1, 0, sj);
+      cs.set_value(k-1, 0, cj);
 
       normr = std::abs(v2);
       if (verbose && A.geom->rank==0 && (k%print_freq == 0 || k+1 == restart_length)) {
@@ -280,12 +276,13 @@ int GMRES(const SparseMatrix_type & A, GMRESData_type & data, const Vector_type 
       HPGMP_fout << "GMRES restart: k = "<< k << " (" << niters << ")" << std::endl;
     }
     // > update x
+    HPGMP_VERBOSE_PRINT("GMRES: Computing TRSM..");
     ComputeTRSM(k-1, one, H, t);
     if (doPreconditioning) {
       // t is on host, so ComputeGEMV first copies it to device before computation
       ComputeGEMV(nrow, k-1, one, Q, t, zero, r, A.isGemvOptimized); flops += (itwo*Nrow*(k-ione)); // r = Q*t
 
-      z.time1 = z.time2 = 0.0;
+      z.time1 = z.time2 = z.time3 = z.time4 = 0.0;
       TICK();
       ComputeMG(A, r, z, symmetric); flops_gmg += (2*numSpMVs_MG*A.totalNumberOfMGNonzeros);      // z = M*r
       TOCK(t5); // Preconditioner apply time
@@ -336,12 +333,6 @@ int GMRES(const SparseMatrix_type & A, GMRESData_type & data, const Vector_type 
   test_data.flops[1] += flops_gmg;
   test_data.flops[2] += flops_spmv;
   test_data.flops[3] += flops_orth;
-  DeleteDenseMatrix(H);
-  DeleteDenseMatrix(h);
-  DeleteDenseMatrix(t);
-  DeleteDenseMatrix(cs);
-  DeleteDenseMatrix(ss);
-  DeleteMultiVector(Q);
 
   if(IS_NAN(normr)) {
       return 2;

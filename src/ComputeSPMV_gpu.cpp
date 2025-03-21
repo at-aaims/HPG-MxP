@@ -57,8 +57,8 @@
 template<class SparseMatrix_type, class Vector_type>
 int ComputeSPMV_ref(const SparseMatrix_type & A, Vector_type & x, Vector_type & y) {
 
-  assert(x.localLength>=A.localNumberOfColumns); // Test vector lengths
-  assert(y.localLength>=A.localNumberOfRows);
+  assert(x.local_length()>=A.localNumberOfColumns); // Test vector lengths
+  assert(y.local_length()>=A.localNumberOfRows);
   typedef typename SparseMatrix_type::scalar_type scalar_type;
 
   const scalar_type one  (1.0);
@@ -67,18 +67,19 @@ int ComputeSPMV_ref(const SparseMatrix_type & A, Vector_type & x, Vector_type & 
   const global_int_t nnz = A.localNumberOfNonzeros;
 
   const local_int_t nrow = A.localNumberOfRows;
-  scalar_type * const d_xv = x.d_values;
-  scalar_type * const d_yv = y.d_values;
+  scalar_type * const d_xv = x.d_values();
+  scalar_type * const d_yv = y.d_values();
+  scalar_type * const xv = x.values();
 
 #ifndef HPGMP_NO_MPI
   if (A.geom->size > 1) {
-    #ifdef HPCG_WITH_CUDA
+    #ifdef HPGMP_WITH_CUDA
     // Copy local part of X to HOST CPU
-    if (cudaSuccess != cudaMemcpy(xv, x.d_values, nrow*sizeof(scalar_type), cudaMemcpyDeviceToHost)) {
+    if (cudaSuccess != cudaMemcpy(xv, x.d_values(), nrow*sizeof(scalar_type), cudaMemcpyDeviceToHost)) {
       printf( " Failed to memcpy d_y\n" );
     }
-    #elif defined(HPCG_WITH_HIP)
-    if (hipSuccess != hipMemcpy(xv, x.d_values, nrow*sizeof(scalar_type), hipMemcpyDeviceToHost)) {
+    #elif defined(HPGMP_WITH_HIP)
+    if (hipSuccess != hipMemcpy(xv, x.d_values(), nrow*sizeof(scalar_type), hipMemcpyDeviceToHost)) {
       printf( " Failed to memcpy d_y\n" );
     }
     #endif
@@ -86,12 +87,14 @@ int ComputeSPMV_ref(const SparseMatrix_type & A, Vector_type & x, Vector_type & 
     ExchangeHalo(A, x);
 
     // copy non-local part of X to device (after Halo exchange)
-    #if defined(HPCG_WITH_CUDA)
-    if (cudaSuccess != cudaMemcpy(&d_xv[nrow], &xv[nrow], (ncol-nrow)*sizeof(scalar_type), cudaMemcpyHostToDevice)) {
+    #if defined(HPGMP_WITH_CUDA)
+    if (cudaSuccess != cudaMemcpy(d_xv + nrow, &xv[nrow], (ncol-nrow)*sizeof(scalar_type),
+                                  cudaMemcpyHostToDevice)) {
       printf( " Failed to memcpy d_x\n" );
     }
-    #elif defined(HPCG_WITH_HIP)
-    if (hipSuccess != hipMemcpy(&d_xv[nrow], &xv[nrow], (ncol-nrow)*sizeof(scalar_type), hipMemcpyHostToDevice)) {
+    #elif defined(HPGMP_WITH_HIP)
+    if (hipSuccess != hipMemcpy(d_xv + nrow, &xv[nrow], (ncol-nrow)*sizeof(scalar_type),
+                                hipMemcpyHostToDevice)) {
       printf( " Failed to memcpy d_x\n" );
     }
     #endif
@@ -99,8 +102,7 @@ int ComputeSPMV_ref(const SparseMatrix_type & A, Vector_type & x, Vector_type & 
 #endif
 
 #if defined(HPGMP_DEBUG)
-  scalar_type * const xv = x.values;
-  scalar_type * const yv = y.values;
+  scalar_type * const yv = y.values();
 
   #ifndef HPGMP_NO_OPENMP
   #pragma omp parallel for

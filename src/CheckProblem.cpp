@@ -19,13 +19,10 @@
 
  HPGMP routine
  */
+#undef NDEBUG
 
 #ifndef HPGMP_NO_MPI
 #include <mpi.h>
-#endif
-
-#ifndef HPGMP_NO_OPENMP
-#include <omp.h>
 #endif
 
 #if defined(HPGMP_DEBUG) || defined(HPGMP_DETAILED_DEBUG)
@@ -68,12 +65,12 @@ void CheckProblem(SparseMatrix_type & A, Vector_type * b, Vector_type * x, Vecto
   local_int_t localNumberOfRows = nx*ny*nz; // This is the size of our subblock
   global_int_t totalNumberOfRows = gnx*gny*gnz; // Total number of grid points in mesh
 
-  scalar_type * bv = 0;
-  scalar_type * xv = 0;
-  scalar_type * xexactv = 0;
-  if (b!=0) bv = b->values; // Only compute exact solution if requested
-  if (x!=0) xv = x->values; // Only compute exact solution if requested
-  if (xexact!=0) xexactv = xexact->values; // Only compute exact solution if requested
+  const scalar_type * bv = b ? b->values() : nullptr;
+  const scalar_type * xv = x ? x->values() : nullptr;
+  const scalar_type * xexactv = xexact ? xexact->values() : nullptr;
+  //if (b!=0) bv = b->values(); // Only compute exact solution if requested
+  //if (x!=0) xv = x->values(); // Only compute exact solution if requested
+  //if (xexact!=0) xexactv = xexact->values(); // Only compute exact solution if requested
 
   local_int_t localNumberOfNonzeros = 0;
   // TODO:  This triply nested loop could be flattened or use nested parallelism

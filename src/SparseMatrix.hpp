@@ -141,7 +141,7 @@ public:
   SC  *d_Unzvals;   //!< values of matrix entries
 
   // workspace vector
-  Vector<SC> workx; // nrow
+  mutable Vector<SC> workx; // nrow
 
   // TODO: remove
   //Vector<SC> y; // ncol
@@ -206,8 +206,8 @@ template <class SparseMatrix_type, class Vector_type>
 inline void CopyMatrixDiagonal(SparseMatrix_type & A, Vector_type & diagonal) {
   typedef typename SparseMatrix_type::scalar_type scalar_type;
   scalar_type ** curDiagA = A.matrixDiagonal;
-  scalar_type * dv = diagonal.values;
-  assert(A.localNumberOfRows==diagonal.localLength);
+  scalar_type * dv = diagonal.values();
+  assert(A.localNumberOfRows==diagonal.local_length());
   for (local_int_t i=0; i<A.localNumberOfRows; ++i) dv[i] = *(curDiagA[i]);
   return;
 }
@@ -221,8 +221,8 @@ template <class SparseMatrix_type, class Vector_type>
 inline void ReplaceMatrixDiagonal(SparseMatrix_type & A, Vector_type & diagonal) {
   typedef typename SparseMatrix_type::scalar_type scalar_type;
   scalar_type ** curDiagA = A.matrixDiagonal;
-  scalar_type * dv = diagonal.values;
-  assert(A.localNumberOfRows==diagonal.localLength);
+  scalar_type * dv = diagonal.values();
+  assert(A.localNumberOfRows==diagonal.local_length());
   for (local_int_t i=0; i<A.localNumberOfRows; ++i) *(curDiagA[i]) = dv[i];
   return;
 }
@@ -273,12 +273,12 @@ inline void DeleteMatrix(SparseMatrix_type & A) {
   }
   if (A.mgData!=0) {
     // Delete MG data
-    DeleteMGData(*A.mgData);
+    //DeleteMGData(*A.mgData);
     delete A.mgData;
-    A.mgData = 0;
+    A.mgData = nullptr;
   }
 
-  DeleteVector (A.workx);
+  //DeleteVector (A.workx);
   //DeleteVector (A.y);
 
 #ifdef HPGMP_WITH_CUDA

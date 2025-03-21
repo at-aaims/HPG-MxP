@@ -62,7 +62,7 @@ int GMRES_IR(const SparseMatrix_type & A, const SparseMatrix_type2 & A_lo,
              GMRESData_type & data, GMRESData_type2 & data_lo, const Vector_type & b_hi, Vector_type & x_hi,
              const int restart_length, const int max_iter, const typename SparseMatrix_type::scalar_type tolerance,
              int & niters, typename SparseMatrix_type::scalar_type & normr_hi, typename SparseMatrix_type::scalar_type & normr0_hi,
-             bool doPreconditioning, bool verbose, TestGMRESData_type & test_data) {
+             const bool doPreconditioning, bool verbose, TestGMRESData_type & test_data) {
 
   // (working) precision for outer loop
   typedef typename SparseMatrix_type::scalar_type scalar_type;
@@ -101,31 +101,20 @@ int GMRES_IR(const SparseMatrix_type & A, const SparseMatrix_type2 & A_lo,
   //Vector_type2 & p = data_lo.p; // Direction vector (in MPI mode ncol>=nrow)
   //Vector_type2 & Ap = data_lo.Ap;
 
-  SerialDenseMatrix_type H;
-  SerialDenseMatrix_type h;
-  SerialDenseMatrix_type t;
-  SerialDenseMatrix_type cs;
-  SerialDenseMatrix_type ss;
-  MultiVector_type2 Q;
-  MultiVector_type2 P;
-  Vector_type2 Qkm1;
-  Vector_type2 Qk;
-  Vector_type2 Qj;
-  InitializeMatrix(H,  restart_length+1, restart_length);
-  InitializeMatrix(h,  restart_length+1, 1);
-  InitializeMatrix(t,  restart_length+1, 1);
-  InitializeMatrix(cs, restart_length+1, 1);
-  InitializeMatrix(ss, restart_length+1, 1);
-  InitializeMultiVector(Q, nrow, restart_length+1, A.comm);
-  #define SINGLEREDUCE_GMRES_IR
+  SerialDenseMatrix_type H (restart_length+1, restart_length, x_hi.get_device_context());
+  SerialDenseMatrix_type h (restart_length+1, 1, x_hi.get_device_context());
+  SerialDenseMatrix_type t (restart_length+1, 1, x_hi.get_device_context());
+  SerialDenseMatrix_type cs(restart_length+1, 1, x_hi.get_device_context());
+  SerialDenseMatrix_type ss(restart_length+1, 1, x_hi.get_device_context());
+
+  MultiVector_type2 Q(nrow, restart_length+1, A.comm, x_hi.get_device_context());
+  //#define SINGLEREDUCE_GMRES_IR
   #ifdef SINGLEREDUCE_GMRES_IR
   MultiVector_type2 V;
-  SerialDenseMatrix_type T;
-  SerialDenseMatrix_type G; // workspace
-  SerialDenseMatrix_type w; // workspace
-  InitializeMatrix(T, restart_length, restart_length);
-  InitializeMatrix(G, restart_length+1, 2);
-  InitializeMatrix(w, restart_length+1, 1);
+  SerialDenseMatrix_type T( restart_length, restart_length);
+  // workspaces
+  SerialDenseMatrix_type G( restart_length+1, 2);
+  SerialDenseMatrix_type w( restart_length+1, 1);
   #endif
 
   // vectors in scalar_type (higher)
@@ -208,10 +197,13 @@ int GMRES_IR(const SparseMatrix_type & A, const SparseMatrix_type2 & A_lo,
     }
 
     // > Scale to the residual vector in working precision
-    TICK(); ScaleVectorValue<Vector_type, scalar_type> (r_hi, one_hi/normr_hi); flops += Nrow; TOCK(t11);
+    TICK();
+    //ScaleVectorValue<Vector_type, scalar_type> (r_hi, one_hi/normr_hi);
+    r_hi.scale(one_hi/normr_hi);
+    flops += Nrow; TOCK(t11);
 
     // > Copy r as the initial basis vector (lower precision)
-    GetVector(Q, 0, Qj);
+    auto Qj = Q.get_vector(0);
     CopyVector(r_hi, Qj);
 
     // do forward GS instead of symmetric GS
@@ -219,12 +211,12 @@ int GMRES_IR(const SparseMatrix_type & A, const SparseMatrix_type2 & A_lo,
 
     // Start restart cycle
     global_int_t k = 1;
-    SetMatrixValue(t, 0, 0, normr);
+    t.set_value(0, 0, normr);
     while (k <= restart_length && normr/normr0 > tolerance && !IS_NAN(normr))
     {
       // Use ">" to exit when res=zero (continuing will cause NaN)
-      GetVector(Q, k-1, Qkm1);
-      GetVector(Q, k,   Qk);
+      auto Qkm1 = Q.get_vector(k-1);
+      auto Qk = Q.get_vector(k);
 
       TICK();
       if (doPreconditioning) {
@@ -248,7 +240,7 @@ int GMRES_IR(const SparseMatrix_type & A, const SparseMatrix_type2 & A_lo,
         // MGS2
         for (int j = 0; j < k; j++) {
           // get j-th column of Q
-          GetVector(Q, j, Qj);
+          auto Qj = Q.get_vector(j);
 
           alpha = zero_pr;
           for (int i = 0; i < 2; i++) {
@@ -260,19 +252,19 @@ int GMRES_IR(const SparseMatrix_type & A, const SparseMatrix_type2 & A_lo,
             START_T(); ComputeWAXPBY(nrow, one, Qk, -beta, Qj, Qk, A.isWaxpbyOptimized); STOP_T(t2);
             alpha += beta;
           }
-          SetMatrixValue(H, j, k-1, alpha);
+          H.set_value(j, k-1, alpha);
         }
         flops_orth += (ifour*k*Nrow);
       } else {
         // CGS2
         // first orthogonalization
-        GetMultiVector(Q, 0, k-1, P);
+        auto P = Q.get_multi_vector(0, k-1);
         // h = Q(1:k)'*q(k+1), mul and add in proj_type
         START_T(); ComputeGEMVT (nrow, k,  one, P, Qk, zero_pr, h, A.isGemvOptimized); STOP_T(t1);
         START_T(); ComputeGEMV  (nrow, k, -one, P, h,  one,    Qk, A.isGemvOptimized); STOP_T(t2); // q(k+1) = q(k+1) - Q(1:k)*h
         t1_comp += h.time1; t1_comm += h.time2;
         for(int i = 0; i < k; i++) {
-          SetMatrixValue(H, i, k-1, h.values[i]);
+          H.set_value(i, k-1, h.values()[i]);
         }
         flops_orth += (ifour*k*Nrow);
 
@@ -285,7 +277,7 @@ int GMRES_IR(const SparseMatrix_type & A, const SparseMatrix_type2 & A_lo,
         START_T(); ComputeGEMV (nrow, k, -one, P, h,  one, Qk, A.isGemvOptimized); STOP_T(t2); // q(k+1) = q(k+1) - Q(1:k)*h
         t1_comp += h.time1; t1_comm += h.time2;
         for(int i = 0; i < k; i++) {
-          AddMatrixValue(H, i, k-1, h.values[i]);
+          H.add_value(i, k-1, h.values()[i]);
         }
         flops_orth += (ifour*k*Nrow);
       } // end or CGS2
@@ -296,11 +288,12 @@ int GMRES_IR(const SparseMatrix_type & A, const SparseMatrix_type2 & A_lo,
       beta = sqrt(beta);
 
       // Qk = Qk / beta
-      START_T(); ScaleVectorValue(Qk, one_pr/beta); STOP_T(t2);
+      // NOTE: Qk is scalar_type2, so the scaling factor is cast to this type before scaling.
+      START_T(); Qk.scale(static_cast<scalar_type2>(one_pr/beta)); STOP_T(t2);
       flops_orth += (Nrow);
 
       TOCK(t6); // Ortho time
-      SetMatrixValue(H, k, k-1, beta);
+      H.set_value(k, k-1, beta);
       #if 0
       for (int i = 0; i <= k; ++i) HPGMP_fout << " + h[" << i << "] = " << GetMatrixValue(H, i, k-1) << std::endl;
       HPGMP_fout << std::endl;
@@ -308,35 +301,35 @@ int GMRES_IR(const SparseMatrix_type & A, const SparseMatrix_type2 & A_lo,
 
       // Given's rotation
       for(int j = 0; j < k-1; j++){
-        project_type cj = project_type(GetMatrixValue(cs, j, 0));
-        project_type sj = project_type(GetMatrixValue(ss, j, 0));
-        project_type h1 = project_type(GetMatrixValue(H, j,   k-1));
-        project_type h2 = project_type(GetMatrixValue(H, j+1, k-1));
+        const auto cj = static_cast<project_type>(cs.get_value(j, 0));
+        const auto sj = static_cast<project_type>(ss.get_value(j, 0));
+        const auto h1 = static_cast<project_type>(H.get_value(j,   k-1));
+        const auto h2 = static_cast<project_type>(H.get_value(j+1, k-1));
 
-        SetMatrixValue(H, j+1, k-1, -sj * h1 + cj * h2);
-        SetMatrixValue(H, j,   k-1,  cj * h1 + sj * h2);
+        H.set_value(j+1, k-1, -sj * h1 + cj * h2);
+        H.set_value(j,   k-1,  cj * h1 + sj * h2);
       }
 
-      project_type f = project_type(GetMatrixValue(H, k-1, k-1));
-      project_type g = project_type(GetMatrixValue(H, k,   k-1));
+      const auto f = static_cast<project_type>(H.get_value(k-1, k-1));
+      const auto g = static_cast<project_type>(H.get_value(k,   k-1));
 
-      project_type f2 = f*f;
-      project_type g2 = g*g;
+      const project_type f2 = f*f;
+      const project_type g2 = g*g;
       project_type fg2 = f2 + g2;
-      project_type D1 = one_pr / sqrt(f2*fg2);
-      project_type cj = f2*D1;
+      const project_type D1 = one_pr / sqrt(f2*fg2);
+      const project_type cj = f2*D1;
       fg2 = fg2 * D1;
-      project_type sj = f*D1*g;
-      SetMatrixValue(H, k-1, k-1, f*fg2);
-      SetMatrixValue(H, k,   k-1, zero_pr);
+      const project_type sj = f*D1*g;
+      H.set_value(k-1, k-1, f*fg2);
+      H.set_value(k,   k-1, zero_pr);
 
-      project_type v1 = project_type(GetMatrixValue(t, k-1, 0));
-      project_type v2 = -v1*sj;
-      SetMatrixValue(t, k,   0, v2);
-      SetMatrixValue(t, k-1, 0, v1*cj);
+      const auto v1 = static_cast<project_type>(t.get_value(k-1, 0));
+      const project_type v2 = -v1*sj;
+      t.set_value(k,   0, v2);
+      t.set_value(k-1, 0, v1*cj);
 
-      SetMatrixValue(ss, k-1, 0, sj);
-      SetMatrixValue(cs, k-1, 0, cj);
+      ss.set_value(k-1, 0, sj);
+      cs.set_value(k-1, 0, cj);
 
       normr = std::abs(v2);
       if (verbose && (k%print_freq == 0 || k+1 == restart_length)) {
@@ -344,7 +337,9 @@ int GMRES_IR(const SparseMatrix_type & A, const SparseMatrix_type2 & A_lo,
         {
           // compute current approximation
           CopyVector(x_hi, p_hi);                                 // using p_hi for x_hi
-          for (int i=0; i <= k; i++) h.values[i] = t.values[i];   // using h for t
+          for (int i=0; i <= k; i++) {
+              h.set_value(i,0, t.values()[i]);   // using h for t
+          }
           ComputeTRSM(k, one_pr, H, h);
           if (doPreconditioning) {
             #ifdef HPGMRES_IR_UPDATE_X_IN_HIGH
@@ -366,16 +361,16 @@ int GMRES_IR(const SparseMatrix_type & A, const SparseMatrix_type2 & A_lo,
           normr_hi = sqrt(normr_hi);
         }
         {
-          GetMultiVector(Q, 0, k, P);
+          auto P = Q.get_multi_vector(0, k);
           for (int j=0; j<=k; j++) {
-            GetVector(Q, j, Qk);
+            auto Qk = Q.get_vector(j);
             ComputeGEMVT (nrow, k+1, one, P, Qk, zero_pr, h, A.isGemvOptimized);
             for (int i=0; i<=k; i++) {
-              project_type error_i = (i == j ? h.values[i]-one_pr : h.values[i]);
+              project_type error_i = (i == j ? h.values()[i]-one_pr : h.values()[i]);
               error_i = std::abs(error_i);
               ortho_err = (error_i > ortho_err ? error_i : ortho_err);
               //if (std::is_same<scalar_type, double>::value && std::is_same<project_type, float>::value && doPreconditioning) {
-              //if (verbose && A.geom->rank==0 && k == restart_length) HPGMP_fout << " " << (i == j ? h.values[i]-one_pr : h.values[i]);
+              //if (verbose && A.geom->rank==0 && k == restart_length) HPGMP_fout << " " << (i == j ? h.values()[i]-one_pr : h.values()[i]);
               //}
             } 
           }
@@ -470,12 +465,6 @@ int GMRES_IR(const SparseMatrix_type & A, const SparseMatrix_type2 & A_lo,
   test_data.flops[1] += flops_gmg;
   test_data.flops[2] += flops_spmv;
   test_data.flops[3] += flops_orth;
-  DeleteDenseMatrix(H);
-  DeleteDenseMatrix(t);
-  DeleteDenseMatrix(h);
-  DeleteDenseMatrix(cs);
-  DeleteDenseMatrix(ss);
-  DeleteMultiVector(Q);
 
   //return ((converged && !IS_NAN(normr)) ? 0 : 1);
   if(!converged) {

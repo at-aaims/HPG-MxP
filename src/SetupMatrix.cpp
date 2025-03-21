@@ -22,6 +22,7 @@
 
 #include "SetupMatrix.hpp"
 
+#include <iostream>
 
 /*!
   Routine to generate a sparse matrix, right hand side, initial guess, and exact solution.
@@ -35,20 +36,35 @@
 */
 
 template<class SparseMatrix_type, class GMRESData_type, class Vector_type>
-void SetupMatrix(int numberOfMgLevels, SparseMatrix_type & A, Geometry * geom, GMRESData_type & data,
+void SetupMatrix(DeviceCtx *const dctx, int numberOfMgLevels, SparseMatrix_type & A, Geometry * geom, GMRESData_type & data,
                  Vector_type * b, Vector_type * x, Vector_type * xexact, bool init_vect, comm_type comm) {
 
   InitializeSparseMatrix(A, geom, comm);
 
-  GenerateNonsymProblem(A, b, x, xexact, init_vect);
-  SetupHalo(A); //TODO: This is currently called in main... Should it really be called in both places?  Which one? 
+  GenerateNonsymProblem(dctx, A, b, x, xexact, init_vect);
+#ifdef HPGMP_VERBOSE
+  if(geom->rank == 0) {
+      std::cout << "Completed generating nonsym problem." << std::endl;
+  }
+#endif
+  SetupHalo(A); //TODO: This is currently called in main.. Should it really be called in both places?  Which one? 
+#ifdef HPGMP_VERBOSE
+  if(geom->rank == 0) {
+      std::cout << "Completed setting up halos." << std::endl;
+  }
+#endif
 
   A.localNumberOfMGNonzeros = A.localNumberOfNonzeros;
   A.totalNumberOfMGNonzeros = A.totalNumberOfNonzeros;
 
   SparseMatrix_type * curLevelMatrix = &A;
   for (int level = 1; level< numberOfMgLevels; ++level) {
-    GenerateNonsymCoarseProblem(*curLevelMatrix);
+    GenerateNonsymCoarseProblem(dctx, *curLevelMatrix);
+#ifdef HPGMP_VERBOSE
+  if(geom->rank == 0) {
+      std::cout << "Completed generating coarse nonsym problem, level " << level << "." << std::endl;
+  }
+#endif
     A.localNumberOfMGNonzeros += curLevelMatrix->Ac->localNumberOfNonzeros;
     A.totalNumberOfMGNonzeros += curLevelMatrix->Ac->totalNumberOfNonzeros;
     curLevelMatrix = curLevelMatrix->Ac; // Make the just-constructed coarse grid the next level
@@ -69,7 +85,7 @@ void SetupMatrix(int numberOfMgLevels, SparseMatrix_type & A, Geometry * geom, G
   }
   #endif */
 
-  InitializeSparseGMRESData(A, data);
+  data.initialize(A, dctx);
 }
 
 /* --------------- *
@@ -79,18 +95,18 @@ void SetupMatrix(int numberOfMgLevels, SparseMatrix_type & A, Geometry * geom, G
 // uniform
 template
 void SetupMatrix< SparseMatrix<double>, GMRESData<double>, class Vector<double> >
- (int numberOfMgLevels, SparseMatrix<double> & A, Geometry * geom, GMRESData<double> & data, Vector<double> * b, Vector<double> * x, Vector<double> * xexact,
+ (DeviceCtx* dctx, int numberOfMgLevels, SparseMatrix<double> & A, Geometry * geom, GMRESData<double> & data, Vector<double> * b, Vector<double> * x, Vector<double> * xexact,
   bool init_vect, comm_type comm);
 
 template
 void SetupMatrix< SparseMatrix<float>, GMRESData<float>, class Vector<float> >
- (int numberOfMgLevels, SparseMatrix<float> & A, Geometry * geom, GMRESData<float> & data, Vector<float> * b, Vector<float> * x, Vector<float> * xexact,
+ (DeviceCtx* dctx, int numberOfMgLevels, SparseMatrix<float> & A, Geometry * geom, GMRESData<float> & data, Vector<float> * b, Vector<float> * x, Vector<float> * xexact,
   bool init_vect, comm_type comm);
 
 
 // mixed
 template
 void SetupMatrix< SparseMatrix<float>, GMRESData<float>, class Vector<double> >
- (int numberOfMgLevels, SparseMatrix<float> & A, Geometry * geom, GMRESData<float> & data, Vector<double> * b, Vector<double> * x, Vector<double> * xexact,
+ (DeviceCtx* dctx, int numberOfMgLevels, SparseMatrix<float> & A, Geometry * geom, GMRESData<float> & data, Vector<double> * b, Vector<double> * x, Vector<double> * xexact,
   bool init_vect, comm_type comm);
 

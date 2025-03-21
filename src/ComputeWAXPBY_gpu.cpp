@@ -59,8 +59,8 @@ int ComputeWAXPBY_ref(const local_int_t n,
                       const typename VectorY_type::scalar_type beta,
                       const VectorY_type & y,
                             VectorW_type & w) {
-  assert(x.localLength>=n); // Test vector lengths
-  assert(y.localLength>=n);
+  assert(x.local_length()>=n); // Test vector lengths
+  assert(y.local_length()>=n);
 
   // quick return
   if (n <= 0) return 0;
@@ -71,9 +71,9 @@ int ComputeWAXPBY_ref(const local_int_t n,
 
 #if defined(HPGMP_DEBUG)
 
-  scalarX_type * const xv = x.values;
-  scalarY_type * const yv = y.values;
-  scalarW_type * const wv = w.values;
+  const scalarX_type * const xv = x.values();
+  const scalarY_type * const yv = y.values();
+  scalarW_type * const wv = w.values();
   if (alpha==1.0) {
     #ifndef HPGMP_NO_OPENMP
     #pragma omp parallel for
@@ -92,9 +92,10 @@ int ComputeWAXPBY_ref(const local_int_t n,
   }
 #endif
 
-  scalarX_type * const d_xv = x.d_values;
-  scalarY_type * const d_yv = y.d_values;
-  scalarW_type * const d_wv = w.d_values;
+  const scalarX_type * const d_xv = x.d_values();
+  const scalarY_type * const d_yv = y.d_values();
+  scalarW_type * const d_wv = w.d_values();
+  auto handle = w.get_blas_handle();
 
   // Only uniform-precision supported
   if ((std::is_same<scalarX_type, double>::value && std::is_same<scalarY_type, double>::value && std::is_same<scalarW_type, double>::value) ||
@@ -108,20 +109,20 @@ int ComputeWAXPBY_ref(const local_int_t n,
     }
     if (std::is_same<scalarX_type, double>::value) {
       // w = alpha*w
-      if (CUBLAS_STATUS_SUCCESS != cublasDscal (w.handle, n, (const double*)&alpha, (double*)d_wv, 1)) {
+      if (CUBLAS_STATUS_SUCCESS != cublasDscal (handle, n, (const double*)&alpha, (double*)d_wv, 1)) {
         printf( " Failed cublasDscal\n" );
       }
       // w += alpha*x
-      if (CUBLAS_STATUS_SUCCESS != cublasDaxpy (w.handle, n, (const double*)&beta, (double*)d_yv, 1, (double*)d_wv, 1)) {
+      if (CUBLAS_STATUS_SUCCESS != cublasDaxpy (handle, n, (const double*)&beta, (double*)d_yv, 1, (double*)d_wv, 1)) {
         printf( " Failed cublasDdot\n" );
       }
     } else if (std::is_same<scalarX_type, float>::value) {
       // w = beta*y
-      if (CUBLAS_STATUS_SUCCESS != cublasSscal (w.handle, n, (const float*)&alpha, (float*)d_wv, 1)) {
+      if (CUBLAS_STATUS_SUCCESS != cublasSscal (handle, n, (const float*)&alpha, (float*)d_wv, 1)) {
         printf( " Failed cublasSscal\n" );
       }
       // w += alpha*x
-      if (CUBLAS_STATUS_SUCCESS != cublasSaxpy (w.handle, n, (const float*)&beta, (float*) d_yv, 1, (float*) d_wv, 1)) {
+      if (CUBLAS_STATUS_SUCCESS != cublasSaxpy (handle, n, (const float*)&beta, (float*) d_yv, 1, (float*) d_wv, 1)) {
         printf( " Failed cublasDdot\n" );
       }
     }
@@ -133,20 +134,20 @@ int ComputeWAXPBY_ref(const local_int_t n,
     }
     if (std::is_same<scalarX_type, double>::value) {
       // w = alpha*w
-      if (rocblas_status_success != rocblas_dscal (w.handle, n, (const double*)&alpha, (double*)d_wv, 1)) {
+      if (rocblas_status_success != rocblas_dscal (handle, n, (const double*)&alpha, (double*)d_wv, 1)) {
         printf( " Failed rocblas_dscal\n" );
       }
       // w += alpha*x
-      if (rocblas_status_success != rocblas_daxpy (w.handle, n, (const double*)&beta, (double*)d_yv, 1, (double*)d_wv, 1)) {
+      if (rocblas_status_success != rocblas_daxpy (handle, n, (const double*)&beta, (double*)d_yv, 1, (double*)d_wv, 1)) {
         printf( " Failed roocblas_ddot\n" );
       }
     } else if (std::is_same<scalarX_type, float>::value) {
       // w = beta*y
-      if (rocblas_status_success != rocblas_sscal (w.handle, n, (const float*)&alpha, (float*)d_wv, 1)) {
+      if (rocblas_status_success != rocblas_sscal (handle, n, (const float*)&alpha, (float*)d_wv, 1)) {
         printf( " Failed rocblas_sscal\n" );
       }
       // w += alpha*x
-      if (rocblas_status_success != rocblas_saxpy (w.handle, n, (const float*)&beta, (float*) d_yv, 1, (float*) d_wv, 1)) {
+      if (rocblas_status_success != rocblas_saxpy (handle, n, (const float*)&beta, (float*) d_yv, 1, (float*) d_wv, 1)) {
         printf( " Failed rocblas_ddot\n" );
       }
     }
@@ -204,27 +205,13 @@ int ComputeWAXPBY_ref(const local_int_t n,
   } else {
     HPGMP_vout << " Mixed-precision WAXPBY on host, since not supported on device" << std::endl;
 
-    scalarX_type * const xv = x.values;
-    scalarY_type * const yv = y.values;
-    scalarW_type * const wv = w.values;
+    const scalarX_type * const xv = x.values();
+    const scalarY_type * const yv = y.values();
+    scalarW_type * const wv = w.values();
 
     // copy Input vectors to Host
-    #if defined(HPGMP_WITH_CUDA)
-    if (cudaSuccess != cudaMemcpy(xv, d_xv, n*sizeof(scalarX_type), cudaMemcpyDeviceToHost)) {
-      printf( " Failed to memcpy d_x\n" );
-    }
-    if (cudaSuccess != cudaMemcpy(yv, d_yv, n*sizeof(scalarY_type), cudaMemcpyDeviceToHost)) {
-      printf( " Failed to memcpy d_w\n" );
-    }
-    #elif defined(HPGMP_WITH_HIP)
-    // TODO
-    if (hipSuccess != hipMemcpy(xv, d_xv, n*sizeof(scalarX_type), hipMemcpyDeviceToHost)) {
-      printf( " Failed to memcpy d_x\n" );
-    }
-    if (hipSuccess != hipMemcpy(yv, d_yv, n*sizeof(scalarY_type), hipMemcpyDeviceToHost)) {
-      printf( " Failed to memcpy d_w\n" );
-    }
-    #endif
+    x.update_host_mirror();
+    y.update_host_mirror();
 
     // WAXPBY on Host
     for (local_int_t i=0; i<n; i++) {
@@ -233,17 +220,8 @@ int ComputeWAXPBY_ref(const local_int_t n,
     }
 
     // Copy output vector to Device
-    #if defined(HPGMP_WITH_CUDA)
-    if (cudaSuccess != cudaMemcpy(d_wv, wv, n*sizeof(scalarW_type), cudaMemcpyHostToDevice)) {
-      printf( " Failed to memcpy d_w\n" );
-    }
-    #elif defined(HPGMP_WITH_HIP)
-    if (hipSuccess != hipMemcpy(d_wv, wv, n*sizeof(scalarW_type), hipMemcpyHostToDevice)) {
-      printf( " Failed to memcpy d_w\n" );
-    }
-    #endif
+    w.update_device_data();
   }
-
   return 0;
 }
 

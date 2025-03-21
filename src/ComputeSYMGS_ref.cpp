@@ -56,7 +56,7 @@
 template<class SparseMatrix_type, class Vector_type>
 int ComputeSYMGS_ref(const SparseMatrix_type & A, const Vector_type & r, Vector_type & x) {
 
-  assert(x.localLength==A.localNumberOfColumns); // Make sure x contain space for halo values
+  assert(x.local_length()==A.localNumberOfColumns); // Make sure x contain space for halo values
 
   typedef typename SparseMatrix_type::scalar_type scalar_type;
 #ifndef HPGMP_NO_MPI
@@ -65,8 +65,8 @@ int ComputeSYMGS_ref(const SparseMatrix_type & A, const Vector_type & r, Vector_
 
   const local_int_t nrow = A.localNumberOfRows;
   scalar_type ** matrixDiagonal = A.matrixDiagonal;  // An array of pointers to the diagonal entries A.matrixValues
-  const scalar_type * const rv = r.values;
-  scalar_type * const xv = x.values;
+  const scalar_type * const rv = r.values();
+  scalar_type * const xv = x.values();
 
   for (local_int_t i=0; i< nrow; i++) {
     const scalar_type * const currentValues = A.matrixValues[i];

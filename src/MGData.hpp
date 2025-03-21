@@ -32,8 +32,37 @@ template<class SC>
 class MGData {
 public:
   typedef Vector<SC> Vector_type;
-  int numberOfPresmootherSteps; // Call ComputeSYMGS this many times prior to coarsening
-  int numberOfPostsmootherSteps; // Call ComputeSYMGS this many times after coarsening
+
+  MGData(local_int_t *f2c_operator, Vector<SC> *rvec, Vector<SC> *xvec,
+         Vector<SC>* axfvec)
+  {
+      initialize(f2c_operator, rvec, xvec, axfvec);
+  }
+
+  /** @brief Move-initializer for MG-related vectors.
+   * 
+   * This class takes ownership of these Vectors and buffer,
+   * and deallocates them when it's destroyed.
+   */
+  void initialize(local_int_t *f2c_operator, Vector<SC> *rvec, Vector<SC> *xvec,
+                  Vector<SC>* axfvec)
+  {
+      f2cOperator = f2c_operator;
+      rc = rvec;
+      xc = xvec;
+      Axf = axfvec;
+  }
+
+  ~MGData()
+  {
+      delete [] f2cOperator;
+      delete Axf;
+      delete rc;
+      delete xc;
+  }
+
+  int numberOfPresmootherSteps = 1; // Call ComputeSYMGS this many times prior to coarsening
+  int numberOfPostsmootherSteps = 1; // Call ComputeSYMGS this many times after coarsening
   local_int_t * f2cOperator; //!< 1D array containing the fine operator local IDs that will be injected into coarse space.
   Vector_type * rc; // coarse grid residual vector
   Vector_type * xc; // coarse grid solution vector
@@ -66,45 +95,17 @@ public:
   #endif
 };
 
-/*!
- Constructor for the data structure of CG vectors.
-
- @param[in] Ac - Fully-formed coarse matrix
- @param[in] f2cOperator -
- @param[out] data the data structure for CG vectors that will be allocated to get it ready for use in CG iterations
- */
-template <class MGData_type>
-inline void InitializeMGData(local_int_t * f2cOperator,
-                             typename MGData_type::Vector_type * rc,
-                             typename MGData_type::Vector_type * xc,
-                             typename MGData_type::Vector_type * Axf,
-                             MGData_type & data) {
-  data.numberOfPresmootherSteps = 1;
-  data.numberOfPostsmootherSteps = 1;
-  data.f2cOperator = f2cOperator; // Space for injection operator
-  data.rc = rc;
-  data.xc = xc;
-  data.Axf = Axf;
-  return;
-}
-
-/*!
- Destructor for the CG vectors data.
-
- @param[inout] data the MG data structure whose storage is deallocated
- */
-template <class MGData_type>
-inline void DeleteMGData(MGData_type & data) {
-
-  delete [] data.f2cOperator;
-  DeleteVector(*data.Axf);
-  DeleteVector(*data.rc);
-  DeleteVector(*data.xc);
-  delete data.Axf;
-  delete data.rc;
-  delete data.xc;
-  return;
-}
+//template <class MGData_type>
+//inline void DeleteMGData(MGData_type & data) {
+//
+//  delete [] data.f2cOperator;
+//  DeleteVector(*data.Axf);
+//  DeleteVector(*data.rc);
+//  DeleteVector(*data.xc);
+//  delete data.Axf;
+//  delete data.rc;
+//  delete data.xc;
+//}
 
 #endif // MGDATA_HPP
 
