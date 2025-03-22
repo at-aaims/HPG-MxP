@@ -31,7 +31,7 @@
 
 template<class TestGMRESData_type, class scalar_type, class scalar_type2, class project_type = scalar_type2>
 int BenchGMRES(int argc, char **argv, comm_type comm, DeviceCtx *dctx, int numberOfMgLevels,
-               bool verbose, bool runReference, TestGMRESData_type & testcg_data);
+               bool verbose, bool runReference, bool validation_failure, TestGMRESData_type & testcg_data);
 
 #endif  // BENCHGMRES_HPP
 

@@ -36,7 +36,6 @@
 #include "hpgmp.hpp"
 
 #include "SetupProblem.hpp"
-#include "ReportResults.hpp"
 #include "Geometry.hpp"
 //#include "SparseMatrix.hpp"
 #include "device_ctx.hpp"
@@ -165,13 +164,14 @@ int main(int argc, char * argv[]) {
   {
     bool runReference = true;
     BenchGMRES<TestGMRESData_type, scalar_type, scalar_type2, project_type>
-        (argc, argv, benchmark_comm, ctx.get(), numberOfMgLevels, verbose, runReference, test_data);
+        (argc, argv, benchmark_comm, ctx.get(), numberOfMgLevels, verbose, runReference, global_failure, test_data);
 #ifndef HPGMP_NO_MPI
     MPI_Barrier(MPI_COMM_WORLD);
 #endif
   }
 
-  
+ 
+#if 0 
   ////////////////////
   // Report Results //
   ////////////////////
@@ -198,6 +198,7 @@ int main(int argc, char * argv[]) {
     DeleteGeometry(*geom);
     delete geom;
   }
+#endif
 
   HPGMP_Finalize();
 #ifndef HPGMP_NO_MPI

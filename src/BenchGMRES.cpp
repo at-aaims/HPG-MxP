@@ -42,6 +42,7 @@ using std::endl;
 
 #include "BenchGMRES.hpp"
 #include "mytimer.hpp"
+#include "ReportResults.hpp"
 
 /// Record execution time of reference SpMV and MG kernels for reporting times
 template<class TestGMRESDataType, class SparseMatrixType, class VectorType>
@@ -54,6 +55,7 @@ void test_mg_spmv_ref(MPI_Comm comm, DeviceCtx *dctx, const Geometry *const geom
   @param[in]      argc      the "argc" parameter passed to the main() function
   @param[in]      argv      the "argv" parameter passed to the main() function
   @param[in]      comm      the communicator use to run benchmark
+  @param[in] validation_failure  Whether validation had failed, for reporting.
 
   @param[inout]   test_data the data structure with the results of the test including pass/fail information
 
@@ -62,8 +64,10 @@ void test_mg_spmv_ref(MPI_Comm comm, DeviceCtx *dctx, const Geometry *const geom
   @see GMRES()
  */
 template<class TestGMRESDataType, class scalar_type, class scalar_type2, class project_type>
-int BenchGMRES(int argc, char **argv, comm_type comm, DeviceCtx *const dctx, int numberOfMgLevels, bool verbose, bool runReference, TestGMRESDataType & test_data) {
-
+int BenchGMRES(int argc, char **argv, comm_type comm, DeviceCtx *const dctx, int numberOfMgLevels,
+               bool verbose, bool runReference, const bool validation_failure,
+               TestGMRESDataType & test_data)
+{
   typedef Vector<scalar_type> Vector_type;
   typedef SparseMatrix<scalar_type> SparseMatrix_type;
   typedef GMRESData<scalar_type> GMRESData_type;
@@ -239,6 +243,7 @@ int BenchGMRES(int argc, char **argv, comm_type comm, DeviceCtx *const dctx, int
   // Run reference GMRES implementation for a fixed number of iterations
   // and record the obtained Gflop/s
   if (runReference) {
+    const int n_ref_calls = 10;
     //warmup
     x.fill_zero();
     GMRES(A, data, b, x, restart_length, maxIters, tolerance, niters, normr, normr0, precond, verbose, test_data);
@@ -249,7 +254,7 @@ int BenchGMRES(int argc, char **argv, comm_type comm, DeviceCtx *const dctx, int
     for (int i=0; i<n_timed_ops; i++) test_data.times[i] = 0.0;
     for (int i=0; i<n_timed_ops; i++) test_data.times_comp[i] = 0.0;
     for (int i=0; i<n_timed_ops; i++) test_data.times_comm[i] = 0.0;
-    for (int i=0; i< numberOfGmresCalls; ++i) {
+    for (int i=0; i< n_ref_calls; ++i) {
       x.fill_zero();
 
       const double time_tic = mytimer();
@@ -263,11 +268,11 @@ int BenchGMRES(int argc, char **argv, comm_type comm, DeviceCtx *const dctx, int
               std::cout << "NaN Error in call to GMRES!" << std::endl;
       }
       if (A.geom->rank==0) {
-        HPGMP_fout << "Call [" << i << " / " << numberOfGmresCalls << "]";
+        HPGMP_fout << "Call [" << i << " / " << n_ref_calls << "]";
         HPGMP_fout << " Number of GMRES Iterations [" << niters <<"] Scaled Residual [" << normr/normr0 << "]" << endl;
         HPGMP_fout << " Time        " << time_toc << endl;
         HPGMP_fout << " Time/itr    " << time_toc / niters << endl;
-        std::cout << " BenchGMRES reference Call [" << i << " / " << numberOfGmresCalls << "]";
+        std::cout << " BenchGMRES reference Call [" << i << " / " << n_ref_calls << "]";
         std::cout << " Number of GMRES Iterations [" << niters <<"] Scaled Residual [" << normr/normr0 << "]" << endl;
         std::cout << "     Time        " << time_toc << endl;
         std::cout << "     Time/itr    " << time_toc / niters << endl;
@@ -298,6 +303,9 @@ int BenchGMRES(int argc, char **argv, comm_type comm, DeviceCtx *const dctx, int
     test_data.refTotalFlops = 0.0;
     test_data.refTotalTime  = 0.0;
   }
+    
+  // Report results 
+  ReportResults(A, numberOfMgLevels, test_data, validation_failure);
 
   // cleanup
   DeleteMatrix(A);  
@@ -321,17 +329,17 @@ int BenchGMRES(int argc, char **argv, comm_type comm, DeviceCtx *const dctx, int
 // uniform version
 template
 int BenchGMRES< TestGMRESData<double>, double, double, double >
-  (int, char**, comm_type, DeviceCtx*, int, bool, bool, TestGMRESData<double>&);
+  (int, char**, comm_type, DeviceCtx*, int, bool, bool, bool, TestGMRESData<double>&);
 
 template
 int BenchGMRES< TestGMRESData<float>, float, float, float >
-  (int, char**, comm_type, DeviceCtx*, int, bool, bool, TestGMRESData<float>&);
+  (int, char**, comm_type, DeviceCtx*, int, bool, bool, bool, TestGMRESData<float>&);
 
 
 // mixed version
 template
 int BenchGMRES< TestGMRESData<double>, double, float, float >
-  (int, char**, comm_type, DeviceCtx*, int, bool, bool, TestGMRESData<double>&);
+  (int, char**, comm_type, DeviceCtx*, int, bool, bool, bool, TestGMRESData<double>&);
 
 
 template<class TestGMRESDataType, class SparseMatrixType, class VectorType>
