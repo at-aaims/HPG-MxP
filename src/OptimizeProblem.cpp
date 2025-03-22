@@ -353,7 +353,7 @@ int OptimizeProblem(SparseMatrix_type & A, GMRESData_type & data, Vector_type & 
 #if defined(HPGMP_WITH_CUDA)
       // -------------------------
       // create Handle (for each matrix)
-      cusparseCreate(&(curLevelMatrix->cusparseHandle));
+      //cusparseCreate(&(curLevelMatrix->cusparseHandle));
 
       // -------------------------
       // descriptor for A
@@ -401,7 +401,7 @@ int OptimizeProblem(SparseMatrix_type & A, GMRESData_type & data, Vector_type & 
       if (std::is_same<SC, double>::value) {
   #if CUDA_VERSION >= 11000
         int pBufferSize;
-        cusparseDcsrsv2_bufferSize(curLevelMatrix->cusparseHandle, CUSPARSE_OPERATION_NON_TRANSPOSE, nrow, nnzL,
+        cusparseDcsrsv2_bufferSize(dctx->get_sparse_handle(), CUSPARSE_OPERATION_NON_TRANSPOSE, nrow, nnzL,
                                    curLevelMatrix->descrL,
                                    (double *)curLevelMatrix->d_Lnzvals, curLevelMatrix->d_Lrow_ptr, curLevelMatrix->d_Lcol_idx,
                                    curLevelMatrix->infoL,
@@ -411,7 +411,7 @@ int OptimizeProblem(SparseMatrix_type & A, GMRESData_type & data, Vector_type & 
         }
         cusparseStatus_t status;
         status = cusparseDcsrsv2_analysis(
-                                 curLevelMatrix->cusparseHandle, CUSPARSE_OPERATION_NON_TRANSPOSE, nrow, nnzL, curLevelMatrix->descrL,
+                                 dctx->get_sparse_handle(), CUSPARSE_OPERATION_NON_TRANSPOSE, nrow, nnzL, curLevelMatrix->descrL,
                                  (double *)curLevelMatrix->d_Lnzvals, curLevelMatrix->d_Lrow_ptr, curLevelMatrix->d_Lcol_idx,
                                  curLevelMatrix->infoL, CUSPARSE_SOLVE_POLICY_USE_LEVEL, curLevelMatrix->buffer_L);
         if (CUSPARSE_STATUS_SUCCESS != status) {
@@ -424,7 +424,7 @@ int OptimizeProblem(SparseMatrix_type & A, GMRESData_type & data, Vector_type & 
           if (status == CUSPARSE_STATUS_MATRIX_TYPE_NOT_SUPPORTED ) printf( " > CUSPARSE_STATUS_MATRIX_TYPE_NOT_SUPPORTED <\n" );
         }
   #else
-        cusparseDcsrsv_analysis(curLevelMatrix->cusparseHandle,
+        cusparseDcsrsv_analysis(dctx->get_sparse_handle(),
                                 CUSPARSE_OPERATION_NON_TRANSPOSE, nrow, nnzL,
                                 curLevelMatrix->descrL,
                                 (double *)curLevelMatrix->d_Lnzvals, curLevelMatrix->d_Lrow_ptr, curLevelMatrix->d_Lcol_idx,
@@ -433,7 +433,7 @@ int OptimizeProblem(SparseMatrix_type & A, GMRESData_type & data, Vector_type & 
       } else if (std::is_same<SC, float>::value) {
   #if CUDA_VERSION >= 11000
         int pBufferSize;
-        cusparseScsrsv2_bufferSize(curLevelMatrix->cusparseHandle, CUSPARSE_OPERATION_NON_TRANSPOSE, nrow, nnzL,
+        cusparseScsrsv2_bufferSize(dctx->get_sparse_handle(), CUSPARSE_OPERATION_NON_TRANSPOSE, nrow, nnzL,
                                    curLevelMatrix->descrL,
                                    (float *)curLevelMatrix->d_Lnzvals, curLevelMatrix->d_Lrow_ptr, curLevelMatrix->d_Lcol_idx,
                                    curLevelMatrix->infoL,
@@ -441,11 +441,11 @@ int OptimizeProblem(SparseMatrix_type & A, GMRESData_type & data, Vector_type & 
         if (cudaSuccess != cudaMalloc(&(curLevelMatrix->buffer_L), pBufferSize)) {
           printf( " Failed cudaMalloc for cusparseDcsrsv2 failed\n" );
         }
-        cusparseScsrsv2_analysis(curLevelMatrix->cusparseHandle, CUSPARSE_OPERATION_NON_TRANSPOSE, nrow, nnzL, curLevelMatrix->descrL,
+        cusparseScsrsv2_analysis(dctx->get_sparse_handle(), CUSPARSE_OPERATION_NON_TRANSPOSE, nrow, nnzL, curLevelMatrix->descrL,
                                  (float *)curLevelMatrix->d_Lnzvals, curLevelMatrix->d_Lrow_ptr, curLevelMatrix->d_Lcol_idx,
                                  curLevelMatrix->infoL, CUSPARSE_SOLVE_POLICY_USE_LEVEL, curLevelMatrix->buffer_L);
   #else
-        cusparseScsrsv_analysis(curLevelMatrix->cusparseHandle,
+        cusparseScsrsv_analysis(dctx->get_sparse_handle(),
                                 CUSPARSE_OPERATION_NON_TRANSPOSE, nrow, nnzL,
                                 curLevelMatrix->descrL,
                                 (float *)curLevelMatrix->d_Lnzvals, curLevelMatrix->d_Lrow_ptr, curLevelMatrix->d_Lcol_idx,
@@ -472,7 +472,7 @@ int OptimizeProblem(SparseMatrix_type & A, GMRESData_type & data, Vector_type & 
 #elif defined(HPGMP_WITH_HIP)
       // -------------------------
       // create Handle (for each matrix)
-      rocsparse_create_handle(&(curLevelMatrix->rocsparseHandle));
+      //rocsparse_create_handle(&(curLevelMatrix->rocsparseHandle));
 
       // -------------------------
       // descriptor for A
@@ -491,7 +491,7 @@ int OptimizeProblem(SparseMatrix_type & A, GMRESData_type & data, Vector_type & 
       rocsparse_create_dnvec_descr(&vecX, ncol, (void*)curLevelMatrix->workx.d_values(), rocsparse_compute_type);
       rocsparse_create_dnvec_descr(&vecY, nrow, (void*)tempy.d_values(), rocsparse_compute_type);
       rocsparse_spmv
-          (curLevelMatrix->rocsparseHandle, rocsparse_operation_none,
+          (dctx->get_sparse_handle(), rocsparse_operation_none,
            &one, curLevelMatrix->descrA, vecX, &zero, vecY, 
            rocsparse_compute_type, rocsparse_spmv_alg_default,
   #if ROCM_VERSION >= 50400
@@ -512,7 +512,7 @@ int OptimizeProblem(SparseMatrix_type & A, GMRESData_type & data, Vector_type & 
       curLevelMatrix->buffer_L = nullptr;
       rocsparse_create_dnvec_descr(&vecX, nrow, (void*)curLevelMatrix->workx.d_values(), rocsparse_compute_type);
       rocsparse_create_dnvec_descr(&vecY, nrow, (void*)tempy.d_values(), rocsparse_compute_type);
-      rocsparse_status spsv_stat = rocsparse_spsv(curLevelMatrix->rocsparseHandle, rocsparse_operation_none,
+      rocsparse_status spsv_stat = rocsparse_spsv(dctx->get_sparse_handle(), rocsparse_operation_none,
                                                   &one, curLevelMatrix->descrL, vecY, vecY, rocsparse_compute_type, 
                                                   rocsparse_spsv_alg_default, rocsparse_spsv_stage_buffer_size,
                                                   &curLevelMatrix->buffer_size_L, curLevelMatrix->buffer_L);
@@ -522,7 +522,7 @@ int OptimizeProblem(SparseMatrix_type & A, GMRESData_type & data, Vector_type & 
       //if (curLevelMatrix->buffer_size_L <= 0) curLevelMatrix->buffer_size_L = 1;
       //hipMalloc(&curLevelMatrix->buffer_L, curLevelMatrix->buffer_size_L);
       curLevelMatrix->buffer_L = dctx->device_alloc(curLevelMatrix->buffer_size_L);
-      spsv_stat = rocsparse_spsv(curLevelMatrix->rocsparseHandle, rocsparse_operation_none,
+      spsv_stat = rocsparse_spsv(dctx->get_sparse_handle(), rocsparse_operation_none,
                                  &one, curLevelMatrix->descrL, vecY, vecY, rocsparse_compute_type, 
                                  rocsparse_spsv_alg_default, rocsparse_spsv_stage_preprocess,
                                  &curLevelMatrix->buffer_size_L, curLevelMatrix->buffer_L);
@@ -542,7 +542,7 @@ int OptimizeProblem(SparseMatrix_type & A, GMRESData_type & data, Vector_type & 
       rocsparse_create_dnvec_descr(&vecX, ncol, (void*)curLevelMatrix->workx.d_values(), rocsparse_compute_type);
       rocsparse_create_dnvec_descr(&vecY, nrow, (void*)tempy.d_values(), rocsparse_compute_type);
       rocsparse_spmv
-          (curLevelMatrix->rocsparseHandle, rocsparse_operation_none,
+          (dctx->get_sparse_handle(), rocsparse_operation_none,
            &alpha, curLevelMatrix->descrU, vecX, &beta, vecY, 
            rocsparse_compute_type, rocsparse_spmv_alg_default,
   #if ROCM_VERSION >= 50400
@@ -560,7 +560,7 @@ int OptimizeProblem(SparseMatrix_type & A, GMRESData_type & data, Vector_type & 
         // -------------------------
         // store restriction as CRS
         local_int_t * f2c = curLevelMatrix->mgData->f2cOperator;
-        local_int_t nc = curLevelMatrix->mgData->rc->local_length();
+        const local_int_t nc = curLevelMatrix->mgData->rc->local_length();
         h_row_ptr = (int*)malloc((nc+1) * sizeof(int));
         h_col_ind = (int*)malloc( nc    * sizeof(int));
         h_nzvals  = (SC *)malloc( nc    * sizeof(SC));
@@ -667,7 +667,7 @@ int OptimizeProblem(SparseMatrix_type & A, GMRESData_type & data, Vector_type & 
         rocsparse_create_dnvec_descr(&vecX, nrow, (void*)curLevelMatrix->workx.d_values(), rocsparse_compute_type);
         rocsparse_create_dnvec_descr(&vecY, nc,   (void*)tempy.d_values(), rocsparse_compute_type);
         rocsparse_spmv
-            (curLevelMatrix->rocsparseHandle, rocsparse_operation_none,
+            (dctx->get_sparse_handle(), rocsparse_operation_none,
              &one, curLevelMatrix->mgData->descrR, vecX, &one, vecY, 
              rocsparse_compute_type, rocsparse_spmv_alg_default,
 	     #if ROCM_VERSION >= 50400
@@ -685,7 +685,7 @@ int OptimizeProblem(SparseMatrix_type & A, GMRESData_type & data, Vector_type & 
         curLevelMatrix->mgData->buffer_size_P = 0;
         curLevelMatrix->mgData->buffer_P = nullptr;
         rocsparse_spmv
-            (curLevelMatrix->rocsparseHandle, rocsparse_operation_none,
+            (dctx->get_sparse_handle(), rocsparse_operation_none,
              &one, curLevelMatrix->mgData->descrP, vecY, &one, vecX, 
              rocsparse_compute_type, rocsparse_spmv_alg_default,
 	#if ROCM_VERSION >= 50400

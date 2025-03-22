@@ -39,7 +39,7 @@ template<class SparseMatrix_type, class GMRESData_type, class Vector_type>
 void SetupMatrix(DeviceCtx *const dctx, int numberOfMgLevels, SparseMatrix_type & A, Geometry * geom, GMRESData_type & data,
                  Vector_type * b, Vector_type * x, Vector_type * xexact, bool init_vect, comm_type comm) {
 
-  InitializeSparseMatrix(A, geom, comm);
+  A.initialize(geom, comm, dctx);
 
   GenerateNonsymProblem(dctx, A, b, x, xexact, init_vect);
 #ifdef HPGMP_VERBOSE

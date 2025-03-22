@@ -102,15 +102,12 @@ void GenerateNonsymCoarseProblem(DeviceCtx *const dctx, const SparseMatrix_type 
   bool init_vect = false;
   Vector_type * tmp;
   SparseMatrix_type * Ac = new SparseMatrix_type;
-  InitializeSparseMatrix(*Ac, geomc, Af.comm);
+  Ac->initialize(geomc, Af.comm, dctx);
   GenerateNonsymProblem(dctx, *Ac, tmp, tmp, tmp, init_vect);
   SetupHalo(*Ac);
   Vector_type *rc = new Vector_type(Ac->localNumberOfRows, Ac->comm, dctx);
   Vector_type *xc = new Vector_type(Ac->localNumberOfColumns, Ac->comm, dctx);
   Vector_type * Axf = new Vector_type(Af.localNumberOfColumns, Ac->comm, dctx);
-  //InitializeVector(*rc, Ac->localNumberOfRows, Ac->comm);
-  //InitializeVector(*xc, Ac->localNumberOfColumns, Ac->comm);
-  //InitializeVector(*Axf, Af.localNumberOfColumns, Ac->comm);
   Af.Ac = Ac;
   MGData_type * mgData = new MGData_type(f2cOperator, rc, xc, Axf);
   // NOTE: SparseMatrix Af takes ownership of mgData and deletes it when it's destroyed.

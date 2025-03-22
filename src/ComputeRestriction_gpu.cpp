@@ -57,6 +57,7 @@ int ComputeRestriction_ref(const SparseMatrix_type & A, const Vector_type & rf) 
   scalar_type * d_Axfv = A.mgData->Axf->d_values();
   const scalar_type * d_rfv  = rf.d_values();
   scalar_type * d_rcv  = A.mgData->rc->d_values();
+  auto sphandle = A.dctx->get_sparse_handle();
   #if defined(HPGMP_WITH_CUDA)
     cusparseStatus_t status;
     #if CUDA_VERSION >= 11000
@@ -78,7 +79,7 @@ int ComputeRestriction_ref(const SparseMatrix_type & A, const Vector_type & rf) 
     cusparseCreateDnVec(&vecF,  n,  d_rfv,  computeType);
     cusparseCreateDnVec(&vecC,  nc, d_rcv,  computeType);
     // SpMV
-    status = cusparseSpMV(A.cusparseHandle, CUSPARSE_OPERATION_NON_TRANSPOSE,
+    status = cusparseSpMV(sphandle, CUSPARSE_OPERATION_NON_TRANSPOSE,
                           &one, Ac_cusparse,
                                  vecF,
                           &zero, vecC,
@@ -87,7 +88,7 @@ int ComputeRestriction_ref(const SparseMatrix_type & A, const Vector_type & rf) 
       printf( " Failed first cusparseSpMV for Restriction\n" );
     } else {
       // SpMV
-      status = cusparseSpMV(A.cusparseHandle, CUSPARSE_OPERATION_NON_TRANSPOSE,
+      status = cusparseSpMV(sphandle, CUSPARSE_OPERATION_NON_TRANSPOSE,
                             &mone, Ac_cusparse,
                                    vecAF,
                             &one,  vecC,
@@ -98,7 +99,7 @@ int ComputeRestriction_ref(const SparseMatrix_type & A, const Vector_type & rf) 
     }
     #else
     if (std::is_same<scalar_type, double>::value) {
-      if (CUSPARSE_STATUS_SUCCESS != cusparseDcsrmv(A.cusparseHandle, CUSPARSE_OPERATION_NON_TRANSPOSE,
+      if (CUSPARSE_STATUS_SUCCESS != cusparseDcsrmv(sphandle, CUSPARSE_OPERATION_NON_TRANSPOSE,
                                                     nc, n, nc,
                                                     (const double*)&one,  A.mgData->descrR,
                                                     (double*)A.mgData->d_nzvals, A.mgData->d_row_ptr, A.mgData->d_col_idx,
@@ -106,7 +107,7 @@ int ComputeRestriction_ref(const SparseMatrix_type & A, const Vector_type & rf) 
                                                     (const double*)&zero, (double*)d_rcv)) {
         printf( " Failed cusparseDcsrmv\n" );
       }
-      if (CUSPARSE_STATUS_SUCCESS != cusparseDcsrmv(A.cusparseHandle, CUSPARSE_OPERATION_NON_TRANSPOSE,
+      if (CUSPARSE_STATUS_SUCCESS != cusparseDcsrmv(sphandle, CUSPARSE_OPERATION_NON_TRANSPOSE,
                                                     nc, n, nc,
                                                     (const double*)&mone, A.mgData->descrR,
                                                                           (double*)A.mgData->d_nzvals, A.mgData->d_row_ptr, A.mgData->d_col_idx,
@@ -115,7 +116,7 @@ int ComputeRestriction_ref(const SparseMatrix_type & A, const Vector_type & rf) 
         printf( " Failed cusparseDcsrmv\n" );
       }
     } else if (std::is_same<scalar_type, float>::value) {
-      if (CUSPARSE_STATUS_SUCCESS != cusparseScsrmv(A.cusparseHandle, CUSPARSE_OPERATION_NON_TRANSPOSE,
+      if (CUSPARSE_STATUS_SUCCESS != cusparseScsrmv(sphandle, CUSPARSE_OPERATION_NON_TRANSPOSE,
                                                     nc, n, nc,
                                                     (const float*)&one,  A.mgData->descrR,
                                                                          (float*)A.mgData->d_nzvals, A.mgData->d_row_ptr, A.mgData->d_col_idx,
@@ -123,7 +124,7 @@ int ComputeRestriction_ref(const SparseMatrix_type & A, const Vector_type & rf) 
                                                     (const float*)&zero, (float*)d_rcv)) {
         printf( " Failed cusparseScsrmv\n" );
       }
-      if (CUSPARSE_STATUS_SUCCESS != cusparseScsrmv(A.cusparseHandle, CUSPARSE_OPERATION_NON_TRANSPOSE,
+      if (CUSPARSE_STATUS_SUCCESS != cusparseScsrmv(sphandle, CUSPARSE_OPERATION_NON_TRANSPOSE,
                                                     nc, n, nc,
                                                     (const float*)&mone, A.mgData->descrR,
                                                                          (float*)A.mgData->d_nzvals, A.mgData->d_row_ptr, A.mgData->d_col_idx,
@@ -144,7 +145,7 @@ int ComputeRestriction_ref(const SparseMatrix_type & A, const Vector_type & rf) 
   rocsparse_create_dnvec_descr(&vecY, nc, (void*)d_rcv, rocsparse_compute_type);
   if (rocsparse_status_success !=
       rocsparse_spmv
-          (A.rocsparseHandle, rocsparse_operation_none,
+          (sphandle, rocsparse_operation_none,
            &one, A.mgData->descrR, vecX, &zero, vecY,
            rocsparse_compute_type, rocsparse_spmv_alg_default,
            #if ROCM_VERSION >= 50400
@@ -156,7 +157,7 @@ int ComputeRestriction_ref(const SparseMatrix_type & A, const Vector_type & rf) 
   rocsparse_create_dnvec_descr(&vecX, n, (void*)d_Axfv, rocsparse_compute_type);
   if (rocsparse_status_success !=
       rocsparse_spmv
-          (A.rocsparseHandle, rocsparse_operation_none,
+          (sphandle, rocsparse_operation_none,
            &mone, A.mgData->descrR, vecX, &one, vecY,
            rocsparse_compute_type, rocsparse_spmv_alg_default,
            #if ROCM_VERSION >= 50400

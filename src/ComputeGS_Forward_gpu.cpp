@@ -139,6 +139,7 @@ int ComputeGS_Forward_ref(const SparseMatrix_type & A, const Vector_type & r, Ve
   const scalar_type  one ( 1.0);
   const scalar_type mone (-1.0);
   double t0 = 0.0;
+  auto sphandle = A.dctx->get_sparse_handle();
 
   // b = r - Ux
 #if defined(HPGMP_WITH_CUDA)
@@ -165,7 +166,7 @@ int ComputeGS_Forward_ref(const SparseMatrix_type & A, const Vector_type & r, Ve
     cusparseCreateDnVec(&vecB, nrow, d_bv, computeType);
     // SpMV
     TICK();
-    status = cusparseSpMV(A.cusparseHandle, CUSPARSE_OPERATION_NON_TRANSPOSE,
+    status = cusparseSpMV(sphandle, CUSPARSE_OPERATION_NON_TRANSPOSE,
                           &mone, A_cusparse,
                                  vecX,
                           &one,  vecB,
@@ -177,14 +178,14 @@ int ComputeGS_Forward_ref(const SparseMatrix_type & A, const Vector_type & r, Ve
     #else
     TICK();
     if (std::is_same<scalar_type, double>::value) {
-       status = cusparseDcsrmv(A.cusparseHandle, CUSPARSE_OPERATION_NON_TRANSPOSE,
+       status = cusparseDcsrmv(sphandle, CUSPARSE_OPERATION_NON_TRANSPOSE,
                                nrow, ncol, A.nnzU,
                                (const double*)&mone,  A.descrU,
                                                       (double*)A.d_Unzvals, A.d_Urow_ptr, A.d_Ucol_idx,
                                                       (double*)d_xv,
                                (const double*)&one,   (double*)d_bv);
     } else if (std::is_same<scalar_type, float>::value) {
-       status = cusparseScsrmv(A.cusparseHandle, CUSPARSE_OPERATION_NON_TRANSPOSE,
+       status = cusparseScsrmv(sphandle, CUSPARSE_OPERATION_NON_TRANSPOSE,
                                nrow, ncol, A.nnzU,
                                (const float*)&mone, A.descrA,
                                                     (float*)A.d_Unzvals, A.d_Urow_ptr, A.d_Ucol_idx,
@@ -212,7 +213,7 @@ int ComputeGS_Forward_ref(const SparseMatrix_type & A, const Vector_type & r, Ve
   TICK();
   if (rocsparse_status_success !=
       rocsparse_spmv
-          (A.rocsparseHandle, rocsparse_operation_none,
+          (sphandle, rocsparse_operation_none,
            &mone, A.descrU, vecX, &one, vecY,
            rocsparse_compute_type, rocsparse_spmv_alg_default,
            #if ROCM_VERSION >= 50400
@@ -229,14 +230,14 @@ int ComputeGS_Forward_ref(const SparseMatrix_type & A, const Vector_type & r, Ve
 #if defined(HPGMP_WITH_CUDA)
     if (std::is_same<scalar_type, double>::value) {
       #if CUDA_VERSION >= 11000
-      status = cusparseDcsrsv2_solve(A.cusparseHandle, CUSPARSE_OPERATION_NON_TRANSPOSE, nrow, A.nnzL,
+      status = cusparseDcsrsv2_solve(sphandle, CUSPARSE_OPERATION_NON_TRANSPOSE, nrow, A.nnzL,
                                      (const double*)&one, A.descrL,
                                            (double*)A.d_Lnzvals, A.d_Lrow_ptr, A.d_Lcol_idx,
                                             A.infoL,
                                      (double*)d_bv, (double*)d_xv,
                                      CUSPARSE_SOLVE_POLICY_USE_LEVEL, A.buffer_L);
       #else
-      status = cusparseDcsrsv_solve(A.cusparseHandle, CUSPARSE_OPERATION_NON_TRANSPOSE,
+      status = cusparseDcsrsv_solve(sphandle, CUSPARSE_OPERATION_NON_TRANSPOSE,
                                     nrow,
                                     (const double*)&one, A.descrL,
                                           (double*)A.d_Lnzvals, A.d_Lrow_ptr, A.d_Lcol_idx,
@@ -245,14 +246,14 @@ int ComputeGS_Forward_ref(const SparseMatrix_type & A, const Vector_type & r, Ve
       #endif
     } else if (std::is_same<scalar_type, float>::value) {
       #if CUDA_VERSION >= 11000
-      status = cusparseScsrsv2_solve(A.cusparseHandle, CUSPARSE_OPERATION_NON_TRANSPOSE, nrow, A.nnzL,
+      status = cusparseScsrsv2_solve(sphandle, CUSPARSE_OPERATION_NON_TRANSPOSE, nrow, A.nnzL,
                                      (const float*)&one, A.descrL,
                                            (float*)A.d_Lnzvals, A.d_Lrow_ptr, A.d_Lcol_idx,
                                             A.infoL,
                                      (float*)d_bv, (float*)d_xv,
                                      CUSPARSE_SOLVE_POLICY_USE_LEVEL, A.buffer_L);
       #else
-      status = cusparseScsrsv_solve(A.cusparseHandle, CUSPARSE_OPERATION_NON_TRANSPOSE,
+      status = cusparseScsrsv_solve(sphandle, CUSPARSE_OPERATION_NON_TRANSPOSE,
                                     nrow,
                                     (const float*)&one, A.descrL,
                                           (float*)A.d_Lnzvals, A.d_Lrow_ptr, A.d_Lcol_idx,
@@ -273,7 +274,7 @@ int ComputeGS_Forward_ref(const SparseMatrix_type & A, const Vector_type & r, Ve
   buffer_size = A.buffer_size_L;
   rocsparse_create_dnvec_descr(&vecX, nrow, (void*)d_bv, rocsparse_compute_type);
   rocsparse_create_dnvec_descr(&vecY, nrow, (void*)d_xv, rocsparse_compute_type);
-  if (rocsparse_status_success != rocsparse_spsv(A.rocsparseHandle, rocsparse_operation_none,
+  if (rocsparse_status_success != rocsparse_spsv(sphandle, rocsparse_operation_none,
                                                  &one, A.descrL, vecX, vecY, rocsparse_compute_type,
                                                  rocsparse_spsv_alg_default, rocsparse_spsv_stage_compute,
                                                  &buffer_size, A.buffer_L)) {

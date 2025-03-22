@@ -119,6 +119,8 @@ int ComputeSPMV_ref(const SparseMatrix_type & A, Vector_type & x, Vector_type & 
   }
 #endif
 
+  auto sphandle = A.dctx->get_sparse_handle();
+
 #if defined(HPGMP_WITH_CUDA)
   cusparseStatus_t status;
   #if CUDA_VERSION >= 11000
@@ -142,7 +144,7 @@ int ComputeSPMV_ref(const SparseMatrix_type & A, Vector_type & x, Vector_type & 
   cusparseCreateDnVec(&vecX, ncol, d_xv, computeType);
   cusparseCreateDnVec(&vecY, nrow, d_yv, computeType);
   // SpMV
-  status = cusparseSpMV(A.cusparseHandle, CUSPARSE_OPERATION_NON_TRANSPOSE,
+  status = cusparseSpMV(sphandle, CUSPARSE_OPERATION_NON_TRANSPOSE,
                         &one, A_cusparse, 
                                vecX,
                         &zero, vecY,
@@ -152,14 +154,14 @@ int ComputeSPMV_ref(const SparseMatrix_type & A, Vector_type & x, Vector_type & 
   }
   #else
   if (std::is_same<scalar_type, double>::value) {
-     status = cusparseDcsrmv(A.cusparseHandle, CUSPARSE_OPERATION_NON_TRANSPOSE,
+     status = cusparseDcsrmv(sphandle, CUSPARSE_OPERATION_NON_TRANSPOSE,
                              nrow, ncol, nnz,
                              (const double*)&one,  A.descrA,
                                                    (double*)A.d_nzvals, A.d_row_ptr, A.d_col_idx,
                                                    (double*)d_xv,
                              (const double*)&zero, (double*)d_yv);
   } else if (std::is_same<scalar_type, float>::value) {
-     status = cusparseScsrmv(A.cusparseHandle, CUSPARSE_OPERATION_NON_TRANSPOSE,
+     status = cusparseScsrmv(sphandle, CUSPARSE_OPERATION_NON_TRANSPOSE,
                              nrow, ncol, nnz,
                              (const float*)&one,  A.descrA,
                                                   (float*)A.d_nzvals, A.d_row_ptr, A.d_col_idx,
@@ -181,7 +183,7 @@ int ComputeSPMV_ref(const SparseMatrix_type & A, Vector_type & x, Vector_type & 
   rocsparse_create_dnvec_descr(&vecY, nrow, (void*)d_yv, rocsparse_compute_type);
   if (rocsparse_status_success !=
       rocsparse_spmv
-          (A.rocsparseHandle, rocsparse_operation_none,
+          (sphandle, rocsparse_operation_none,
            &one, A.descrA, vecX, &zero, vecY,
            rocsparse_compute_type, rocsparse_spmv_alg_default,
            #if ROCM_VERSION >= 50400
