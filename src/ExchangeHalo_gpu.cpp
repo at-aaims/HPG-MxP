@@ -21,9 +21,7 @@
  */
 
 // Compile this routine only if running with MPI
-#if !defined(HPGMP_NO_MPI) && !(defined(HPGMP_WITH_CUDA) || defined(HPGMP_WITH_HIP))
-
-#error "ExchangeHalo GPU version does not work!"
+#if !defined(HPGMP_NO_MPI) && (defined(HPGMP_WITH_CUDA) || defined(HPGMP_WITH_HIP))
 
 #include <mpi.h>
 #include "Utils_MPI.hpp"
@@ -40,20 +38,13 @@
  */
 
 
-#if defined(HPGMP_WITH_HIP)
-__global__ void sHaloGather(int totalToBeSent, float *d_x, float *d_sendBuffer, int *d_elementsToSend) {
-  int i = threadIdx.x + blockIdx.x*blockDim.x;
+template <typename scalar>
+__global__ void haloGather(const int totalToBeSent, const scalar *const d_x, scalar *const d_sendBuffer, const int *const d_elementsToSend) {
+  const int i = threadIdx.x + blockIdx.x*blockDim.x;
   if (i < totalToBeSent) {
     d_sendBuffer[i] = d_x[d_elementsToSend[i]];
   }
 }
-__global__ void dHaloGather(int totalToBeSent, double *d_x, double *d_sendBuffer, int *d_elementsToSend) {
-  int i = threadIdx.x + blockIdx.x*blockDim.x;
-  if (i < totalToBeSent) {
-    d_sendBuffer[i] = d_x[d_elementsToSend[i]];
-  }
-}
-#endif
 
 template<class SparseMatrix_type, class Vector_type>
 void ExchangeHalo_ref(const SparseMatrix_type & A, Vector_type & x) {
@@ -71,8 +62,10 @@ void ExchangeHalo_ref(const SparseMatrix_type & A, Vector_type & x) {
   const local_int_t totalToBeSent = A.totalToBeSent;
   const local_int_t * elementsToSend = A.elementsToSend;
 
-  scalar_type * const xv = x.values;
-  scalar_type * const d_xv = x.d_values;
+#ifndef HPGMP_USE_GPU_AWARE_MPI
+  scalar_type * const xv = x.values();
+#endif
+  scalar_type * const d_xv = x.d_values();
 
   int size, rank; // Number of MPI processes, My process ID
   MPI_Comm_size(A.comm, &size);
@@ -95,9 +88,11 @@ void ExchangeHalo_ref(const SparseMatrix_type & A, Vector_type & x) {
 #ifdef HPGMP_USE_GPU_AWARE_MPI
   scalar_type * x_external = (scalar_type *) d_xv + localNumberOfRows;
 #else
-#error "Require GPU-aware MPI!"
   scalar_type * x_external = (scalar_type *) xv + localNumberOfRows;
 #endif
+
+  auto dctx = x.get_device_context();
+  auto halo_stream = dctx->get_halo_stream();
 
   // Post receives first
   // TODO: Thread this loop
@@ -116,52 +111,22 @@ void ExchangeHalo_ref(const SparseMatrix_type & A, Vector_type & x) {
   // Fill up send buffer
   //
   TICK();
-#if defined(HPGMP_WITH_HIP) // Only with HIP for now
   scalar_type * d_sendBuffer = A.d_sendBuffer;
 
-  int num_threads = (totalToBeSent < 256 ? totalToBeSent : 256);
-  int num_blocks = (totalToBeSent+num_threads-1)/num_threads;
-  #if defined(HPGMP_WITH_HIP)
-  dim3 blocks(num_blocks, 1, 1);
-  dim3 threads(num_threads, 1, 1);
-  if (std::is_same<scalar_type, float>::value) {
-    hipLaunchKernelGGL(sHaloGather, //Kernel name (__global__ void function)
-      blocks,        //Grid dimensions
-      threads,       //Block dimensions
-      0,             //Bytes of dynamic LDS space (ignore for now)
-      0,             //Stream (0=NULL stream)
-      totalToBeSent, (float*)d_xv, (float*)d_sendBuffer, A.d_elementsToSend); //Kernel arguments
-  } else if (std::is_same<scalar_type, double>::value) {
-    hipLaunchKernelGGL(dHaloGather, //Kernel name (__global__ void function)
-      blocks,        //Grid dimensions
-      threads,       //Block dimensions
-      0,             //Bytes of dynamic LDS space (ignore for now)
-      0,             //Stream (0=NULL stream)
-      totalToBeSent, (double*)d_xv, (double*)d_sendBuffer, A.d_elementsToSend); //Kernel arguments
-  }
-  #ifdef HPGMP_USE_GPU_AWARE_MPI
-  hipDeviceSynchronize();
-  #else
-  if (hipSuccess != hipMemcpy(sendBuffer, A.d_sendBuffer, totalToBeSent*sizeof(scalar_type), hipMemcpyDeviceToHost)) {
-    printf( " Failed to memcpy d_y\n" );
-  }
-  #endif
-  #endif
-#else
-  // Copy local part of X to HOST CPU
-  #if defined(HPGMP_WITH_CUDA)
-  if (cudaSuccess != cudaMemcpy(xv, d_xv, localNumberOfRows*sizeof(scalar_type), cudaMemcpyDeviceToHost)) {
-    printf( " Failed to memcpy d_y\n" );
-  }
-  #else
-  if (hipSuccess != hipMemcpy(xv, d_xv, localNumberOfRows*sizeof(scalar_type), hipMemcpyDeviceToHost)) {
-    printf( " Failed to memcpy d_y\n" );
-  }
-  #endif
+  const int num_threads = (totalToBeSent < 256 ? totalToBeSent : 256);
+  const int num_blocks = (totalToBeSent+num_threads-1)/num_threads;
+  haloGather<<<num_blocks, num_threads, 0, halo_stream>>>(
+    totalToBeSent, d_xv, d_sendBuffer, A.d_elementsToSend);
+  
+  dctx->synchronize_halo_stream();
 
-  // TODO: Thread this loop
-  for (local_int_t i=0; i<totalToBeSent; i++) sendBuffer[i] = xv[elementsToSend[i]];
+#if !defined(HPGMP_USE_GPU_AWARE_MPI)
+  if (hipSuccess != hipMemcpy(sendBuffer, A.d_sendBuffer, totalToBeSent*sizeof(scalar_type),
+              hipMemcpyDeviceToHost)) {
+    printf( " Failed to memcpy d_y\n" );
+  }
 #endif
+
   double time1 = 0.0;
   TOCK(time1);
 
@@ -172,11 +137,11 @@ void ExchangeHalo_ref(const SparseMatrix_type & A, Vector_type & x) {
   // TODO: Thread this loop
   for (int i = 0; i < num_neighbors; i++) {
     local_int_t n_send = sendLength[i];
-    #if defined(HPGMP_USE_GPU_AWARE_MPI) & defined(HPGMP_WITH_HIP)
+#if defined(HPGMP_USE_GPU_AWARE_MPI)
     MPI_Send(d_sendBuffer, n_send, MPI_SCALAR_TYPE, neighbors[i], MPI_MY_TAG, A.comm);
-    #else
+#else
     MPI_Send(sendBuffer, n_send, MPI_SCALAR_TYPE, neighbors[i], MPI_MY_TAG, A.comm);
-    #endif
+#endif
     sendBuffer += n_send;
   }
 
@@ -193,19 +158,20 @@ void ExchangeHalo_ref(const SparseMatrix_type & A, Vector_type & x) {
   }
   TOCK(time2);
 
-  #if !defined(HPGMP_USE_GPU_AWARE_MPI) | !defined(HPGMP_WITH_HIP)
+#if !defined(HPGMP_USE_GPU_AWARE_MPI)
+  // copy received data to GPU
   TICK();
   #if defined(HPGMP_WITH_CUDA)
-  if (cudaSuccess != cudaMemcpy(&d_xv[localNumberOfRows], &xv[localNumberOfRows], (localNumberOfCols-localNumberOfRows)*sizeof(scalar_type), cudaMemcpyHostToDevice)) {
+  if (cudaSuccess != cudaMemcpy(d_xv + localNumberOfRows, &xv[localNumberOfRows], (localNumberOfCols-localNumberOfRows)*sizeof(scalar_type), cudaMemcpyHostToDevice)) {
     printf( " Failed to memcpy d_y\n" );
   }
   #elif defined(HPGMP_WITH_HIP)
-  if (hipSuccess != hipMemcpy(&d_xv[localNumberOfRows], &xv[localNumberOfRows], (localNumberOfCols-localNumberOfRows)*sizeof(scalar_type), hipMemcpyHostToDevice)) {
+  if (hipSuccess != hipMemcpy(d_xv + localNumberOfRows, &xv[localNumberOfRows], (localNumberOfCols-localNumberOfRows)*sizeof(scalar_type), hipMemcpyHostToDevice)) {
     printf( " Failed to memcpy d_y\n" );
   }
   #endif
   TOCK(time1);
-  #endif
+#endif
 
   x.time1 = time1; x.time2 = time2;
   delete [] request;

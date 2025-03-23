@@ -109,7 +109,7 @@ void GenerateNonsymCoarseProblem(DeviceCtx *const dctx, const SparseMatrix_type 
   Vector_type *xc = new Vector_type(Ac->localNumberOfColumns, Ac->comm, dctx);
   Vector_type * Axf = new Vector_type(Af.localNumberOfColumns, Ac->comm, dctx);
   Af.Ac = Ac;
-  MGData_type * mgData = new MGData_type(f2cOperator, rc, xc, Axf);
+  MGData_type * mgData = new MGData_type(dctx, f2cOperator, rc, xc, Axf);
   // NOTE: SparseMatrix Af takes ownership of mgData and deletes it when it's destroyed.
   Af.mgData = mgData;
 

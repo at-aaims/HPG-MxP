@@ -33,10 +33,10 @@ class MGData {
 public:
   typedef Vector<SC> Vector_type;
 
-  MGData(local_int_t *f2c_operator, Vector<SC> *rvec, Vector<SC> *xvec,
+  MGData(DeviceCtx *const dctx, local_int_t *f2c_operator, Vector<SC> *rvec, Vector<SC> *xvec,
          Vector<SC>* axfvec)
   {
-      initialize(f2c_operator, rvec, xvec, axfvec);
+      initialize(dctx, f2c_operator, rvec, xvec, axfvec);
   }
 
   /** @brief Move-initializer for MG-related vectors.
@@ -44,9 +44,10 @@ public:
    * This class takes ownership of these Vectors and buffer,
    * and deallocates them when it's destroyed.
    */
-  void initialize(local_int_t *f2c_operator, Vector<SC> *rvec, Vector<SC> *xvec,
+  void initialize(DeviceCtx *const dctx, local_int_t *f2c_operator, Vector<SC> *rvec, Vector<SC> *xvec,
                   Vector<SC>* axfvec)
   {
+      dctx_ = dctx;
       f2cOperator = f2c_operator;
       rc = rvec;
       xc = xvec;
@@ -59,8 +60,11 @@ public:
       delete Axf;
       delete rc;
       delete xc;
+      dctx_->device_free(buffer_R);
+      dctx_->device_free(buffer_P);
   }
 
+  DeviceCtx *dctx_;
   int numberOfPresmootherSteps = 1; // Call ComputeSYMGS this many times prior to coarsening
   int numberOfPostsmootherSteps = 1; // Call ComputeSYMGS this many times after coarsening
   local_int_t * f2cOperator; //!< 1D array containing the fine operator local IDs that will be injected into coarse space.
@@ -74,8 +78,8 @@ public:
   void * optimizationData;
   size_t buffer_size_R;
   size_t buffer_size_P;
-  void* buffer_R;
-  void* buffer_P;
+  void* buffer_R = nullptr;
+  void* buffer_P = nullptr;
   #if defined(HPGMP_WITH_CUDA) | defined(HPGMP_WITH_HIP)
   // to store the restrictiion as CRS matrix on device
   int *d_row_ptr;

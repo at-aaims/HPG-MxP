@@ -73,31 +73,7 @@ int ComputeSPMV_ref(const SparseMatrix_type & A, Vector_type & x, Vector_type & 
 
 #ifndef HPGMP_NO_MPI
   if (A.geom->size > 1) {
-    #ifdef HPGMP_WITH_CUDA
-    // Copy local part of X to HOST CPU
-    if (cudaSuccess != cudaMemcpy(xv, x.d_values(), nrow*sizeof(scalar_type), cudaMemcpyDeviceToHost)) {
-      printf( " Failed to memcpy d_y\n" );
-    }
-    #elif defined(HPGMP_WITH_HIP)
-    if (hipSuccess != hipMemcpy(xv, x.d_values(), nrow*sizeof(scalar_type), hipMemcpyDeviceToHost)) {
-      printf( " Failed to memcpy d_y\n" );
-    }
-    #endif
-
     ExchangeHalo(A, x);
-
-    // copy non-local part of X to device (after Halo exchange)
-    #if defined(HPGMP_WITH_CUDA)
-    if (cudaSuccess != cudaMemcpy(d_xv + nrow, &xv[nrow], (ncol-nrow)*sizeof(scalar_type),
-                                  cudaMemcpyHostToDevice)) {
-      printf( " Failed to memcpy d_x\n" );
-    }
-    #elif defined(HPGMP_WITH_HIP)
-    if (hipSuccess != hipMemcpy(d_xv + nrow, &xv[nrow], (ncol-nrow)*sizeof(scalar_type),
-                                hipMemcpyHostToDevice)) {
-      printf( " Failed to memcpy d_x\n" );
-    }
-    #endif
   }
 #endif
 
