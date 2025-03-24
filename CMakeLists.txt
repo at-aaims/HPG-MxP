@@ -67,7 +67,7 @@ if (HPGMP_ENABLE_HIP)
 else()
 endif()
 
-set(device_sources src/Vector.dev.cpp src/ExchangeHalo_gpu.cpp
+set(device_sources src/Vector.dev.cpp src/ExchangeHalo_gpu.cpp src/ComputeWAXPBY_opt.dev.cpp
 )
 
 # Flag source files as device source files
