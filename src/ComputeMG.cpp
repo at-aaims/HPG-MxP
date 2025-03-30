@@ -20,8 +20,17 @@
  HPGMP routine
  */
 
+//#include "ComputeMG_ref.hpp"
 #include "ComputeMG.hpp"
-#include "ComputeMG_ref.hpp"
+
+#include <cassert>
+
+#include "ComputeSYMGS.hpp"
+#include "ComputeGS_Forward.hpp"
+#include "ComputeSPMV.hpp"
+#include "ComputeRestriction_ref.hpp"
+#include "ComputeProlongation_ref.hpp"
+#include "mytimer.hpp"
 
 /*!
   @param[in] A the known system matrix
@@ -36,8 +45,81 @@ template<class SparseMatrix_type, class Vector_type>
 int ComputeMG(const SparseMatrix_type & A, const Vector_type & r, Vector_type & x, bool symmetric) {
 
   // This line and the next two lines should be removed and your version of ComputeSYMGS should be used.
-  A.isMgOptimized = false;
-  return ComputeMG_ref(A, r, x, symmetric);
+  //A.isMgOptimized = false;
+  //return ComputeMG_ref(A, r, x, symmetric);
+
+  // Optimized versions of calls
+  // initialize x to zero
+  double t0 = 0.0;
+  x.fill_zero();
+
+  int ierr = 0;
+  if (A.mgData!=0) { // Go to next coarse level if defined
+    const int numberOfPresmootherSteps = A.mgData->numberOfPresmootherSteps;
+    if (symmetric) {
+      for (int i=0; i< numberOfPresmootherSteps; ++i)
+          ierr += ComputeSYMGS(A, r, x);
+    } else {
+      for (int i=0; i< numberOfPresmootherSteps; ++i)
+          ierr += ComputeGS_Forward(A, r, x);
+    }
+    if (ierr!=0)
+        return ierr;
+
+    // Compute residual vector
+    TICK();
+    double time1 = x.time1, time2 = x.time2;
+    ierr = ComputeSPMV(A, x, *A.mgData->Axf);
+    if (ierr!=0)
+        return ierr;
+    x.time1 = time1; x.time2 = time2;
+    TOCK(x.time1);
+
+    // Restriction operation
+    TICK();
+    ierr = ComputeRestriction_ref(A, r);
+    if (ierr!=0)
+        return ierr;
+    TOCK(x.time3);
+
+    // MG on coarser-grid
+    A.mgData->xc->time1 = A.mgData->xc->time2 = 0.0;
+    A.mgData->xc->time3 = A.mgData->xc->time4 = 0.0;
+    ierr = ComputeMG(*A.Ac,*A.mgData->rc, *A.mgData->xc, symmetric);
+    if (ierr!=0)
+        return ierr;
+    x.time1 += A.mgData->xc->time1; x.time2 += A.mgData->xc->time2;
+    x.time3 += A.mgData->xc->time3; x.time4 += A.mgData->xc->time4;
+
+    // Prolongation operation
+    TICK();
+    ierr = ComputeProlongation_ref(A, x);
+    if (ierr!=0)
+        return ierr;
+    TOCK(x.time4);
+
+    // Post-smoothing
+    const int numberOfPostsmootherSteps = A.mgData->numberOfPostsmootherSteps;
+    if (symmetric) {
+      for (int i=0; i< numberOfPostsmootherSteps; ++i)
+          ierr += ComputeSYMGS(A, r, x);
+    } else {
+      for (int i=0; i< numberOfPostsmootherSteps; ++i)
+          ierr += ComputeGS_Forward(A, r, x);
+    }
+    if (ierr!=0)
+        return ierr;
+  }
+  else {
+    // coarsest grid
+    if (symmetric) {
+      ierr = ComputeSYMGS(A, r, x);
+    } else {
+      ierr = ComputeGS_Forward(A, r, x);
+    }
+    if (ierr!=0) return ierr;
+  }
+  return 0;
 }
 
 
