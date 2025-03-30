@@ -60,7 +60,6 @@ void ExchangeHalo_ref(const SparseMatrix_type & A, Vector_type & x) {
   const int * neighbors = A.neighbors;
   scalar_type * sendBuffer = A.sendBuffer;
   const local_int_t totalToBeSent = A.totalToBeSent;
-  const local_int_t * elementsToSend = A.elementsToSend;
 
 #ifndef HPGMP_USE_GPU_AWARE_MPI
   scalar_type * const xv = x.values();

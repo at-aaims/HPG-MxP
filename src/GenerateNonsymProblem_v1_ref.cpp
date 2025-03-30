@@ -71,7 +71,7 @@ void GenerateNonsymProblem_v1_ref(DeviceCtx *const dctx, SparseMatrix_type & A, 
   const local_int_t localNumberOfRows = nx*ny*nz; // This is the size of our subblock
   // If this assert fails, it most likely means that the local_int_t is set to int and should be set to long long
   assert(localNumberOfRows>0); // Throw an exception of the number of rows is less than zero (can happen if int overflow)
-  local_int_t numberOfNonzerosPerRow = 27; // We are approximating a 27-point finite element/volume/difference 3D stencil
+  const local_int_t numberOfNonzerosPerRow = 27; // We are approximating a 27-point finite element/volume/difference 3D stencil
 
   global_int_t totalNumberOfRows = gnx*gny*gnz; // Total number of grid points in mesh
   // If this assert fails, it most likely means that the global_int_t is set to int and should be set to long long
@@ -120,15 +120,16 @@ void GenerateNonsymProblem_v1_ref(DeviceCtx *const dctx, SparseMatrix_type & A, 
    mtxIndG[i] = new global_int_t[numberOfNonzerosPerRow];
 
 #else
+  // CONTIGUOUS ARRAYS is ON by default
   // Now allocate the arrays pointed to
   mtxIndL[0] = new local_int_t[localNumberOfRows * numberOfNonzerosPerRow];
   matrixValues[0] = new matrix_scalar_type[localNumberOfRows * numberOfNonzerosPerRow];
   mtxIndG[0] = new global_int_t[localNumberOfRows * numberOfNonzerosPerRow];
 
   for (local_int_t i=1; i< localNumberOfRows; ++i) {
-  mtxIndL[i] = mtxIndL[0] + i * numberOfNonzerosPerRow;
-  matrixValues[i] = matrixValues[0] + i * numberOfNonzerosPerRow;
-  mtxIndG[i] = mtxIndG[0] + i * numberOfNonzerosPerRow;
+    mtxIndL[i] = mtxIndL[0] + i * numberOfNonzerosPerRow;
+    matrixValues[i] = matrixValues[0] + i * numberOfNonzerosPerRow;
+    mtxIndG[i] = mtxIndG[0] + i * numberOfNonzerosPerRow;
   }
 #endif
 

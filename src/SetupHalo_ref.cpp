@@ -52,11 +52,12 @@ template<class SparseMatrix_type>
 void SetupHalo_ref(SparseMatrix_type & A) {
 
   typedef typename SparseMatrix_type::scalar_type scalar_type;
+  const local_int_t maxNumberOfNonzerosPerRow = 27; // We are approximating a 27-point finite element/volume/difference 3D stencil
 
   // Extract Matrix pieces
 
   local_int_t localNumberOfRows = A.localNumberOfRows;
-  char  * nonzerosInRow = A.nonzerosInRow;
+  const char  * nonzerosInRow = A.nonzerosInRow;
   global_int_t ** mtxIndG = A.mtxIndG;
   local_int_t ** mtxIndL = A.mtxIndL;
 
@@ -65,8 +66,13 @@ void SetupHalo_ref(SparseMatrix_type & A) {
   #pragma omp parallel for
 #endif
   for (local_int_t i=0; i< localNumberOfRows; i++) {
-    int cur_nnz = nonzerosInRow[i];
-    for (int j=0; j<cur_nnz; j++) mtxIndL[i][j] = mtxIndG[i][j];
+    const int cur_nnz = nonzerosInRow[i];
+    for (int j=0; j<cur_nnz; j++) {
+        mtxIndL[i][j] = mtxIndG[i][j];
+    }
+    for(int j = cur_nnz; j < maxNumberOfNonzerosPerRow; j++) {
+        mtxIndL[i][j] = -1;
+    }
   }
 
 #else // Run this section if compiling for MPI
@@ -149,13 +155,17 @@ void SetupHalo_ref(SparseMatrix_type & A) {
 #endif
   for (local_int_t i=0; i< localNumberOfRows; i++) {
     for (int j=0; j<nonzerosInRow[i]; j++) {
-      global_int_t curIndex = mtxIndG[i][j];
-      int rankIdOfColumnEntry = ComputeRankOfMatrixRow(*(A.geom), curIndex);
+      const global_int_t curIndex = mtxIndG[i][j];
+      const int rankIdOfColumnEntry = ComputeRankOfMatrixRow(*(A.geom), curIndex);
       if (A.geom->rank==rankIdOfColumnEntry) { // My column index, so convert to local index
         mtxIndL[i][j] = A.globalToLocalMap[curIndex];
       } else { // If column index is not a row index, then it comes from another processor
         mtxIndL[i][j] = externalToLocalMap[curIndex];
       }
+    }
+    // padding values
+    for(int j = nonzerosInRow[i]; j < maxNumberOfNonzerosPerRow; j++) {
+        mtxIndL[i][j] = -1;
     }
   }
 

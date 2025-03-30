@@ -202,6 +202,8 @@ int ComputeGS_Forward_ref(const SparseMatrix_type & A, const Vector_type & r, Ve
     printf( " Failed rocsparse_spmv\n" );
   }
   TOCK(x.time1);
+  rocsparse_destroy_dnvec_descr(vecX);
+  rocsparse_destroy_dnvec_descr(vecY);
 #endif
 
   // x = L^{-1}b

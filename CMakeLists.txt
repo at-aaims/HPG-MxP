@@ -20,13 +20,15 @@ option(HPGMP_ENABLE_DEBUG "Enable debug build" OFF)
 option(HPGMP_ENABLE_DETAILED_DEBUG "Enable detailed debug build" OFF)
 option(HPGMP_VERBOSE "Print more messages (low-cost)" OFF)
 option(HPGMP_ENABLE_MPI "Enable MPI support" ON)
-option(HPGMP_GPU_AWARE_MPI "Enable GPU-aware MPI support" ON)
+option(HPGMP_GPU_AWARE_MPI "Enable GPU-aware MPI support" OFF)
 option(HPGMP_ENABLE_LONG_LONG "Enable use of 'long long' type for global indices" ON)
 option(HPGMP_ENABLE_OPENMP "Enable OpenMP support" OFF)
 option(HPGMP_ENABLE_CUDA "Enable CUDA support" OFF)
 option(HPGMP_ENABLE_HIP "Enable HIP support" OFF)
+option(HPGMP_BUILD_REFERENCE "Build reference implementation without optimizations" OFF)
 option(CMAKE_DEBUG "Enable CMake script debugging" OFF)
 
+#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-unused-result")
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -ggdb")
 
 if (HPGMP_ENABLE_HIP)
@@ -47,6 +49,7 @@ if (HPGMP_ENABLE_HIP)
     find_package(rocblas REQUIRED)
     find_package(rocsparse REQUIRED)
     find_package(rocrand REQUIRED)
+    find_package(rocprim REQUIRED)
     #find_package(ROCM 0.7.3 QUIET CONFIG PATHS ${CMAKE_PREFIX_PATH} $ENV{ROCM_PATH})
     #if(NOT ROCM_FOUND)
     #    message(SEND_ERROR "ROCm not found!")
@@ -67,7 +70,9 @@ if (HPGMP_ENABLE_HIP)
 else()
 endif()
 
-set(device_sources src/Vector.dev.cpp src/ExchangeHalo_gpu.cpp src/ComputeWAXPBY_opt.dev.cpp
+set(device_sources
+    src/Vector.dev.cpp src/ExchangeHalo_gpu.cpp src/ComputeWAXPBY_opt.dev.cpp
+    src/ell_matrix.cpp
 )
 
 # Flag source files as device source files
@@ -79,6 +84,7 @@ if(HPGMP_ENABLE_HIP)
     #hip_add_library(hpgmp_device ${device_sources})
     add_library(hpgmp_device ${device_sources})
     target_link_libraries(hpgmp_device PRIVATE hip::device)
+    set(CMAKE_HIP_FLAGS_DEBUG "${CMAKE_HIP_FLAGS_DEBUG} -O0 -ggdb -fsanitize=address -fno-omit-frame-pointer")
 elseif(HPGMP_ENABLE_CUDA)
     message(SEND_ERROR "CUDA not really supported yet.")
 else()
@@ -87,7 +93,7 @@ endif()
 
 
 add_library(hpgmp
-    src/device_ctx.cpp src/MultiVector.cpp
+    src/device_ctx.cpp src/MultiVector.cpp src/SparseMatrix.cpp
     src/GMRES.cpp src/GMRES_IR.cpp src/TestGMRES.cpp
     src/ComputeResidual.cpp src/GenerateGeometry.cpp
     src/ExchangeHalo.cpp src/ExchangeHalo_ref.cpp
@@ -113,10 +119,19 @@ add_library(hpgmp
     src/ComputeProlongation_gpu.cpp src/ComputeRestriction_gpu.cpp
     src/GenerateNonsymCoarseProblem.cpp
     src/ComputeOptimalShapeXYZ.cpp src/MixedBaseCounter.cpp
-    src/CheckAspectRatio.cpp src/OutputFile.cpp)
+    src/CheckAspectRatio.cpp src/OutputFile.cpp src/matrix_base.cpp
+    src/optimize_ell.cpp)
+
+if(HPGMP_BUILD_REFERENCE)
+    message(WARNING "Building reference mode without optimizations.")
+    target_compile_definitions(hpgmp PRIVATE HPGMP_REFERENCE)
+    target_compile_definitions(hpgmp_device PRIVATE HPGMP_REFERENCE)
+endif()
 
 if (HPGMP_ENABLE_CONTIGUOUS_ARRAYS)
     target_compile_definitions(hpgmp PUBLIC HPGMP_CONTIGUOUS_ARRAYS)
+else()
+    message(SEND_ERROR "Optimized HPGMP currently only works for contiguous sparse matrix arrays!")
 endif ()
 
 if (HPGMP_ENABLE_CUBIC_RADICAL_SEARCH)
@@ -184,6 +199,7 @@ if (HPGMP_ENABLE_HIP)
     target_compile_definitions(hpgmp PUBLIC HPGMP_WITH_HIP)
     target_compile_definitions(hpgmp_device PUBLIC HPGMP_WITH_HIP)
     target_compile_definitions(hpgmp PUBLIC HPGMP_USE_FENCE)
+    target_link_libraries(hpgmp_device PRIVATE roc::rocprim)
     target_link_libraries(hpgmp PUBLIC hip::host roc::rocrand)
     target_link_libraries(hpgmp PUBLIC roc::rocblas roc::rocsparse)
 else ()
@@ -203,3 +219,7 @@ add_executable( xhpgmp_time src/main_time.cpp )
 target_link_libraries(xhpgmp_time PRIVATE hpgmp hpgmp_device)
 
 install(TARGETS xhpgmp xhpgmp_time)
+
+enable_testing()
+add_subdirectory(unittesting)
+

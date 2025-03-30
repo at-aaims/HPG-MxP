@@ -67,24 +67,24 @@ public:
   DeviceCtx *dctx_;
   int numberOfPresmootherSteps = 1; // Call ComputeSYMGS this many times prior to coarsening
   int numberOfPostsmootherSteps = 1; // Call ComputeSYMGS this many times after coarsening
-  local_int_t * f2cOperator; //!< 1D array containing the fine operator local IDs that will be injected into coarse space.
-  Vector_type * rc; // coarse grid residual vector
-  Vector_type * xc; // coarse grid solution vector
-  Vector_type * Axf; // fine grid residual vector
+  local_int_t * f2cOperator = nullptr; //!< 1D array containing the fine operator local IDs that will be injected into coarse space.
+  Vector_type * rc = nullptr; // coarse grid residual vector
+  Vector_type * xc = nullptr; // coarse grid solution vector
+  Vector_type * Axf = nullptr; // fine grid residual vector
   /*!
    This is for storing optimized data structres created in OptimizeProblem and
    used inside optimized ComputeSPMV().
    */
-  void * optimizationData;
+  void * optimizationData = nullptr;
   size_t buffer_size_R;
   size_t buffer_size_P;
   void* buffer_R = nullptr;
   void* buffer_P = nullptr;
   #if defined(HPGMP_WITH_CUDA) | defined(HPGMP_WITH_HIP)
   // to store the restrictiion as CRS matrix on device
-  int *d_row_ptr;
-  int *d_col_idx;
-  SC  *d_nzvals;   //!< values of matrix entries
+  int *d_row_ptr = nullptr;
+  int *d_col_idx = nullptr;
+  SC  *d_nzvals = nullptr;   //!< values of matrix entries
   #if defined(HPGMP_WITH_CUDA)
   cusparseMatDescr_t descrR;
   #elif defined(HPGMP_WITH_HIP)
@@ -92,9 +92,9 @@ public:
 
   // to store transpose
   rocsparse_spmat_descr descrP;
-  int *d_tran_row_ptr;
-  int *d_tran_col_idx;
-  SC  *d_tran_nzvals;   //!< values of matrix entries
+  int *d_tran_row_ptr = nullptr;
+  int *d_tran_col_idx = nullptr;
+  SC  *d_tran_nzvals = nullptr;   //!< values of matrix entries
   #endif
   #endif
 };

@@ -1,9 +1,6 @@
 #ifndef HPGMP_DEVICE_CTX_HPP
 #define HPGMP_DEVICE_CTX_HPP
 
-#include <stdexcept>
-#include <string>
-
 #include "DataTypes.hpp"
 
 #ifdef HPGMP_WITH_HIP
@@ -22,6 +19,8 @@ using dev_spblas_ctx = cusparseHandle_t;
 using stream_t = hipStream_t;
 #elif defined HPGMP_WITH_CUDA
 using stream_t = cudaStream_t;
+#else
+struct stream_t {};
 #endif
 
 /**
@@ -65,36 +64,24 @@ public:
     /// Synchronize halo stream with host
     void synchronize_halo_stream();
 
+    /// Get a pre-allocted workspace on the device
+    void *get_device_workspace() const { return workspace_; }
+
 private:
     stream_t halo_stream_;
     stream_t compute_stream_;
     dev_blas_ctx blas_handle_;
     dev_spblas_ctx sparse_handle_;
     const int rank_;
+    void *workspace_ = nullptr;
 };
 
-class HandleNotCreatedError : public std::runtime_error
-{
-public:
-    HandleNotCreatedError(const std::string& msg)
-        : std::runtime_error("! Error: Handle could not be created: " + msg)
-    { }
+/// Padding multiple for GPU allocation of multi-vectors.
+template <typename T>
+struct padding_multiple {
+    static constexpr int value = static_cast<int>(128 / sizeof(T));
+    //static constexpr int value = 128;
 };
 
-class HostDeviceCopyFailedError : public std::runtime_error
-{
-public:
-    HostDeviceCopyFailedError(const std::string& msg)
-        :std::runtime_error("! Error: could not copy " + msg)
-    { }
-};
-
-class DeviceMemoryError : public std::runtime_error
-{
-public:
-    DeviceMemoryError(const std::string& msg)
-        : std::runtime_error("! Device memory error: " + msg)
-    { }
-};
 
 #endif

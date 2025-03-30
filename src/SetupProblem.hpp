@@ -24,6 +24,7 @@
 #define SETUP_PROBLEM_HPP
 
 #include "device_ctx.hpp"
+#include "Geometry.hpp"
 
 template<class SparseMatrix_type, class SparseMatrix_type2, class GMRESData_type, class GMRESData_type2, class Vector_type, class TestGMRESData_type>
 void SetupProblem(const char *title, int argc, char **argv, comm_type comm, DeviceCtx *dctx, int numberOfMgLevels, bool verbose, Geometry * geom,

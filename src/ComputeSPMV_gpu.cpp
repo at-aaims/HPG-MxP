@@ -25,6 +25,7 @@
  #include <omp.h>
 #endif
 #include <cassert>
+#include <iostream>
 
 #include "DataTypes.hpp"
 #include "ComputeSPMV_ref.hpp"
@@ -37,7 +38,6 @@
  #include "Utils_MPI.hpp"
  #include "hpgmp.hpp"
 #endif
-
 
 /*!
   Routine to compute matrix vector product y = Ax where:
@@ -55,8 +55,8 @@
   @see ComputeSPMV
 */
 template<class SparseMatrix_type, class Vector_type>
-int ComputeSPMV_ref(const SparseMatrix_type & A, Vector_type & x, Vector_type & y) {
-
+int ComputeSPMV_ref(const SparseMatrix_type & A, Vector_type & x, Vector_type & y)
+{
   assert(x.local_length()>=A.localNumberOfColumns); // Test vector lengths
   assert(y.local_length()>=A.localNumberOfRows);
   typedef typename SparseMatrix_type::scalar_type scalar_type;
@@ -74,6 +74,8 @@ int ComputeSPMV_ref(const SparseMatrix_type & A, Vector_type & x, Vector_type & 
 #ifndef HPGMP_NO_MPI
   if (A.geom->size > 1) {
     ExchangeHalo(A, x);
+    //auto elldata = static_cast<const EllOptData<scalar_type,scalar_type>*>(A.optimizationData);
+    //x.update_halos(elldata->mat.get());
   }
 #endif
 
@@ -169,6 +171,8 @@ int ComputeSPMV_ref(const SparseMatrix_type & A, Vector_type & x, Vector_type & 
   {
     printf( " Failed rocsparse_spmv\n" );
   }
+  rocsparse_destroy_dnvec_descr(vecX);
+  rocsparse_destroy_dnvec_descr(vecY);
 #endif
   
 #if 0 // HPGMP_DEBUG

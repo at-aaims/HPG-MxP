@@ -34,7 +34,7 @@
 
 #include "device_ctx.hpp"
 #include "hpgmp.hpp"
-#include "Geometry.hpp"
+#include "matrix_base.hpp"
 
 template<class SC = double>
 class Vector {
@@ -88,6 +88,11 @@ public:
 
   /// Updates the device data of the vector from the host buffer's data.
   void update_device_data() const;
+
+  /** Blocking halo update of distributed vector
+   * according to the discretization represented by a matrix.
+   */
+  void update_halos(const DistMatrixBase *mat) const;
 
   // Some operations
 

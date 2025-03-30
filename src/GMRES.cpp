@@ -131,7 +131,6 @@ int GMRES(const SparseMatrix_type & A, GMRESData_type & data, const Vector_type 
     auto Qj = Q.get_vector(0);
     CopyVector(r, Qj);
     TICK(); Qj.scale(one/normr); TOCK(t11); flops += Nrow;
-    HPGMP_VERBOSE_PRINT("GMRES: completed first vector scaling.");
 
     // Record initial residual for convergence testing
     if (niters == 0) normr0 = normr;
@@ -153,7 +152,7 @@ int GMRES(const SparseMatrix_type & A, GMRESData_type & data, const Vector_type 
     // Start restart cycle
     int k = 1;
     t.set_value(0, 0, normr);
-    HPGMP_VERBOSE_PRINT("GMRES: Starting restart cycle..");
+    //HPGMP_VERBOSE_PRINT("GMRES: Starting restart cycle..");
     while (k <= restart_length && normr/normr0 > tolerance) { // Use ">" to exit when res=zero (continuing will cause NaN)
       auto Qkm1 = Q.get_vector(k-1);
       auto Qk = Q.get_vector(k);
@@ -195,14 +194,11 @@ int GMRES(const SparseMatrix_type & A, GMRESData_type & data, const Vector_type 
         flops_orth += (ifour*k*Nrow);
 #endif
         // CGS2
-        HPGMP_VERBOSE_PRINT("GMRES: Starting CGS2..");
         auto P = Q.get_multi_vector(0, k-1);
         // Computes GEMV^T and copies output h to host
         START_T(); ComputeGEMVT (nrow, k,  one, P, Qk, zero, h, A.isGemvOptimized); STOP_T(t1); // h = Q(1:k)'*q(k+1)
-        HPGMP_VERBOSE_PRINT("GMRES: Completed first GEMV^T.");
         // Copies input h to device and Computes GEMV
         START_T(); ComputeGEMV  (nrow, k, -one, P, h,  one, Qk, A.isGemvOptimized); STOP_T(t2); // h = Q(1:k)'*q(k+1)
-        HPGMP_VERBOSE_PRINT("GMRES: Completed first GEMV.");
         t1_comp += h.time1; t1_comm += h.time2;
         for(int i = 0; i < k; i++) {
           H.set_value(i, k-1, h.values()[i]);
@@ -276,7 +272,6 @@ int GMRES(const SparseMatrix_type & A, GMRESData_type & data, const Vector_type 
       HPGMP_fout << "GMRES restart: k = "<< k << " (" << niters << ")" << std::endl;
     }
     // > update x
-    HPGMP_VERBOSE_PRINT("GMRES: Computing TRSM..");
     ComputeTRSM(k-1, one, H, t);
     if (doPreconditioning) {
       // t is on host, so ComputeGEMV first copies it to device before computation

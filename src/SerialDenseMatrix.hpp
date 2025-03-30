@@ -29,6 +29,7 @@
 
 #include "DataTypes.hpp"
 #include "device_ctx.hpp"
+#include "exceptions.hpp"
 
 /** @brief Dense matrix mostly on the host.
  *

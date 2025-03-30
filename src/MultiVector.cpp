@@ -25,6 +25,7 @@
 #include <cstdlib>
 
 #include "DataTypes.hpp"
+#include "exceptions.hpp"
 
 template<class scalar>
 MultiVector<scalar>::MultiVector() { }

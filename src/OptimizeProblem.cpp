@@ -14,6 +14,8 @@
 // ***************************************************
 //@HEADER
 
+//#ifdef HPGMP_REFERENCE
+
 /*!
  @file OptimizeProblem.cpp
 
@@ -21,6 +23,10 @@
  */
 
 #include "OptimizeProblem.hpp"
+
+template <typename mat_scalar, typename solver_scalar, typename vec_scalar>
+int OptimizeProblemELL(SparseMatrix<mat_scalar>& A, GMRESData<solver_scalar>& data,
+                    Vector<vec_scalar>& b, Vector<vec_scalar>& x, Vector<vec_scalar>& xexact);
 
 /*!
   Optimizes the data structures used for CG iteration to increase the
@@ -502,6 +508,8 @@ int OptimizeProblem(SparseMatrix_type & A, GMRESData_type & data, Vector_type & 
           curLevelMatrix->buffer_size_A = 1;
       //hipMalloc(&curLevelMatrix->buffer_A, curLevelMatrix->buffer_size_A);
       curLevelMatrix->buffer_A = dctx->device_alloc(curLevelMatrix->buffer_size_A);
+      rocsparse_destroy_dnvec_descr(vecX);
+      rocsparse_destroy_dnvec_descr(vecY);
 
       // -------------------------
       // run analysis for triangular solve
@@ -529,6 +537,8 @@ int OptimizeProblem(SparseMatrix_type & A, GMRESData_type & data, Vector_type & 
       if (rocsparse_status_success != spsv_stat) {
         printf( " Failed rocsparse_spsv(preprocess, stat = %d)\n",spsv_stat );
       }
+      rocsparse_destroy_dnvec_descr(vecX);
+      rocsparse_destroy_dnvec_descr(vecY);
 
       // -------------------------
       // descriptor for U
@@ -553,6 +563,8 @@ int OptimizeProblem(SparseMatrix_type & A, GMRESData_type & data, Vector_type & 
           curLevelMatrix->buffer_size_U = 1;
       //hipMalloc(&curLevelMatrix->buffer_U, curLevelMatrix->buffer_size_U);
       curLevelMatrix->buffer_U = dctx->device_alloc(curLevelMatrix->buffer_size_U);
+      rocsparse_destroy_dnvec_descr(vecX);
+      rocsparse_destroy_dnvec_descr(vecY);
 #endif
 
 #if defined(HPGMP_WITH_CUDA) | defined(HPGMP_WITH_HIP)
@@ -677,6 +689,8 @@ int OptimizeProblem(SparseMatrix_type & A, GMRESData_type & data, Vector_type & 
         if (curLevelMatrix->mgData->buffer_size_R <= 0)
             curLevelMatrix->mgData->buffer_size_R = 1;
         curLevelMatrix->mgData->buffer_R = dctx->device_alloc(curLevelMatrix->mgData->buffer_size_R);
+        rocsparse_destroy_dnvec_descr(vecX);
+        rocsparse_destroy_dnvec_descr(vecY);
 
         // Allocate buffer for prolongation
         rocsparse_create_csr_descr(&(curLevelMatrix->mgData->descrP), nrow, nc, nc,
@@ -728,6 +742,8 @@ int OptimizeProblem(SparseMatrix_type & A, GMRESData_type & data, Vector_type & 
   }
 #endif
 
+  OptimizeProblemELL(A, data, b, x, xexact);
+
   return 0;
 }
 
@@ -765,3 +781,4 @@ template
 int OptimizeProblem< SparseMatrix<float>, GMRESData<double>, Vector<double> >
   (SparseMatrix<float>&, GMRESData<double>&, Vector<double>&, Vector<double>&, Vector<double>&);
 
+//#endif // HPGMPG_REFERENCE

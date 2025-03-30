@@ -4,6 +4,9 @@
 #include <cstdlib>
 #include <new>
 
+#include "hpgmp.hpp"
+#include "exceptions.hpp"
+
 #ifdef HPGMP_WITH_HIP
 #define HPGMP_THROW_ON_ERROR(_expr, _msg) \
     if(hipSuccess != (_expr)) { \
@@ -72,8 +75,9 @@ DeviceCtx::DeviceCtx(const int process_rank) : rank_{process_rank}
     if(rank_ == 0) {
         std::cout << "Created device context." << std::endl;
     }
+    workspace_ = device_alloc(1024*sizeof(local_int_t));
 }
-  
+ 
 DeviceCtx::~DeviceCtx()
 {
 #if defined(HPGMP_WITH_CUDA)
@@ -88,6 +92,7 @@ DeviceCtx::~DeviceCtx()
     HPGMP_PRINT_ON_ERROR(hipStreamDestroy(halo_stream_), "destroy halo stream");
     HPGMP_PRINT_ON_ERROR(hipStreamDestroy(compute_stream_), "destroy compute stream");
 #endif
+    device_free(workspace_);
     if(rank_ == 0) {
         std::cout << "Destroyed device context." << std::endl;
     }
@@ -200,4 +205,12 @@ void DeviceCtx::synchronize_halo_stream()
     HPGMP_THROW_ON_ERROR(hipStreamSynchronize(halo_stream_), "sync halo stream");
 #endif
 }
+
+#ifdef HPGMP_WITH_HIP
+const std::string DeviceAPIError::platform = "HIP";
+#elif HPGMP_WITH_CUDA
+const std::string DeviceAPIError::platform = "CUDA";
+#else
+const std::string DeviceAPIError::platform = "CPU";
+#endif
 
