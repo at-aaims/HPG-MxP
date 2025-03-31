@@ -312,15 +312,20 @@ void Vector<scalar>::update_halos(const DistMatrixBase *const mat) const
     haloGather<<<num_blocks, num_threads, 0, halo_stream>>>(
       totalToBeSent, d_xv, d_sendBuffer, mat->get_elements_to_send());
     
-    dctx_->synchronize_halo_stream();
+    //dctx_->synchronize_halo_stream();
 
     // TODO: Replace with async copy on halo stream
 #if !defined(HPGMP_USE_GPU_AWARE_MPI)
-    if (hipSuccess != hipMemcpy(sendBuffer, d_sendBuffer, totalToBeSent*sizeof(scalar_type),
-                                hipMemcpyDeviceToHost)) {
-      printf( " Failed to memcpy d_y\n" );
-    }
+    //if (hipSuccess != hipMemcpy(sendBuffer, d_sendBuffer, totalToBeSent*sizeof(scalar_type),
+    //                            hipMemcpyDeviceToHost)) {
+    //  printf( " Failed to memcpy d_y\n" );
+    //}
+    dctx_->copy_device_to_host_async(sendBuffer, d_sendBuffer, totalToBeSent*sizeof(scalar_type),
+                                     halo_stream);
 #endif
+
+    // wait for buffer to be ready before sending
+    dctx_->synchronize_halo_stream();
 
     double time1 = 0.0;
     TOCK(time1);
@@ -358,11 +363,11 @@ void Vector<scalar>::update_halos(const DistMatrixBase *const mat) const
     // copy received data to GPU
     TICK();
     #if defined(HPGMP_WITH_CUDA)
-    if (cudaSuccess != cudaMemcpy(d_xv + localNumberOfRows, &xv[localNumberOfRows], (localNumberOfCols-localNumberOfRows)*sizeof(scalar_type), cudaMemcpyHostToDevice)) {
+    if (cudaSuccess != cudaMemcpyAsync(d_xv + localNumberOfRows, &xv[localNumberOfRows], (localNumberOfCols-localNumberOfRows)*sizeof(scalar_type), cudaMemcpyHostToDevice, halo_stream)) {
       printf( " Failed to memcpy d_y\n" );
     }
     #elif defined(HPGMP_WITH_HIP)
-    if (hipSuccess != hipMemcpy(d_xv + localNumberOfRows, &xv[localNumberOfRows], (localNumberOfCols-localNumberOfRows)*sizeof(scalar_type), hipMemcpyHostToDevice)) {
+    if (hipSuccess != hipMemcpyAsync(d_xv + localNumberOfRows, &xv[localNumberOfRows], (localNumberOfCols-localNumberOfRows)*sizeof(scalar_type), hipMemcpyHostToDevice, halo_stream)) {
       printf( " Failed to memcpy d_y\n" );
     }
     #endif

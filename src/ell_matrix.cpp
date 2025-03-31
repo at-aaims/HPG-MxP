@@ -415,7 +415,7 @@ void ell_halo_spmv(const ELLMatrix<hiscalar>* mat, const Vector<vscalar> *x, Vec
 {
     constexpr int block_size = 1024;
     const int nblocks = (mat->get_num_halo_rows() - 1) / block_size + 1;
-    auto stream = mat->get_device_context()->get_compute_stream();
+    auto stream = mat->get_device_context()->get_halo_stream();
     simple_ell_spmv_halo<<<nblocks,block_size,0,stream>>>(mat->get_num_halo_rows(),
             mat->get_halo_ld_values(), mat->get_halo_ld_indices(), mat->get_ell_width(),
             mat->get_halo_row_indices(), mat->get_halo_col_idxs(), mat->get_halo_values(),
@@ -429,6 +429,8 @@ template void ell_halo_spmv(const ELLMatrix<float>* mat, const Vector<double> *x
 template <typename hiscalar, typename vscalar>
 void ell_spmv(const ELLMatrix<hiscalar>* mat, const Vector<vscalar> *x, Vector<vscalar>* y)
 {
+    auto dctx = x->get_device_context();
+
     ell_interior_spmv(mat, x, y);
     //if(mat->get_geometry()->rank == 0) {
     //    printf("ELL SPMV: completed local spmv\n");
@@ -438,6 +440,7 @@ void ell_spmv(const ELLMatrix<hiscalar>* mat, const Vector<vscalar> *x, Vector<v
     //    printf("ELL SPMV: starting halo exchange..\n");
     //}
 #ifndef HPGMP_NO_MPI
+    // Exchange halo info on halo stream
     x->update_halos(mat);
 #endif
     //if(mat->get_geometry()->rank == 0) {
@@ -445,6 +448,9 @@ void ell_spmv(const ELLMatrix<hiscalar>* mat, const Vector<vscalar> *x, Vector<v
     //}
 
     ell_halo_spmv(mat, x, y);
+
+    dctx->synchronize_halo_stream();
+    dctx->synchronize_compute_stream();
 }
 
 template<class SparseMatrix_type, class Vector_type>

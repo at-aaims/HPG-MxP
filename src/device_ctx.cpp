@@ -188,6 +188,34 @@ void DeviceCtx::copy_device_to_host_sync(void *h_ptr, const void *d_ptr, size_t 
 #endif
 }
 
+void DeviceCtx::copy_host_to_device_async(void *d_ptr, const void *h_ptr, size_t nbytes,
+                                          stream_t stream)
+{
+#if defined(HPGMP_WITH_CUDA)
+    if(cudaSuccess != cudaMemcpyAsync(d_ptr, h_ptr, nbytes, cudaMemcpyHostToDevice, stream)) {
+        throw HostDeviceCopyFailedError("H2D");
+    }
+#elif defined(HPGMP_WITH_HIP)
+    if(hipSuccess != hipMemcpyAsync(d_ptr, h_ptr, nbytes, hipMemcpyHostToDevice, stream)) {
+        throw HostDeviceCopyFailedError("H2D");
+    }
+#endif
+}
+
+void DeviceCtx::copy_device_to_host_async(void *h_ptr, const void *d_ptr, size_t nbytes,
+                                          stream_t stream)
+{
+#if defined(HPGMP_WITH_CUDA)
+    if(cudaSuccess != cudaMemcpyAsync(h_ptr, d_ptr, nbytes, cudaMemcpyDeviceToHost, stream)) {
+        throw HostDeviceCopyFailedError("D2H");
+    }
+#elif defined(HPGMP_WITH_HIP)
+    if(hipSuccess != hipMemcpyAsync(h_ptr, d_ptr, nbytes, hipMemcpyDeviceToHost, stream)) {
+        throw HostDeviceCopyFailedError("D2H");
+    }
+#endif
+}
+
 void DeviceCtx::synchronize_compute_stream()
 {
 #if defined(HPGMP_WITH_CUDA)
