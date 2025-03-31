@@ -32,6 +32,11 @@
  #include "cblas.h"
 #endif
 
+#ifndef HPGMP_NO_MPI
+#include <vector>
+#include <mpi.h>
+#endif
+
 #include "device_ctx.hpp"
 #include "hpgmp.hpp"
 #include "matrix_base.hpp"
@@ -118,15 +123,14 @@ private:
 
   SC * values_ = nullptr;     //!< array of values
 
-//#if defined(HPGMP_WITH_CUDA) | defined(HPGMP_WITH_HIP)
   SC * d_values_ = nullptr;   //!< array of values
-  //#if defined(HPGMP_WITH_CUDA)
-  //cublasHandle_t handle;
-  //#elif defined(HPGMP_WITH_HIP)
-  //rocblas_handle handle;
-  //#endif
-//#endif
   bool is_view_ = false;
+
+#ifndef HPGMP_NO_MPI
+  mutable std::vector<MPI_Request> send_reqs_;
+  mutable std::vector<MPI_Request> recv_reqs_;
+#endif
+
   /*!
    This is for storing optimized data structures created in OptimizeProblem and
    used inside optimized ComputeSPMV().

@@ -229,6 +229,8 @@ Vector<scalar>::~Vector() {
 
 namespace {
 
+#if defined(HPGMP_WITH_CUDA) || defined(HPGMP_WITH_HIP)
+
 template <typename scalar>
 __global__ void haloGather(const int totalToBeSent, const scalar *const d_x,
         scalar *const d_sendBuffer, const int *const d_elementsToSend)
@@ -239,11 +241,14 @@ __global__ void haloGather(const int totalToBeSent, const scalar *const d_x,
   }
 }
 
+#endif
+
 }
 
 template <typename scalar>
 void Vector<scalar>::update_halos(const DistMatrixBase *const mat) const
 {
+#ifndef HPGMP_NO_MPI
     const MPI_Datatype MPI_SCALAR_TYPE = MpiTypeTraits<scalar>::getType ();
     const local_int_t localNumberOfRows = mat->get_local_num_rows();
     const local_int_t localNumberOfCols = mat->get_local_num_cols();
@@ -276,8 +281,6 @@ void Vector<scalar>::update_halos(const DistMatrixBase *const mat) const
 
     const int MPI_MY_TAG = 99;
 
-    MPI_Request * request = new MPI_Request[num_neighbors];
-
     //
     // Externals are at end of locals
     //
@@ -288,14 +291,16 @@ void Vector<scalar>::update_halos(const DistMatrixBase *const mat) const
 #endif
 
     auto halo_stream = dctx_->get_halo_stream();
+    
+    recv_reqs_.resize(num_neighbors);
 
     // Post receives first
-    // TODO: Thread this loop
+    // Thread this loop
     double t0 = 0.0;
     TICK();
     for (int i = 0; i < num_neighbors; i++) {
         const local_int_t n_recv = receiveLength[i];
-        MPI_Irecv(x_external, n_recv, MPI_SCALAR_TYPE, neighbors[i], MPI_MY_TAG, comm, request+i);
+        MPI_Irecv(x_external, n_recv, MPI_SCALAR_TYPE, neighbors[i], MPI_MY_TAG, comm, &recv_reqs_[i]);
         x_external += n_recv;
     }
     double time2 = 0.0;
@@ -312,14 +317,7 @@ void Vector<scalar>::update_halos(const DistMatrixBase *const mat) const
     haloGather<<<num_blocks, num_threads, 0, halo_stream>>>(
       totalToBeSent, d_xv, d_sendBuffer, mat->get_elements_to_send());
     
-    //dctx_->synchronize_halo_stream();
-
-    // TODO: Replace with async copy on halo stream
 #if !defined(HPGMP_USE_GPU_AWARE_MPI)
-    //if (hipSuccess != hipMemcpy(sendBuffer, d_sendBuffer, totalToBeSent*sizeof(scalar_type),
-    //                            hipMemcpyDeviceToHost)) {
-    //  printf( " Failed to memcpy d_y\n" );
-    //}
     dctx_->copy_device_to_host_async(sendBuffer, d_sendBuffer, totalToBeSent*sizeof(scalar_type),
                                      halo_stream);
 #endif
@@ -333,15 +331,16 @@ void Vector<scalar>::update_halos(const DistMatrixBase *const mat) const
     //
     // Send to each neighbor
     //
+    send_reqs_.resize(num_neighbors);
     TICK();
-    // TODO: Thread this loop
+    // Thread this loop
     for (int i = 0; i < num_neighbors; i++) {
       local_int_t n_send = sendLength[i];
 #if defined(HPGMP_USE_GPU_AWARE_MPI)
-      MPI_Send(d_sendBuffer, n_send, MPI_SCALAR_TYPE, neighbors[i], MPI_MY_TAG, comm);
+      MPI_Isend(d_sendBuffer, n_send, MPI_SCALAR_TYPE, neighbors[i], MPI_MY_TAG, comm, &send_reqs_[i]);
       d_sendBuffer += n_send;
 #else
-      MPI_Send(sendBuffer, n_send, MPI_SCALAR_TYPE, neighbors[i], MPI_MY_TAG, comm);
+      MPI_Isend(sendBuffer, n_send, MPI_SCALAR_TYPE, neighbors[i], MPI_MY_TAG, comm, &send_reqs_[i]);
 #endif
       sendBuffer += n_send;
     }
@@ -350,12 +349,11 @@ void Vector<scalar>::update_halos(const DistMatrixBase *const mat) const
     // Complete the reads issued above
     //
 
-    MPI_Status status;
-    // TODO: Thread this loop
-    for (int i = 0; i < num_neighbors; i++) {
-      if ( MPI_Wait(request+i, &status) ) {
-        std::exit(-1); // TODO: have better error exit
-      }
+    if(MPI_SUCCESS != MPI_Waitall(num_neighbors, recv_reqs_.data(), MPI_STATUSES_IGNORE)) {
+        throw std::runtime_error(" Vector: update_halo: receives failed!");
+    }
+    if(MPI_SUCCESS != MPI_Waitall(num_neighbors, send_reqs_.data(), MPI_STATUSES_IGNORE)) {
+        throw std::runtime_error(" Vector: update_halo: sends failed!");
     }
     TOCK(time2);
 
@@ -374,7 +372,9 @@ void Vector<scalar>::update_halos(const DistMatrixBase *const mat) const
     TOCK(time1);
 #endif
 
-    delete [] request;
+    recv_reqs_.clear();
+    send_reqs_.clear();
+#endif // HPGMP_NO_MPI
 }
 
 // Explicit instantiations
