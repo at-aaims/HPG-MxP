@@ -37,4 +37,12 @@ public:
     { }
 };
 
+class MPICommError : public std::runtime_error
+{
+public:
+    MPICommError(const std::string& msg)
+        : std::runtime_error("! MPI: " + msg)
+    { }
+};
+
 #endif

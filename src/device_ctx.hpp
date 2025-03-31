@@ -70,6 +70,9 @@ public:
     /// Synchronize halo stream with host
     void synchronize_halo_stream();
 
+    /// Synchronize entire device
+    void synchronize_device();
+
     /// Get a pre-allocted workspace on the device
     void *get_device_workspace() const { return workspace_; }
 

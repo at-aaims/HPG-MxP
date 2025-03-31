@@ -25,9 +25,6 @@ template DistMatrixBase::DistMatrixBase(const SparseMatrix<float>& A);
 
 DistMatrixBase::~DistMatrixBase()
 {
-    //delete [] neighbors_;
-    //delete [] receiveLength_;
-    //delete [] sendLength_;
     dctx_->pinned_host_free(sendBuffer_);
 
     dctx_->device_free(halo_row_ind_);

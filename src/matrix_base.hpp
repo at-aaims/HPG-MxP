@@ -53,8 +53,8 @@ public:
     const local_int_t *get_send_lengths() const { return sendLength_; }
     const local_int_t *get_halo_row_indices() const { return halo_row_ind_; }
 
-    void *get_host_send_buffer() const { return static_cast<void*>(sendBuffer_); }
-    void *get_device_send_buffer() const { return static_cast<void*>(d_sendBuffer_); }
+    void *get_host_send_buffer() const { return sendBuffer_; }
+    void *get_device_send_buffer() const { return d_sendBuffer_; }
 
 protected:
     comm_type comm_;

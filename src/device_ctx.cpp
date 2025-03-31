@@ -234,6 +234,15 @@ void DeviceCtx::synchronize_halo_stream()
 #endif
 }
 
+void DeviceCtx::synchronize_device()
+{
+#if defined(HPGMP_WITH_CUDA)
+    cudaDeviceSynchronize();
+#elif defined(HPGMP_WITH_HIP)
+    HPGMP_THROW_ON_ERROR(hipDeviceSynchronize(), "sync device");
+#endif
+}
+
 #ifdef HPGMP_WITH_HIP
 const std::string DeviceAPIError::platform = "HIP";
 #elif HPGMP_WITH_CUDA

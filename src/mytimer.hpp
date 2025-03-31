@@ -34,9 +34,9 @@ void fence(stream_t stream);
 #define STOP_T(t)  fence(); t += mytimer() - start_t //!< store time difference in 't' using time in 'start_t'
 
 // Stream-specific timers
-//! record current time in 't0' after synchronizing the given device stream.
-#define TICKS(stream)  fence(stream); t0 = mytimer()
-//! store time difference in 't' using time in 't0' after syncing the given stream.
-#define TOCKS(stream, t) fence(stream); t += mytimer() - t0
+//! record current time in _startvar after synchronizing the given stream.
+#define TICK_S(_stream, _startvar)  fence(_stream); _startvar = mytimer()
+//! Add time difference into _endvar using time in _startvar after syncing the given stream.
+#define TOCK_S(_stream, _startvar, _endvar) fence(_stream); _endvar += mytimer() - _startvar
 
 #endif // MYTIMER_HPP

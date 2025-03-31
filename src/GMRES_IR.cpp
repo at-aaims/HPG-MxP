@@ -158,7 +158,12 @@ int GMRES_IR(const SparseMatrix_type & A, const SparseMatrix_type2 & A_lo,
     // > Compute residual vector (higher working precision)
     // p is of length ncols, copy x to p for sparse MV operation
     CopyVector(x_hi, p_hi);
-    TICK(); ComputeSPMV(A, p_hi, Ap_hi); flops_spmv += (2*A.totalNumberOfNonzeros); TOCK(t3); t3_1 += p_hi.time1; t3_2 += p_hi.time2; // Ap = A*p
+
+    TICK(); ComputeSPMV(A, p_hi, Ap_hi);            // Ap = A*p
+    flops_spmv += (2*A.totalNumberOfNonzeros);
+    TOCK(t3);
+    t3_1 += p_hi.time1; t3_2 += p_hi.time2;
+
     TICK(); ComputeWAXPBY_opt(nrow, one_hi, b_hi, -one_hi, Ap_hi, r_hi, A.isWaxpbyOptimized); flops += (itwo*Nrow);  TOCK(t11); // r = b - Ax (x stored in p)
     TICK(); ComputeDotProduct(nrow, r_hi, r_hi, normr_hi, t4, A.isDotProductOptimized); flops += (itwo*Nrow); TOCK(t11);
     normr_hi = sqrt(normr_hi);
@@ -230,7 +235,10 @@ int GMRES_IR(const SparseMatrix_type & A, const SparseMatrix_type2 & A_lo,
       TOCK(t5); // Preconditioner apply time
 
       // Qk = A*z
-      TICK(); ComputeSPMV(A_lo, z, Qk); flops_spmv += (2*A.totalNumberOfNonzeros); TOCK(t3); t3_1 += z.time1; t3_2 += z.time2;
+      TICK(); ComputeSPMV(A_lo, z, Qk);
+      flops_spmv += (2*A.totalNumberOfNonzeros);
+      TOCK(t3);
+      t3_1 += z.time1; t3_2 += z.time2;
       test_data.numOfSPCalls++;
 
       // orthogonalize z against Q(:,0:k-1), using dots

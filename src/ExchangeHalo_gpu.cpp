@@ -133,7 +133,6 @@ void ExchangeHalo_ref(const SparseMatrix_type & A, Vector_type & x) {
   // Send to each neighbor
   //
   TICK();
-  // TODO: Thread this loop
   for (int i = 0; i < num_neighbors; i++) {
     local_int_t n_send = sendLength[i];
 #if defined(HPGMP_USE_GPU_AWARE_MPI)
@@ -149,10 +148,9 @@ void ExchangeHalo_ref(const SparseMatrix_type & A, Vector_type & x) {
   //
 
   MPI_Status status;
-  // TODO: Thread this loop
   for (int i = 0; i < num_neighbors; i++) {
     if ( MPI_Wait(request+i, &status) ) {
-      std::exit(-1); // TODO: have better error exit
+        throw std::runtime_error("Sync exchangehalo wait did not complete!");
     }
   }
   TOCK(time2);

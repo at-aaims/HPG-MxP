@@ -33,7 +33,7 @@ set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -ggdb")
 
 if (HPGMP_ENABLE_HIP)
     #enable_language(HIP)
-    message(STATUS "ROCm path is ${ROCM_PATH}")
+    #message(STATUS "ROCm path is ${ROCM_PATH}")
     # CMake modules
     list(APPEND CMAKE_MODULE_PATH
          ${CMAKE_CURRENT_SOURCE_DIR}/cmake
@@ -166,8 +166,6 @@ if (HPGMP_ENABLE_MPI)
     message(STATUS "MPI found. Include directories: ${MPI_CXX_INCLUDE_DIRS}")
     target_link_libraries(hpgmp PUBLIC MPI::MPI_CXX ${GTL_LIB})
     target_link_libraries(hpgmp_device PUBLIC MPI::MPI_CXX ${GTL_LIB})
-    #target_include_directories(hpgmp PRIVATE ${MPI_C_INCLUDE_DIRS})
-    #target_include_directories(hpgmp_device PRIVATE ${MPI_C_INCLUDE_DIRS})
 else ()
     target_compile_definitions(hpgmp PUBLIC HPGMP_NO_MPI)
     target_compile_definitions(hpgmp_device PUBLIC HPGMP_NO_MPI)
