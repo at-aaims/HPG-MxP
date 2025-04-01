@@ -37,6 +37,11 @@ using std::endl;
 
 #include "GenerateNonsymProblem_v1_ref.hpp"
 
+inline local_int_t get_hash(local_int_t ix, local_int_t iy, local_int_t iz)
+{
+    return ((ix & 1) << 2) | ((iy & 1) << 1) | ((iz & 1) << 0);
+}
+
 
 /*!
   Reference version of GenerateProblem to generate the sparse matrix, right hand side, initial guess, and exact solution.
@@ -133,6 +138,8 @@ void GenerateNonsymProblem_v1_ref(DeviceCtx *const dctx, SparseMatrix_type & A, 
   }
 #endif
 
+  A.rowHash = new local_int_t[localNumberOfRows];
+
   local_int_t localNumberOfNonzeros = 0;
 //printf( "A=[\n" );
   // TODO:  This triply nested loop could be flattened or use nested parallelism
@@ -145,7 +152,7 @@ void GenerateNonsymProblem_v1_ref(DeviceCtx *const dctx, SparseMatrix_type & A, 
       global_int_t giy = giy0+iy;
       for (local_int_t ix=0; ix<nx; ix++) {
         global_int_t gix = gix0+ix;
-        local_int_t currentLocalRow = iz*nx*ny+iy*nx+ix;
+        const local_int_t currentLocalRow = iz*nx*ny+iy*nx+ix;
         global_int_t currentGlobalRow = giz*gnx*gny+giy*gnx+gix;
 #ifndef HPGMP_NO_OPENMP
 // C++ std::map is not threadsafe for writing
@@ -210,6 +217,11 @@ void GenerateNonsymProblem_v1_ref(DeviceCtx *const dctx, SparseMatrix_type & A, 
           xv[currentLocalRow] = 0.0;
           xexactv[currentLocalRow] = 1.0;
         }
+
+        // Compute a row hash
+        const local_int_t crd  = iz * nx * ny + iy * (nx << 1) + (ix << 2);
+        const local_int_t hash = get_hash(ix, iy, iz) * nx * ny * nz + crd;
+        A.rowHash[currentLocalRow] = hash;
       } // end ix loop
     } // end iy loop
   } // end iz loop

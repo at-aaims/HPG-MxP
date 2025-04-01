@@ -40,7 +40,7 @@
 #include "ell_matrix.hpp"
 #include "GMRESData.hpp"
 //#include "Permute.hpp"
-//#include "multiColoring.hpp"
+#include "multicoloring.hpp"
 
 /*!
   Optimizes the data structures used for GMRES to increase the
@@ -62,9 +62,19 @@ int OptimizeProblemELL(SparseMatrix<mat_scalar>& A, GMRESData<solver_scalar>& da
                        Vector<vec_scalar>& b, Vector<vec_scalar>& x, Vector<vec_scalar>& xexact)
 {
     auto dctx = A.dctx;
+    const int local_nrows = A.localNumberOfRows;
+
+    A.d_mtxIndL = reinterpret_cast<local_int_t*>(
+            dctx->device_alloc(A.max_nnz_per_row*local_nrows*sizeof(local_int_t)));
+    dctx->copy_host_to_device_sync(A.d_mtxIndL, A.mtxIndL[0],
+            A.max_nnz_per_row*local_nrows*sizeof(local_int_t));
+    A.d_matrixValues = reinterpret_cast<mat_scalar*>(
+            dctx->device_alloc(A.max_nnz_per_row*local_nrows*sizeof(mat_scalar)));
+    dctx->copy_host_to_device_sync(A.d_matrixValues, A.matrixValues[0],
+            A.max_nnz_per_row*local_nrows*sizeof(mat_scalar));
 
     // Perform matrix coloring
-    //JPLColoring(A);
+    //multicolor_JPL(A);
 
     // Permute matrix columns
     //PermuteColumns(A);
@@ -106,6 +116,9 @@ int OptimizeProblemELL(SparseMatrix<mat_scalar>& A, GMRESData<solver_scalar>& da
 
     // Initialize GMRES structures
     //data.initialize(A, dctx);
+    
+    dctx->device_free(A.d_mtxIndL);
+    dctx->device_free(A.d_matrixValues);
 
     // Process all coarse level matrices
     SparseMatrix<mat_scalar>* M = A.Ac;
@@ -113,8 +126,18 @@ int OptimizeProblemELL(SparseMatrix<mat_scalar>& A, GMRESData<solver_scalar>& da
     int igrid = 1;
     while(M != NULL)
     {
+        const auto local_nrows = M->localNumberOfRows;
+        M->d_mtxIndL = reinterpret_cast<local_int_t*>(
+                dctx->device_alloc(A.max_nnz_per_row*local_nrows*sizeof(local_int_t)));
+        dctx->copy_host_to_device_sync(M->d_mtxIndL, M->mtxIndL[0],
+                A.max_nnz_per_row*local_nrows*sizeof(local_int_t));
+        M->d_matrixValues = reinterpret_cast<mat_scalar*>(
+                dctx->device_alloc(A.max_nnz_per_row*local_nrows*sizeof(mat_scalar)));
+        dctx->copy_host_to_device_sync(M->d_matrixValues, M->matrixValues[0],
+                A.max_nnz_per_row*local_nrows*sizeof(mat_scalar));
+
         // Perform matrix coloring
-        //JPLColoring(*M);
+        //multicolor_JPL(*M);
 
         // Permute matrix columns
         //PermuteColumns(*M);
@@ -153,6 +176,8 @@ int OptimizeProblemELL(SparseMatrix<mat_scalar>& A, GMRESData<solver_scalar>& da
 #endif
 #endif
 
+        dctx->device_free(M->d_mtxIndL);
+        dctx->device_free(M->d_matrixValues);
         // Go to next level in hierarchy
         M = M->Ac;
         igrid++;

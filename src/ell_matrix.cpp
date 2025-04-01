@@ -75,7 +75,7 @@ ELLMatrix<hiscalar,loscalar>::~ELLMatrix()
         kernel_to_ell_col<blocksizex, blocksizey><<<blocks, threads>>>( \
             local_nrows_,                                        \
             ell_width_,                                                \
-            d_loc_indices,                                                \
+            A.d_mtxIndL,                                                \
             ldi_,                                                       \
             col_idxs_,                                                  \
             d_n_halo_rows,                                              \
@@ -91,7 +91,7 @@ ELLMatrix<hiscalar,loscalar>::~ELLMatrix()
             local_nrows_,                                               \
             max_nnz_per_row,                                            \
             ldv_,                                                       \
-            d_matrix_vals,                                              \
+            A.d_matrixValues,                                           \
             values_);                                                   \
     }
 
@@ -231,10 +231,10 @@ void ELLMatrix<hiscalar,loscalar>::convert_from_csr(const SparseMatrix<hiscalar>
 {
     const int max_nnz_per_row = ell_width_;
 
-    auto d_matrix_vals = static_cast<hiscalar*>(
-            dctx_->device_alloc(ell_width_*local_nrows_*sizeof(hiscalar)));
-    dctx_->copy_host_to_device_sync(d_matrix_vals, A.matrixValues[0],
-                                    ell_width_*local_nrows_*sizeof(hiscalar));
+    //auto d_matrix_vals = static_cast<hiscalar*>(
+    //        dctx_->device_alloc(ell_width_*local_nrows_*sizeof(hiscalar)));
+    //dctx_->copy_host_to_device_sync(d_matrix_vals, A.matrixValues[0],
+    //                                ell_width_*local_nrows_*sizeof(hiscalar));
 
     // Determine blocksize
     unsigned int blocksize = 1024 / ell_width_;
@@ -258,13 +258,13 @@ void ELLMatrix<hiscalar,loscalar>::convert_from_csr(const SparseMatrix<hiscalar>
     else if(blocksize ==  8) LAUNCH_TO_ELL_VAL(27,  8)
     else                     LAUNCH_TO_ELL_VAL(27,  4)
 
-    dctx_->device_free(d_matrix_vals);
-    d_matrix_vals = nullptr;
+    //dctx_->device_free(d_matrix_vals);
+    //d_matrix_vals = nullptr;
 
-    auto d_loc_indices = static_cast<local_int_t*>(dctx_->device_alloc(
-                ell_width_*local_nrows_*sizeof(local_int_t)));
-    dctx_->copy_host_to_device_sync(d_loc_indices, A.mtxIndL[0],
-                                    ell_width_*local_nrows_*sizeof(local_int_t));
+    //auto d_loc_indices = static_cast<local_int_t*>(dctx_->device_alloc(
+    //            ell_width_*local_nrows_*sizeof(local_int_t)));
+    //dctx_->copy_host_to_device_sync(d_loc_indices, A.mtxIndL[0],
+    //                                ell_width_*local_nrows_*sizeof(local_int_t));
 
     // Convert mtxIndL into ELL column indices
     local_int_t* d_n_halo_rows = reinterpret_cast<local_int_t*>(dctx_->get_device_workspace());
@@ -296,7 +296,7 @@ void ELLMatrix<hiscalar,loscalar>::convert_from_csr(const SparseMatrix<hiscalar>
 
     // Free old matrix indices
     //HIP_CHECK(deviceFree(A.d_mtxIndL));
-    dctx_->device_free(d_loc_indices);
+    //dctx_->device_free(d_loc_indices);
 
 #ifndef HPGMP_NO_MPI
     dctx_->copy_device_to_host_sync(&n_halo_rows_, d_n_halo_rows, sizeof(local_int_t));

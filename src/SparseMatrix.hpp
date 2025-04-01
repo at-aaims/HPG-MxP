@@ -61,7 +61,7 @@ public:
   local_int_t localNumberOfColumns = 0;  //!< number of columns local to this process
   local_int_t localNumberOfNonzeros = 0;  //!< number of nonzeros local to this process
   local_int_t localNumberOfMGNonzeros = 0;  //!< number of nonzeros local to this process, for MG
-  char  * nonzerosInRow = nullptr;  //!< The number of nonzeros in a row will always be 27 or fewer
+  char * nonzerosInRow = nullptr;  //!< The number of nonzeros in a row will always be 27 or fewer
   global_int_t ** mtxIndG = nullptr; //!< matrix indices as global values
   local_int_t ** mtxIndL = nullptr; //!< matrix indices as local values
   SC ** matrixValues = nullptr; //!< values of matrix entries
@@ -149,6 +149,21 @@ public:
   // TODO: remove
   //Vector<SC> y; // ncol
 #endif
+  
+  const int max_nnz_per_row = 27;
+
+  // Optimizations
+  local_int_t* rowHash = nullptr;
+  local_int_t* d_rowHash = nullptr;
+  local_int_t* d_mtxIndL = nullptr;
+  SC *d_matrixValues = nullptr;
+
+  // Multicolor GS
+  int nblocks{};                    //!< Number of independent sets
+  int ublocks{};                    //!< Number of upper triangular sets
+  local_int_t* sizes = nullptr;     //!< Number of rows of each independent set
+  local_int_t* offsets = nullptr;   //!< Pointer to the first row of each independent set
+  local_int_t* perm = nullptr;      //!< Permutation obtained by independent set coloring
 
   double time1, time2;
 };
