@@ -118,6 +118,16 @@ public:
 
   /// Scales the vector by multiplying with a scalar.
   void scale(scalar_type value);
+
+  /** @brief Permutes a vector based on given indices.
+   *
+   * @param perm  Local indices such that v_new[perm[i]] = v_old[i].
+   *              We assume it has the same length as this vector.
+   *
+   * @warning Calling this function invalidates outstanding outside pointers
+   *          returned by d_values().
+   */
+  void permute(const local_int_t *perm);
   
   mutable double time1{}, time2{}, time3{}, time4{};
 

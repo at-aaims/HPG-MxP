@@ -347,6 +347,56 @@ void ELLMatrix<hiscalar,loscalar>::convert_from_csr(const SparseMatrix<hiscalar>
 #endif
 }
 
+template <int BLOCKSIZE, typename scalar>
+__launch_bounds__(BLOCKSIZE)
+__global__ void kernel_permute_ell_rows(const local_int_t m,
+                                        const local_int_t p,
+                                        const int ldi,
+                                        const int ldv,
+                                        const local_int_t* __restrict__ tmp_cols,
+                                        const scalar* __restrict__ tmp_vals,
+                                        const local_int_t* __restrict__ perm,
+                                        local_int_t* __restrict__ ell_col_ind,
+                                        scalar* __restrict__ ell_val)
+{
+    const local_int_t row = blockIdx.x * BLOCKSIZE + threadIdx.x;
+    if(row >= m) {
+        return;
+    }
+
+    //const local_int_t idx = p * m + perm[row];
+    const local_int_t col = tmp_cols[row];
+
+    ell_col_ind[p*ldi + perm[row]] = col;
+    ell_val[p*ldv + perm[row]] = tmp_vals[row];
+}
+
+template <typename hiscalar, typename loscalar>
+void ELLMatrix<hiscalar,loscalar>::permute_rows(const local_int_t *const perm)
+{
+    const local_int_t m = local_nrows_;
+
+    // Temporary structures for row permutation
+    auto tmp_cols = reinterpret_cast<local_int_t*>(dctx_->device_alloc(m*sizeof(local_int_t)));
+    auto tmp_vals = reinterpret_cast<hiscalar*>(dctx_->device_alloc(m*sizeof(hiscalar)));
+
+    // Permute ELL rows
+    for(local_int_t p = 0; p < ell_width_; ++p)
+    {
+        dctx_->copy_device_to_device_sync(tmp_cols, col_idxs_ + p*ldi_, m*sizeof(local_int_t));
+        dctx_->copy_device_to_device_sync(tmp_vals, values_ + p*ldv_, m*sizeof(hiscalar));
+
+        kernel_permute_ell_rows<1024><<<(m - 1) / 1024 + 1, 1024>>>(
+            m, p, ldi_, ldv_,
+            tmp_cols, tmp_vals,
+            perm,
+            col_idxs_, values_);
+    }
+
+    dctx_->device_free(tmp_cols);
+    dctx_->device_free(tmp_vals);
+}
+
 template class ELLMatrix<double, double>;
 template class ELLMatrix<float, float>;
 
@@ -377,6 +427,7 @@ template <typename mscalar, typename vscalar>
 __global__ void simple_ell_spmv_halo(const local_int_t nrows, const int ldv, const int ldi,
     const local_int_t width, const local_int_t *const halo_row_ind,
     const local_int_t *const col_idxs, const mscalar *const mvalues,
+    const local_int_t *const perm,
     const vscalar *const xvals, vscalar *const __restrict__ yvals)
 {
     const local_int_t row_idx = blockIdx.x * blockDim.x + threadIdx.x;
@@ -392,7 +443,7 @@ __global__ void simple_ell_spmv_halo(const local_int_t nrows, const int ldv, con
         partial += static_cast<vscalar>(mvalues[row_idx + j*ldv])
             * static_cast<vscalar>(xvals[col]);
     }
-    yvals[halo_row_ind[row_idx]] += partial;
+    yvals[perm[halo_row_ind[row_idx]]] += partial;
 }
 
 template <typename hiscalar, typename vscalar>
@@ -420,7 +471,7 @@ void ell_halo_spmv(const ELLMatrix<hiscalar>* mat, const Vector<vscalar> *x, Vec
     simple_ell_spmv_halo<<<nblocks,block_size,0,stream>>>(mat->get_num_halo_rows(),
             mat->get_halo_ld_values(), mat->get_halo_ld_indices(), mat->get_ell_width(),
             mat->get_halo_row_indices(), mat->get_halo_col_idxs(), mat->get_halo_values(),
-            x->d_values(), y->d_values());
+            mat->get_reordering_permutation(), x->d_values(), y->d_values());
 }
 
 template void ell_halo_spmv(const ELLMatrix<double>* mat, const Vector<double> *x, Vector<double>* y);

@@ -188,6 +188,19 @@ void DeviceCtx::copy_device_to_host_sync(void *h_ptr, const void *d_ptr, size_t 
 #endif
 }
 
+void DeviceCtx::copy_device_to_device_sync(void *dst_ptr, const void *src_ptr, const size_t nbytes)
+{
+#if defined(HPGMP_WITH_CUDA)
+    if(cudaSuccess != cudaMemcpy(dst_ptr, src_ptr, nbytes, cudaMemcpyDeviceToDevice)) {
+        throw HostDeviceCopyFailedError("D2D");
+    }
+#elif defined(HPGMP_WITH_HIP)
+    if(hipSuccess != hipMemcpy(dst_ptr, src_ptr, nbytes, hipMemcpyDeviceToDevice)) {
+        throw HostDeviceCopyFailedError("D2D");
+    }
+#endif
+}
+
 void DeviceCtx::copy_host_to_device_async(void *d_ptr, const void *h_ptr, size_t nbytes,
                                           stream_t stream)
 {

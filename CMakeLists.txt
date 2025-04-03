@@ -5,7 +5,7 @@ cmake_minimum_required( VERSION 3.10 FATAL_ERROR )
 
 project( hpgmp
     VERSION 3.1
-    LANGUAGES CXX HIP
+    LANGUAGES CXX
     DESCRIPTION "High Performance Conjugate Gradient Benchmark (HPGMP) " )
 
 set(CMAKE_CXX_STANDARD 17)
@@ -25,6 +25,7 @@ option(HPGMP_ENABLE_LONG_LONG "Enable use of 'long long' type for global indices
 option(HPGMP_ENABLE_OPENMP "Enable OpenMP support" OFF)
 option(HPGMP_ENABLE_CUDA "Enable CUDA support" OFF)
 option(HPGMP_ENABLE_HIP "Enable HIP support" OFF)
+option(HPGMP_ENABLE_TESTS "Enable unit tests" ON)
 option(HPGMP_BUILD_REFERENCE "Build reference implementation without optimizations" OFF)
 option(CMAKE_DEBUG "Enable CMake script debugging" OFF)
 
@@ -32,7 +33,7 @@ option(CMAKE_DEBUG "Enable CMake script debugging" OFF)
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -ggdb")
 
 if (HPGMP_ENABLE_HIP)
-    #enable_language(HIP)
+    enable_language(HIP)
     #message(STATUS "ROCm path is ${ROCM_PATH}")
     # CMake modules
     list(APPEND CMAKE_MODULE_PATH
@@ -67,7 +68,14 @@ if (HPGMP_ENABLE_HIP)
         get_property(importTargetsAfterHip DIRECTORY "${CMAKE_SOURCE_DIR}" PROPERTY IMPORTED_TARGETS)
         message(STATUS "Imported targets: ${importTargetsAfterHip}")
     endif()
-else()
+
+    set(CMAKE_HIP_FLAGS_DEBUG "${CMAKE_HIP_FLAGS_DEBUG} -O0 -ggdb")
+    #set(CMAKE_HIP_FLAGS_DEBUG "${CMAKE_HIP_FLAGS_DEBUG} -O0 -ggdb -fsanitize=address -fno-omit-frame-pointer")
+elseif(HPGMP_ENABLE_CUDA)
+    enable_language(CUDA)
+    find_package(CUDAToolkit REQUIRED)
+    set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -Wno-deprecated-gpu-targets")
+    set(CMAKE_CUDA_FLAGS_DEBUG "${CMAKE_CUDA_FLAGS_DEBUG} -G")
 endif()
 
 set(device_sources
@@ -84,10 +92,13 @@ if(HPGMP_ENABLE_HIP)
     #hip_add_library(hpgmp_device ${device_sources})
     add_library(hpgmp_device ${device_sources})
     target_link_libraries(hpgmp_device PRIVATE hip::device)
-    set(CMAKE_HIP_FLAGS_DEBUG "${CMAKE_HIP_FLAGS_DEBUG} -O0 -ggdb")
-    #set(CMAKE_HIP_FLAGS_DEBUG "${CMAKE_HIP_FLAGS_DEBUG} -O0 -ggdb -fsanitize=address -fno-omit-frame-pointer")
 elseif(HPGMP_ENABLE_CUDA)
-    message(SEND_ERROR "CUDA not really supported yet.")
+    #message(SEND_ERROR "CUDA not really supported yet.")
+    foreach(i ${device_sources})
+        set_source_files_properties(${i} PROPERTIES LANGUAGE CUDA)
+    endforeach()
+    #hip_add_library(hpgmp_device ${device_sources})
+    add_library(hpgmp_device ${device_sources})
 else()
     add_library(hpgmp_device ${device_sources})
 endif()
@@ -188,7 +199,8 @@ if (HPGMP_ENABLE_CUDA)
     target_compile_definitions(hpgmp PUBLIC HPGMP_WITH_CUDA)
     target_compile_definitions(hpgmp_device PUBLIC HPGMP_WITH_CUDA)
     target_compile_definitions(hpgmp PUBLIC HPGMP_USE_FENCE)
-    target_link_libraries(hpgmp PUBLIC ${CUDA_LIBRARIES})
+    target_link_libraries(hpgmp_device PUBLIC CUDA::cublas CUDA::cusparse CUDA::curand)
+    target_link_libraries(hpgmp PUBLIC CUDA::cublas CUDA::cusparse CUDA::curand)
 else ()
     target_compile_definitions(hpgmp PUBLIC HPGMP_NO_CUDA)
 endif ()
@@ -219,6 +231,9 @@ target_link_libraries(xhpgmp_time PRIVATE hpgmp hpgmp_device)
 
 install(TARGETS xhpgmp xhpgmp_time)
 
-enable_testing()
-add_subdirectory(unittesting)
+if(HPGMP_ENABLE_TESTS)
+    find_package(GTest REQUIRED)
+    enable_testing()
+    add_subdirectory(unittesting)
+endif()
 

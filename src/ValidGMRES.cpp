@@ -187,7 +187,6 @@ int ValidGMRES(const int argc, char **argv, comm_type comm, DeviceCtx *const dct
   // cleanup
   DeleteMatrix(A);
   DeleteMatrix(A_lo);
-  DeleteGeometry(*geom);
   delete geom;
 
   if (verbose && A.geom->rank==0) {

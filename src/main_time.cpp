@@ -42,7 +42,6 @@ using std::endl;
 
 #include "SetupMatrix.hpp"
 #include "CheckAspectRatio.hpp"
-#include "GenerateGeometry.hpp"
 #include "CheckProblem.hpp"
 #include "OptimizeProblem.hpp"
 #include "WriteProblem.hpp"

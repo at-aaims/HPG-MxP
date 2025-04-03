@@ -36,6 +36,12 @@ public:
     int get_halo_ld_values() const { return halo_ldv_; }
     int get_halo_ld_indices() const { return halo_ldi_; }
 
+    /** @brief Permute rows of the matrix based on a permutation vector.
+     *
+     * @param perm  Permutation indices s.t. in new matrix, row perm[i] was row i in the old one.
+     */
+    void permute_rows(const local_int_t *perm);
+
 protected:
     static constexpr int pad_mult_v = padding_multiple<hiscalar>::value;
     static constexpr int pad_mult_i = padding_multiple<local_int_t>::value;

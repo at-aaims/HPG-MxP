@@ -55,6 +55,7 @@ public:
 
     void *get_host_send_buffer() const { return sendBuffer_; }
     void *get_device_send_buffer() const { return d_sendBuffer_; }
+    const local_int_t* get_reordering_permutation() const { return perm_; }
 
 protected:
     comm_type comm_;
@@ -83,6 +84,8 @@ protected:
     local_int_t * sendLength_ = nullptr;
     /// Local indices of halo rows
     local_int_t *halo_row_ind_ = nullptr;
+    /// Permutation vector, eg., computer by independent set ordering (device)
+    local_int_t *perm_ = nullptr;
 
     /** Buffer for communicating vectors.
      *

@@ -23,6 +23,8 @@
 #ifndef GEOMETRY_HPP
 #define GEOMETRY_HPP
 
+#include <array>
+
 #include "hpgmp.hpp"
 
 /*!
@@ -40,8 +42,8 @@ struct Geometry_STRUCT {
   int npz;  //!< Number of processors in z-direction
   int pz; //!< partition ID of z-dimension process that starts the second region of nz values
   int npartz; //!< Number of partitions with varying nz values
-  int * partz_ids; //!< Array of partition ids of processor in z-direction where new value of nz starts (valid values are 1 to npz)
-  local_int_t * partz_nz; //!< Array of length npartz containing the nz values for each partition
+  std::array<int,2> partz_ids;
+  std::array<local_int_t,2> partz_nz;
   int ipx;  //!< Current rank's x location in the npx by npy by npz processor grid
   int ipy;  //!< Current rank's y location in the npx by npy by npz processor grid
   int ipz;  //!< Current rank's z location in the npx by npy by npz processor grid
@@ -54,6 +56,28 @@ struct Geometry_STRUCT {
 
 };
 typedef struct Geometry_STRUCT Geometry;
+
+/*!
+ * Computes the factorization of the total number of processes into a
+ * 3-dimensional process grid that is as close as possible to a cube. The
+ * quality of the factorization depends on the prime number structure of the
+ * total number of processes. It then stores this decompostion together with the
+ * parallel parameters of the run in the geometry data structure.
+
+ * @param[in] size  Total number of MPI processes
+ * @param[in] rank  This process' rank among other MPI processes
+ * @param[in] numThreads  Number of OpenMP threads in this process
+ * @param[in] pz  z-dimension processor ID where second zone of nz values start
+ * @param[in] nx, ny, nz  Number of grid points for each local block in the x, y, and z dimensions
+ *             respectively
+ * @param[out] geom  Data structure that will store the above parameters and
+ *                   the factoring of total number of processes into three dimensions
+*/
+void GenerateGeometry(const int size, const int rank, const int numThreads,
+                      const int pz, const local_int_t zl, const local_int_t zu,
+                      const local_int_t nx, const local_int_t ny, const local_int_t nz,
+                      int npx, int npy, int npz,
+                      Geometry *const geom);
 
 /*!
   Returns the rank of the MPI process that is assigned the global row index
@@ -99,18 +123,12 @@ inline int ComputeRankOfMatrixRow(const Geometry & geom, global_int_t index) {
   return rank;
 }
 
-
-/*!
- Destructor for geometry data.
-
- @param[inout] data the geometry data structure whose storage is deallocated
- */
-inline void DeleteGeometry(Geometry & geom) {
-
-  delete [] geom.partz_nz;
-  delete [] geom.partz_ids;
-
-  return;
+inline std::array<int,3> get_local_3d_from_flattened(const int i, const std::array<int,3> n)
+{
+    const int iz = i / (n[2]*n[1]);
+    const int iy = (i - iz*n[2]*n[1]) / n[2];
+    const int ix = i - iz*n[2]*n[1] - iy*n[2];
+    return std::array<int,3>{iz, iy, ix};
 }
 
 

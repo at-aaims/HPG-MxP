@@ -310,7 +310,6 @@ int BenchGMRES(int argc, char **argv, comm_type comm, DeviceCtx *const dctx, int
   // cleanup
   DeleteMatrix(A);  
   DeleteMatrix(A_lo);
-  DeleteGeometry(*geom);
   delete geom;
 
   if (verbose && A.geom->rank==0) {

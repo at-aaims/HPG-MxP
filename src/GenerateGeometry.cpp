@@ -25,7 +25,7 @@
 #include <cassert>
 
 #include "ComputeOptimalShapeXYZ.hpp"
-#include "GenerateGeometry.hpp"
+#include "Geometry.hpp"
 
 #ifdef HPGMP_DEBUG
 #include <fstream>
@@ -48,33 +48,29 @@ using std::endl;
   @param[in]  nx, ny, nz number of grid points for each local block in the x, y, and z dimensions, respectively
   @param[out] geom data structure that will store the above parameters and the factoring of total number of processes into three dimensions
 */
-void GenerateGeometry(int size, int rank, int numThreads,
-  int pz, local_int_t zl, local_int_t zu,
-  local_int_t nx, local_int_t ny, local_int_t nz,
-  int npx, int npy, int npz,
-  Geometry * geom)
+void GenerateGeometry(const int size, const int rank, const int numThreads,
+                      const int pz, const local_int_t zl, const local_int_t zu,
+                      const local_int_t nx, const local_int_t ny, const local_int_t nz,
+                      int npx, int npy, int npz,
+                      Geometry *const geom)
 {
 
   if (npx * npy * npz <= 0 || npx * npy * npz > size)
     ComputeOptimalShapeXYZ( size, npx, npy, npz );
 
-  int * partz_ids = 0;
-  local_int_t * partz_nz = 0;
+  std::array<int,2> partz_ids;
+  std::array<local_int_t,2> partz_nz;
   int npartz = 0;
   if (pz==0) { // No variation in nz sizes
     npartz = 1;
-    partz_ids = new int[1];
-    partz_nz = new local_int_t[1];
     partz_ids[0] = npz;
     partz_nz[0] = nz;
   }
   else {
     npartz = 2;
-    partz_ids = new int[2];
     partz_ids[0] = pz;
     partz_ids[1] = npz;
-    partz_nz = new local_int_t[2];
-    partz_nz[0] = zl;
+    partz_nz[1] = zl;
     partz_nz[1] = zu;
   }
 //  partz_ids[npartz-1] = npz; // The last element of this array is always npz

@@ -23,7 +23,6 @@
 #include <iostream>
 
 #include "hpgmp.hpp"
-#include "GenerateGeometry.hpp"
 #include "Geometry.hpp"
 #include "SparseMatrix.hpp"
 #include "Vector.hpp"

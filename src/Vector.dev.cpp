@@ -21,6 +21,9 @@
 
 #ifdef HPGMP_WITH_HIP
 #include <rocrand/rocrand.hpp>
+#elif defined HPGMP_WITH_CUDA
+#include <cub/cub.cuh>
+#include <curand.h>
 #endif
 
 #include "Utils_MPI.hpp"
@@ -122,6 +125,24 @@ void Vector<scalar>::fill_random() {
   dctx_->synchronize_compute_stream();
   // TODO: Add 1 to generated vector
   rocrand_destroy_generator(generator);
+#elif defined HPGMP_WITH_CUDA
+  curandGenerator_t generator;
+  curandCreateGenerator(&generator, CURAND_RNG_PSEUDO_DEFAULT);
+  curandSetStream(generator, dctx_->get_compute_stream());
+  curandStatus status = CURAND_STATUS_SUCCESS;
+  if constexpr(std::is_same<scalar,double>::value) {
+      status = curandGenerateUniformDouble(generator, d_values_, localLength_);
+  } else if constexpr(std::is_same<scalar,float>::value) {
+      status = curandGenerateUniform(generator, d_values_, localLength_);
+  } else {
+      throw std::runtime_error("fill_random: Unsupported scalar type");
+  }
+  if(status != CURAND_STATUS_SUCCESS) {
+      throw std::runtime_error("random vector generation failed!");
+  }
+  dctx_->synchronize_compute_stream();
+  // TODO: Add 1 to generated vector
+  curandDestroyGenerator(generator);
 #else
   scalar * vv = v.values();
   for (int i=0; i<localLength_; ++i) {
@@ -233,11 +254,12 @@ namespace {
 
 template <typename scalar>
 __global__ void haloGather(const int totalToBeSent, const scalar *const d_x,
-        scalar *const d_sendBuffer, const int *const d_elementsToSend)
+                           const int *const d_elementsToSend, const local_int_t *const perm,
+                           scalar *const d_sendBuffer)
 {
   const int i = threadIdx.x + blockIdx.x*blockDim.x;
   if (i < totalToBeSent) {
-    d_sendBuffer[i] = d_x[d_elementsToSend[i]];
+    d_sendBuffer[i] = d_x[perm[d_elementsToSend[i]]];
   }
 }
 
@@ -261,7 +283,8 @@ void Vector<scalar>::update_halos_pack_send_buffer(const DistMatrixBase *const m
     const int num_threads = (totalToBeSent < 256 ? 512 : 256);
     const int num_blocks = (totalToBeSent - 1)/num_threads + 1;
     haloGather<<<num_blocks, num_threads, 0, halo_stream>>>(
-      totalToBeSent, d_xv, d_sendBuffer, mat->get_elements_to_send());
+      totalToBeSent, d_xv, mat->get_elements_to_send(), mat->get_reordering_permutation(),
+      d_sendBuffer);
 #else
 #error "Halo gather not implented for host!"
 #endif
@@ -290,10 +313,11 @@ void Vector<scalar>::update_halos_send_receive(const DistMatrixBase *const mat) 
 
     assert(localNumberOfRows + totalToBeSent <= localLength_);
 
-#if !defined HPGMP_USE_GPU_AWARE_MPI
+#if defined HPGMP_USE_GPU_AWARE_MPI
+    scalar_type * const d_xv = d_values_;
+#else
     scalar_type * const xv = values_;
 #endif
-    scalar_type * const d_xv = d_values_;
 
     int size, rank; // Number of MPI processes, My process ID
     auto comm = mat->get_comm();
@@ -460,7 +484,8 @@ void Vector<scalar>::update_halos(const DistMatrixBase *const mat) const
     const int num_threads = (totalToBeSent < 256 ? totalToBeSent : 256);
     const int num_blocks = (totalToBeSent+num_threads-1)/num_threads;
     haloGather<<<num_blocks, num_threads, 0, halo_stream>>>(
-      totalToBeSent, d_xv, d_sendBuffer, mat->get_elements_to_send());
+      totalToBeSent, d_xv, mat->get_elements_to_send(), mat->get_reordering_permutation(),
+      d_sendBuffer);
 
 #if !defined(HPGMP_USE_GPU_AWARE_MPI)
     dctx_->copy_device_to_host_async(sendBuffer, d_sendBuffer, totalToBeSent*sizeof(scalar_type),
@@ -520,6 +545,33 @@ void Vector<scalar>::update_halos(const DistMatrixBase *const mat) const
     recv_reqs_.clear();
     send_reqs_.clear();
 #endif // HPGMP_NO_MPI
+}
+
+
+template <unsigned int BLOCKSIZE, typename scalar>
+__launch_bounds__(BLOCKSIZE)
+__global__ void kernel_permute(const local_int_t size,
+                               const local_int_t* __restrict__ perm,
+                               const scalar* __restrict__ in,
+                               scalar* __restrict__ out)
+{
+    const local_int_t gid = blockIdx.x * BLOCKSIZE + threadIdx.x;
+    if(gid >= size) {
+        return;
+    }
+    out[perm[gid]] = in[gid];
+}
+
+template <typename scalar>
+void Vector<scalar>::permute(const local_int_t *const perm)
+{
+    const auto size = localLength_;
+    auto buffer = reinterpret_cast<scalar*>(dctx_->device_alloc(size*sizeof(scalar)));
+
+    kernel_permute<1024><<<(size - 1) / 1024 + 1, 1024>>>(size, perm, d_values_, buffer);
+
+    dctx_->device_free(d_values_);
+    d_values_ = buffer;
 }
 
 // Explicit instantiations

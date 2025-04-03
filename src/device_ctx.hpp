@@ -58,6 +58,9 @@ public:
     /// Sync copy to host
     void copy_device_to_host_sync(void *h_ptr, const void *d_ptr, size_t nbytes);
 
+    /// Sync copy from one device buffer to another.
+    void copy_device_to_device_sync(void *dst_ptr, const void *src_ptr, size_t nbytes);
+
     /// Asynchronous copy to device
     void copy_host_to_device_async(void *d_ptr, const void *h_ptr, size_t nbytes, stream_t stream);
     

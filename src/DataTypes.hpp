@@ -20,8 +20,14 @@
 //#   define HALF_ROUND_TIES_TO_EVEN 1
 //#   include <half/half.hpp>
 //using half_float::half;               // This clashes with rocrand which uses __half.
+#if defined HPGMP_WITH_HIP
 #include <hip/hip_fp16.h>
+#endif
+// CUDA/HIP
 using half = __half;
+#else
+// CPU
+using half = _Float16;
 #endif
 
 #if defined HPGMP_WITH_CUDA || defined HPGMP_WITH_HIP

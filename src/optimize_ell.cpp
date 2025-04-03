@@ -39,7 +39,7 @@
 #include "SparseMatrix.hpp"
 #include "ell_matrix.hpp"
 #include "GMRESData.hpp"
-//#include "Permute.hpp"
+#include "permute.hpp"
 #include "multicoloring.hpp"
 
 /*!
@@ -74,14 +74,13 @@ int OptimizeProblemELL(SparseMatrix<mat_scalar>& A, GMRESData<solver_scalar>& da
             A.max_nnz_per_row*local_nrows*sizeof(mat_scalar));
 
     // Perform matrix coloring
-    //multicolor_JPL(A);
+    multicolor_JPL(A);
 
-    // Permute matrix columns
-    //PermuteColumns(A);
+    // Permute matrix columns of original CSR-like matrix
+    permute_columns(A);
 
     // Convert matrix to ELL format
-    //ConvertToELL(A);
-    auto aoptdata = new EllOptData<mat_scalar>;// static_cast<EllOptData<mat_scalar>*>(A.optimizationData);
+    auto aoptdata = new EllOptData<mat_scalar>;
     aoptdata->mat = std::make_shared<ELLMatrix<mat_scalar>>(A);
     A.optimizationData = aoptdata;
 #ifdef HPGMP_VERBOSE
@@ -94,8 +93,8 @@ int OptimizeProblemELL(SparseMatrix<mat_scalar>& A, GMRESData<solver_scalar>& da
     // Defrag permutation vector
     //HIP_CHECK(deviceDefrag((void**)&A.perm, sizeof(local_int_t) * A.localNumberOfRows));
 
-    // Permute matrix rows
-    //PermuteRows(A);
+    // Permute matrix rows of ELL matrix
+    aoptdata->mat->permute_rows(A.perm);
 
     // Extract diagonal indices and inverse values
     //ExtractDiagonal(A);
@@ -113,6 +112,8 @@ int OptimizeProblemELL(SparseMatrix<mat_scalar>& A, GMRESData<solver_scalar>& da
     // Permute vectors
     //PermuteVector(A.localNumberOfRows, b, A.perm);
     //PermuteVector(A.localNumberOfRows, xexact, A.perm);
+    b.permute(A.perm);
+    xexact.permute(A.perm);
 
     // Initialize GMRES structures
     //data.initialize(A, dctx);
@@ -128,22 +129,21 @@ int OptimizeProblemELL(SparseMatrix<mat_scalar>& A, GMRESData<solver_scalar>& da
     {
         const auto local_nrows = M->localNumberOfRows;
         M->d_mtxIndL = reinterpret_cast<local_int_t*>(
-                dctx->device_alloc(A.max_nnz_per_row*local_nrows*sizeof(local_int_t)));
+                dctx->device_alloc(M->max_nnz_per_row*local_nrows*sizeof(local_int_t)));
         dctx->copy_host_to_device_sync(M->d_mtxIndL, M->mtxIndL[0],
-                A.max_nnz_per_row*local_nrows*sizeof(local_int_t));
+                M->max_nnz_per_row*local_nrows*sizeof(local_int_t));
         M->d_matrixValues = reinterpret_cast<mat_scalar*>(
-                dctx->device_alloc(A.max_nnz_per_row*local_nrows*sizeof(mat_scalar)));
+                dctx->device_alloc(M->max_nnz_per_row*local_nrows*sizeof(mat_scalar)));
         dctx->copy_host_to_device_sync(M->d_matrixValues, M->matrixValues[0],
-                A.max_nnz_per_row*local_nrows*sizeof(mat_scalar));
+                M->max_nnz_per_row*local_nrows*sizeof(mat_scalar));
 
         // Perform matrix coloring
-        //multicolor_JPL(*M);
+        multicolor_JPL(*M);
 
         // Permute matrix columns
-        //PermuteColumns(*M);
+        permute_columns(*M);
 
         // Convert matrix to ELL format
-        //ConvertToELL(*M);
         auto moptdata = new EllOptData<mat_scalar>;
         moptdata->mat = std::make_shared<ELLMatrix<mat_scalar>>(*M);
         M->optimizationData = moptdata;
@@ -161,7 +161,7 @@ int OptimizeProblemELL(SparseMatrix<mat_scalar>& A, GMRESData<solver_scalar>& da
         //HIP_CHECK(deviceDefrag((void**)&M->perm, sizeof(local_int_t) * M->localNumberOfRows));
 
         // Permute matrix rows
-        //PermuteRows(*M);
+        moptdata->mat->permute_rows(M->perm);
 
         // Extract diagonal indices and inverse values
         //ExtractDiagonal(*M);
@@ -201,7 +201,7 @@ int OptimizeProblemELL(SparseMatrix<mat_scalar>& A, GMRESData<solver_scalar>& da
 #endif
 
     if(A.geom->rank == 0) {
-        std::cout << "Finished building all ELL matrices." << std::endl;
+        std::cout << "Finished building and permuting all ELL matrices." << std::endl;
     }
     return 0;
 }

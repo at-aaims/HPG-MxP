@@ -18,7 +18,6 @@
 
 #include "SetupMatrix.hpp"
 #include "CheckAspectRatio.hpp"
-#include "GenerateGeometry.hpp"
 #include "CheckProblem.hpp"
 #include "OptimizeProblem.hpp"
 #include "WriteProblem.hpp"
@@ -45,14 +44,6 @@ typedef float project_type;
 typedef Vector<scalar_type2> Vector_type2;
 typedef SparseMatrix<scalar_type2> SparseMatrix_type2;
 typedef GMRESData<scalar_type2, project_type> GMRESData_type2;
-
-inline std::array<int,3> get_local_3d_from_flattened(const int i, const std::array<int,3> n)
-{
-    const int iz = i / (n[2]*n[1]);
-    const int iy = (i - iz*n[2]*n[1]) / n[2];
-    const int ix = i - iz*n[2]*n[1] - iy*n[2];
-    return std::array<int,3>{iz, iy, ix};
-}
 
 local_int_t simulate_halos(SparseMatrix<scalar_type>& A)
 {
@@ -190,6 +181,7 @@ int main(int argc, char * argv[])
 
     // free
     DeleteMatrix(A);
+    delete geom;
     HPGMP_Finalize();
 #ifndef HPGMP_NO_MPI
     MPI_Finalize();

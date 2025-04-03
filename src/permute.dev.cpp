@@ -33,10 +33,7 @@
  HPCG routine
  */
 
-#include "utils.hpp"
-#include "Permute.hpp"
-
-#include <hip/hip_runtime.h>
+#include "permute.hpp"
 
 #define LAUNCH_PERM_COLS(blocksizex, blocksizey)                       \
     {                                                                  \
@@ -51,30 +48,6 @@
             A.d_mtxIndL,                                               \
             A.d_matrixValues);                                         \
     }
-
-template <unsigned int BLOCKSIZE, typename scalar>
-__launch_bounds__(BLOCKSIZE)
-__global__ void kernel_permute_ell_rows(const local_int_t m,
-                                        const local_int_t p,
-                                        const local_int_t* __restrict__ tmp_cols,
-                                        const scalar* __restrict__ tmp_vals,
-                                        const local_int_t* __restrict__ perm,
-                                        local_int_t* __restrict__ ell_col_ind,
-                                        scalar* __restrict__ ell_val)
-{
-    local_int_t row = blockIdx.x * BLOCKSIZE + threadIdx.x;
-
-    if(row >= m)
-    {
-        return;
-    }
-
-    local_int_t idx = p * m + perm[row];
-    local_int_t col = tmp_cols[row];
-
-    ell_col_ind[idx] = col;
-    ell_val[idx] = tmp_vals[row];
-}
 
 template <typename scalar>
 __device__ void swap(local_int_t& key, scalar& val, int mask, int dir)
@@ -151,7 +124,7 @@ __global__ void kernel_perm_cols(const local_int_t m,
 }
 
 template <typename scalar>
-void PermuteColumns(SparseMatrix<scalar>& A)
+void permute_columns(SparseMatrix<scalar>& A)
 {
     // Determine blocksize in x direction
     unsigned int dim_x = A.max_nnz_per_row;
@@ -187,65 +160,6 @@ void PermuteColumns(SparseMatrix<scalar>& A)
     else                 LAUNCH_PERM_COLS(32,  4)
 }
 
-template <typename scalar>
-void PermuteRows(SparseMatrix& A)
-{
-    const local_int_t m = A.localNumberOfRows;
+template void permute_columns(SparseMatrix<float>& A);
+template void permute_columns(SparseMatrix<double>& A);
 
-    // Temporary structures for row permutation
-    local_int_t* tmp_cols;
-    scalar* tmp_vals;
-
-    HIP_CHECK(deviceMalloc((void**)&tmp_cols, sizeof(local_int_t) * m));
-    HIP_CHECK(deviceMalloc((void**)&tmp_vals, sizeof(scalar) * m));
-
-    // Permute ELL rows
-    for(local_int_t p = 0; p < A.ell_width; ++p)
-    {
-        const local_int_t offset = p * m;
-
-        HIP_CHECK(hipMemcpy(tmp_cols, A.ell_col_ind + offset, sizeof(local_int_t) * m, hipMemcpyDeviceToDevice));
-        HIP_CHECK(hipMemcpy(tmp_vals, A.ell_val + offset, sizeof(scalar) * m, hipMemcpyDeviceToDevice));
-
-        kernel_permute_ell_rows<1024><<<(m - 1) / 1024 + 1, 1024>>>(
-            m,
-            p,
-            tmp_cols,
-            tmp_vals,
-            A.perm,
-            A.ell_col_ind,
-            A.ell_val);
-    }
-
-    HIP_CHECK(deviceFree(tmp_cols));
-    HIP_CHECK(deviceFree(tmp_vals));
-}
-
-template <unsigned int BLOCKSIZE>
-__launch_bounds__(BLOCKSIZE)
-__global__ void kernel_permute(local_int_t size,
-                               const local_int_t* __restrict__ perm,
-                               const scalar* __restrict__ in,
-                               scalar* __restrict__ out)
-{
-    local_int_t gid = blockIdx.x * BLOCKSIZE + threadIdx.x;
-
-    if(gid >= size)
-    {
-        return;
-    }
-
-    out[perm[gid]] = in[gid];
-}
-
-template <typename scalar>
-void PermuteVector(local_int_t size, Vector& v, const local_int_t* perm)
-{
-    scalar* buffer;
-    HIP_CHECK(deviceMalloc((void**)&buffer, sizeof(scalar) * v.localLength));
-
-    kernel_permute<1024><<<(size - 1) / 1024 + 1, 1024>>>(size, perm, v.d_values, buffer);
-
-    HIP_CHECK(deviceFree(v.d_values));
-    v.d_values = buffer;
-}

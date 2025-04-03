@@ -13,6 +13,7 @@ DistMatrixBase::DistMatrixBase(const SparseMatrix<scalar>& A)
     neighbors_{A.neighbors}, receiveLength_{A.receiveLength}, sendLength_{A.sendLength},
     halo_row_ind_{static_cast<local_int_t*>(
                       dctx_->device_alloc(totalToBeSent_*sizeof(local_int_t)))},
+    perm_{A.perm},
     sendBuffer_{dctx_->pinned_host_alloc(totalToBeSent_*sizeof(double))},
     d_sendBuffer_{dctx_->device_alloc(totalToBeSent_*sizeof(double))}
 {

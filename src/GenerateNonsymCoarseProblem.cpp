@@ -26,7 +26,6 @@
 
 #include <cassert>
 #include "GenerateNonsymCoarseProblem.hpp"
-#include "GenerateGeometry.hpp"
 #include "GenerateNonsymProblem.hpp"
 #include "SetupHalo.hpp"
 

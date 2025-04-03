@@ -95,9 +95,9 @@ void DeleteMatrix(SparseMatrix_type & A)
   rocsparse_destroy_spmat_descr(A.descrU);
 #endif
 
+  A.dctx->device_free(A.perm);
   delete [] A.sizes;
   delete [] A.offsets;
-  delete [] A.perm;
   return;
 }
 

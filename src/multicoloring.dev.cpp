@@ -34,6 +34,9 @@
 
 #include "multicoloring.hpp"
 
+#include <map>
+#include <list>
+#include <algorithm>
 #include <rocprim/rocprim.hpp>
 
 #include "exceptions.hpp"
@@ -49,7 +52,6 @@
             A.d_rowHash,                                               \
             color1,                                                    \
             color2,                                                    \
-            d_nonzerosInRow,                                           \
             A.d_mtxIndL,                                               \
             A.perm);                                                   \
     }
@@ -180,7 +182,7 @@ __global__ void kernel_jpl(const local_int_t m,
                            const local_int_t* __restrict__ hash,
                            const int color1,
                            const int color2,
-                           const char* __restrict__ nonzerosInRow,
+                           //const char* __restrict__ nonzerosInRow,
                            const local_int_t* __restrict__ mtxIndL,
                            local_int_t* __restrict__ colors)
 {
@@ -222,7 +224,7 @@ __global__ void kernel_jpl(const local_int_t m,
         if(col != row)
         {
             // Get neighbors color
-            int color_nb = __ldg(colors + col);
+            const int color_nb = __ldg(colors + col);
 
             // Compare only with uncolored neighbors
             if(color_nb == -1 || color_nb == color1 || color_nb == color2)
@@ -274,7 +276,6 @@ void multicolor_JPL(SparseMatrix<scalar>& A)
     delete [] A.rowHash;
 
     A.perm = reinterpret_cast<local_int_t*>(A.dctx->device_alloc(m * sizeof(local_int_t)));
-    //HIP_CHECK(deviceMalloc((void**)&A.perm, sizeof(local_int_t) * m));
 #ifdef HPGMP_WITH_HIP
     if(hipMemset(A.perm, -1, sizeof(local_int_t) * m) != hipSuccess) {
         throw DeviceAPIError("memset failed in multicolor_JPL!");
@@ -301,10 +302,8 @@ void multicolor_JPL(SparseMatrix<scalar>& A)
     A.offsets = new local_int_t[MAX_COLORS];
     A.offsets[0] = 0;
 
-    const int max_nnz_per_row = 27;
-
     // Determine blocksize
-    unsigned int blocksize = 512 / max_nnz_per_row;
+    unsigned int blocksize = 512 / A.max_nnz_per_row;
 
     // Compute next power of two
     blocksize |= blocksize >> 1;
@@ -315,13 +314,13 @@ void multicolor_JPL(SparseMatrix<scalar>& A)
     ++blocksize;
 
     // Shift right until we obtain a valid blocksize
-    while(blocksize * max_nnz_per_row > 512)
+    while(blocksize * A.max_nnz_per_row > 512)
     {
         blocksize >>= 1;
     }
 
-    auto d_nonzerosInRow = reinterpret_cast<char*>(A.dctx->device_alloc(m*sizeof(char)));
-    A.dctx->copy_host_to_device_sync(d_nonzerosInRow, A.nonzerosInRow, m*sizeof(char));
+    //auto d_nonzerosInRow = reinterpret_cast<char*>(A.dctx->device_alloc(m*sizeof(char)));
+    //A.dctx->copy_host_to_device_sync(d_nonzerosInRow, A.nonzerosInRow, m*sizeof(char));
 
     // Run Jones-Plassmann Luby algorithm until all vertices have been colored
     while(colored != m)
@@ -362,7 +361,7 @@ void multicolor_JPL(SparseMatrix<scalar>& A)
     A.ublocks = A.nblocks - 1;
 
     A.dctx->device_free(A.d_rowHash);
-    A.dctx->device_free(d_nonzerosInRow);
+    //A.dctx->device_free(d_nonzerosInRow);
 
     auto tmp_color = reinterpret_cast<local_int_t*>(A.dctx->device_alloc(m*sizeof(local_int_t)));
     auto tmp_perm = reinterpret_cast<local_int_t*>(A.dctx->device_alloc(m*sizeof(local_int_t)));
@@ -386,7 +385,7 @@ void multicolor_JPL(SparseMatrix<scalar>& A)
 #endif
     auto buf = A.dctx->device_alloc(size);
     if(rocprim::radix_sort_pairs(buf, size, keys, vals, m, startbit, endbit) != hipSuccess) {
-        throw DeviceAPIError(" JPL multicoloring: rocprim buffer size estimation failed!");
+        throw DeviceAPIError(" JPL multicoloring: rocprim radix sort failed!");
     }
     A.dctx->device_free(buf);
 
@@ -401,4 +400,59 @@ void multicolor_JPL(SparseMatrix<scalar>& A)
 
 template void multicolor_JPL(SparseMatrix<double>&);
 template void multicolor_JPL(SparseMatrix<float>&);
+
+template <typename scalar>
+void multicolor_ref(SparseMatrix<scalar>& A)
+{
+    const auto local_nrows = A.localNumberOfRows;
+
+    std::vector<int> color(local_nrows, -1);
+
+    for(int i = 0; i < local_nrows; i++) {
+        int mycolor = -1;
+        bool overlap = true;
+        while(overlap) {
+            mycolor++;
+            overlap = false;
+            for(int jz = 0; jz < A.nonzerosInRow[i]; jz++) {
+                const int j = A.mtxIndL[i][jz];
+                if (i != j && mycolor == color[j]) {
+                    overlap = true;
+                }
+            }
+        }
+        color[i] = mycolor;
+    }
+
+    std::map<int, std::vector<local_int_t>> color_points;
+
+    // color_points stores old indices of points in each color group.
+    for(local_int_t i = 0; i < local_nrows; i++) {
+        // add point to the corresponding color group.
+        assert(color[i] >= 0 && color[i] < A.max_nnz_per_row);
+        color_points[color[i]].push_back(i);
+    }
+    const int num_colors = static_cast<int>(color_points.size());
+    A.nblocks = num_colors;
+    A.sizes = new local_int_t[num_colors];
+    A.offsets = new local_int_t[num_colors+1];
+    A.offsets[0] = 0;
+    A.perm = reinterpret_cast<local_int_t*>(A.dctx->device_alloc(local_nrows * sizeof(local_int_t)));
+    std::vector<local_int_t> host_perm (local_nrows);
+
+    for(int ic = 0; ic < num_colors; ic++) {
+        // map is sorted, so this should be stable.
+        A.sizes[ic] = static_cast<int>(color_points[ic].size());
+        for(int i = 0; i < A.sizes[ic]; i++) {
+            host_perm[color_points[ic][i]] = A.offsets[ic] + i;
+        }
+        A.offsets[ic+1] = A.offsets[ic] + A.sizes[ic];
+    }
+    assert(host_perm.end() == host_perm.begin() + A.offsets[num_colors]);
+
+    A.dctx->copy_host_to_device_sync(A.perm, host_perm.data(), local_nrows*sizeof(local_int_t));
+}
+
+template void multicolor_ref(SparseMatrix<double>&);
+template void multicolor_ref(SparseMatrix<float>&);
 
