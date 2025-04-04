@@ -97,7 +97,7 @@ int OptimizeProblemELL(SparseMatrix<mat_scalar>& A, GMRESData<solver_scalar>& da
     aoptdata->mat->permute_rows(A.perm);
 
     // Extract diagonal indices and inverse values
-    //ExtractDiagonal(A);
+    aoptdata->mat->extract_diagonal();
 
     // Defrag
 #ifdef HPGMP_MEMORY_MANAGEMENT
@@ -164,7 +164,7 @@ int OptimizeProblemELL(SparseMatrix<mat_scalar>& A, GMRESData<solver_scalar>& da
         moptdata->mat->permute_rows(M->perm);
 
         // Extract diagonal indices and inverse values
-        //ExtractDiagonal(*M);
+        moptdata->mat->extract_diagonal();
 
         // Defrag
 #ifdef HPGMP_MEMORY_MANAGEMENT
@@ -201,7 +201,7 @@ int OptimizeProblemELL(SparseMatrix<mat_scalar>& A, GMRESData<solver_scalar>& da
 #endif
 
     if(A.geom->rank == 0) {
-        std::cout << "Finished building and permuting all ELL matrices." << std::endl;
+        std::cout << "Finished building, reordering and preparing all ELL matrices." << std::endl;
     }
     return 0;
 }

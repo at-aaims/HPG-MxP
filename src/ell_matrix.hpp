@@ -42,6 +42,14 @@ public:
      */
     void permute_rows(const local_int_t *perm);
 
+    const hiscalar* get_inverse_diagonal() const { return inv_diag_; }
+    const local_int_t* get_diagonal_indices() const { return diag_idxs_; }
+
+    /** @brief Compute and store indices of diagonal entries in every row and
+     *         the inverses of the diagonal entries.
+     */
+    void extract_diagonal();
+
 protected:
     static constexpr int pad_mult_v = padding_multiple<hiscalar>::value;
     static constexpr int pad_mult_i = padding_multiple<local_int_t>::value;
@@ -67,6 +75,9 @@ protected:
     local_int_t *halo_col_idxs_ = nullptr;
     hiscalar *halo_values_ = nullptr;
 
+    local_int_t *diag_idxs_ = nullptr;
+    hiscalar *inv_diag_ = nullptr;
+
     void convert_from_csr(const SparseMatrix<hiscalar>& A);
 };
 
@@ -75,6 +86,7 @@ protected:
 
 template <typename hiscalar, typename vscalar>
 void ell_halo_spmv(const ELLMatrix<hiscalar>* mat, const Vector<vscalar> *x, Vector<vscalar>* y);
+
 template <typename hiscalar, typename vscalar>
 void ell_interior_spmv(const ELLMatrix<hiscalar>* mat, const Vector<vscalar> *x, Vector<vscalar>* y);
 

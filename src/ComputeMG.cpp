@@ -26,7 +26,8 @@
 #include <cassert>
 
 #include "ComputeSYMGS.hpp"
-#include "ComputeGS_Forward.hpp"
+//#include "ComputeGS_Forward.hpp"
+#include "ell_multicolor_gs.hpp"
 #include "ComputeSPMV.hpp"
 #include "ComputeRestriction_ref.hpp"
 #include "ComputeProlongation_ref.hpp"
@@ -47,11 +48,15 @@ int ComputeMG(const SparseMatrix_type & A, const Vector_type & r, Vector_type & 
   // This line and the next two lines should be removed and your version of ComputeSYMGS should be used.
   //A.isMgOptimized = false;
   //return ComputeMG_ref(A, r, x, symmetric);
+  using scalar_type = typename SparseMatrix_type::scalar_type;
 
   // Optimized versions of calls
   // initialize x to zero
   double t0 = 0.0;
   x.fill_zero();
+
+  std::shared_ptr<const ELLMatrix<scalar_type>> mat =
+      dynamic_cast<EllOptData<scalar_type>*>(A.optimizationData)->mat;
 
   int ierr = 0;
   if (A.mgData!=0) { // Go to next coarse level if defined
@@ -61,7 +66,12 @@ int ComputeMG(const SparseMatrix_type & A, const Vector_type & r, Vector_type & 
           ierr += ComputeSYMGS(A, r, x);
     } else {
       for (int i=0; i< numberOfPresmootherSteps; ++i)
-          ierr += ComputeGS_Forward(A, r, x);
+          //ierr += ComputeGS_Forward(A, r, x);
+          if(i = 0) {
+              ierr += ell_multicolor_gs_zero_initial(mat.get(), &r, &x);
+          } else {
+              ierr += ell_multicolor_gs(mat.get(), &r, &x);
+          }
     }
     if (ierr!=0)
         return ierr;
@@ -104,8 +114,10 @@ int ComputeMG(const SparseMatrix_type & A, const Vector_type & r, Vector_type & 
       for (int i=0; i< numberOfPostsmootherSteps; ++i)
           ierr += ComputeSYMGS(A, r, x);
     } else {
-      for (int i=0; i< numberOfPostsmootherSteps; ++i)
-          ierr += ComputeGS_Forward(A, r, x);
+      for (int i=0; i< numberOfPostsmootherSteps; ++i) {
+          //ierr += ComputeGS_Forward(A, r, x);
+          ierr += ell_multicolor_gs(mat.get(), &r, &x);
+      }
     }
     if (ierr!=0)
         return ierr;
@@ -115,7 +127,8 @@ int ComputeMG(const SparseMatrix_type & A, const Vector_type & r, Vector_type & 
     if (symmetric) {
       ierr = ComputeSYMGS(A, r, x);
     } else {
-      ierr = ComputeGS_Forward(A, r, x);
+      //ierr = ComputeGS_Forward(A, r, x);
+      ierr += ell_multicolor_gs(mat.get(), &r, &x);
     }
     if (ierr!=0) return ierr;
   }

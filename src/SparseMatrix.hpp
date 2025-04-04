@@ -143,7 +143,7 @@ public:
   int *d_Ucol_idx;
   SC  *d_Unzvals;   //!< values of matrix entries
 
-  // workspace vector
+  // workspace vector for reference (vendor library) GS
   mutable Vector<SC> workx; // nrow
 
   // TODO: remove

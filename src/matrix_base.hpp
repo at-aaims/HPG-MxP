@@ -46,6 +46,8 @@ public:
 
     int get_num_neighbors() const { return numberOfSendNeighbors_; }
 
+    int get_num_independent_sets() const { return n_independent_sets_; }
+
     /// Get list of vector entries to send; residing on device.
     const local_int_t* get_elements_to_send() const { return elementsToSend_; }
     const int* get_neighbors() const { return neighbors_; }
@@ -55,7 +57,9 @@ public:
 
     void *get_host_send_buffer() const { return sendBuffer_; }
     void *get_device_send_buffer() const { return d_sendBuffer_; }
-    const local_int_t* get_reordering_permutation() const { return perm_; }
+    const local_int_t* get_reordering_permutation() const { return ind_perm_; }
+    const local_int_t* get_independent_set_sizes() const { return ind_sizes_; }
+    const local_int_t* get_independent_set_offsets() const { return ind_offsets_; }
 
 protected:
     comm_type comm_;
@@ -84,8 +88,14 @@ protected:
     local_int_t * sendLength_ = nullptr;
     /// Local indices of halo rows
     local_int_t *halo_row_ind_ = nullptr;
-    /// Permutation vector, eg., computer by independent set ordering (device)
-    local_int_t *perm_ = nullptr;
+    /// Number of independent sets
+    int n_independent_sets_{};
+    /// Permutation vector, eg., computer by independent set ordering (resides on device)
+    local_int_t *ind_perm_ = nullptr;
+    /// Sizes of the indepndent sets (resides on host)
+    local_int_t *ind_sizes_ = nullptr;
+    /// Offset to the beginning of each independent set in the new ordering (host)
+    local_int_t *ind_offsets_ = nullptr;
 
     /** Buffer for communicating vectors.
      *

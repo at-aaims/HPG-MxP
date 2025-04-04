@@ -63,6 +63,8 @@ ELLMatrix<hiscalar,loscalar>::~ELLMatrix()
     dctx_->device_free(values_);
     dctx_->device_free(halo_col_idxs_);
     dctx_->device_free(halo_values_);
+    dctx_->device_free(diag_idxs_);
+    dctx_->device_free(inv_diag_);
 }
 
 #if defined HPGMP_WITH_HIP || defined HPGMP_WITH_CUDA
@@ -231,11 +233,6 @@ void ELLMatrix<hiscalar,loscalar>::convert_from_csr(const SparseMatrix<hiscalar>
 {
     const int max_nnz_per_row = ell_width_;
 
-    //auto d_matrix_vals = static_cast<hiscalar*>(
-    //        dctx_->device_alloc(ell_width_*local_nrows_*sizeof(hiscalar)));
-    //dctx_->copy_host_to_device_sync(d_matrix_vals, A.matrixValues[0],
-    //                                ell_width_*local_nrows_*sizeof(hiscalar));
-
     // Determine blocksize
     unsigned int blocksize = 1024 / ell_width_;
 
@@ -258,22 +255,8 @@ void ELLMatrix<hiscalar,loscalar>::convert_from_csr(const SparseMatrix<hiscalar>
     else if(blocksize ==  8) LAUNCH_TO_ELL_VAL(27,  8)
     else                     LAUNCH_TO_ELL_VAL(27,  4)
 
-    //dctx_->device_free(d_matrix_vals);
-    //d_matrix_vals = nullptr;
-
-    //auto d_loc_indices = static_cast<local_int_t*>(dctx_->device_alloc(
-    //            ell_width_*local_nrows_*sizeof(local_int_t)));
-    //dctx_->copy_host_to_device_sync(d_loc_indices, A.mtxIndL[0],
-    //                                ell_width_*local_nrows_*sizeof(local_int_t));
-
     // Convert mtxIndL into ELL column indices
     local_int_t* d_n_halo_rows = reinterpret_cast<local_int_t*>(dctx_->get_device_workspace());
-
-    //if(geom_->rank == 0) {
-    //    std::printf("  ELL: local nrows = %d, total to be sent = %d, ref num halos = %d.\n",
-    //            local_nrows_, totalToBeSent_, ref_n_halos);
-    //    std::fflush(stdout);
-    //}
 
 #ifndef HPGMP_NO_MPI
 
@@ -291,13 +274,6 @@ void ELLMatrix<hiscalar,loscalar>::convert_from_csr(const SparseMatrix<hiscalar>
     else if(blocksize ==  8) LAUNCH_TO_ELL_COL(27,  8)
     else                     LAUNCH_TO_ELL_COL(27,  4)
 
-    //auto ierr = hipDeviceSynchronize();
-    //sync not needed
-
-    // Free old matrix indices
-    //HIP_CHECK(deviceFree(A.d_mtxIndL));
-    //dctx_->device_free(d_loc_indices);
-
 #ifndef HPGMP_NO_MPI
     dctx_->copy_device_to_host_sync(&n_halo_rows_, d_n_halo_rows, sizeof(local_int_t));
     if(geom_->rank == 0) {
@@ -309,8 +285,6 @@ void ELLMatrix<hiscalar,loscalar>::convert_from_csr(const SparseMatrix<hiscalar>
             local_nrows_, ell_width_, A.mtxIndL[0]);
     assert(n_halo_rows_ == ref_n_halos);
 
-    //HIP_CHECK(deviceMalloc((void**)&A.halo_col_ind, sizeof(local_int_t) * A.ell_width * A.halo_rows));
-    //HIP_CHECK(deviceMalloc((void**)&A.halo_val, sizeof(hiscalar) * A.ell_width * A.halo_rows));
     halo_ldv_ = ((n_halo_rows_ - 1) / pad_mult_v + 1) * pad_mult_v;
     halo_ldi_ = ((n_halo_rows_ - 1) / pad_mult_i + 1) * pad_mult_i;
 
@@ -395,6 +369,46 @@ void ELLMatrix<hiscalar,loscalar>::permute_rows(const local_int_t *const perm)
 
     dctx_->device_free(tmp_cols);
     dctx_->device_free(tmp_vals);
+}
+
+template <unsigned int BLOCKSIZE, typename mscalar, typename diag_scalar>
+__launch_bounds__(BLOCKSIZE)
+__global__ void kernel_extract_diag_index(const local_int_t m,
+                                          const local_int_t ell_width,
+                                          const int ldi, const int ldv,
+                                          const local_int_t* __restrict__ ell_col_ind,
+                                          const mscalar* __restrict__ ell_val,
+                                          local_int_t* __restrict__ diag_idx,
+                                          diag_scalar* __restrict__ inv_diag)
+{
+    const local_int_t row = blockIdx.x * BLOCKSIZE + threadIdx.x;
+    if(row >= m) {
+        return;
+    }
+
+    for(local_int_t p = 0; p < ell_width; ++p)
+    {
+        const local_int_t col = ell_col_ind[p*ldi + row];
+        if(col == row) {
+            diag_idx[row] = p;
+            inv_diag[row] = 1.0 / static_cast<diag_scalar>(ell_val[p*ldv + row]);
+            break;
+        }
+    }
+}
+
+template <typename hiscalar, typename loscalar>
+void ELLMatrix<hiscalar,loscalar>::extract_diagonal()
+{
+    // Allocate memory to extract diagonal entries
+    diag_idxs_ = static_cast<local_int_t*>(
+            dctx_->device_alloc(sizeof(local_int_t) * local_nrows_));
+    inv_diag_ = static_cast<hiscalar*>(dctx_->device_alloc(sizeof(double) * local_nrows_));
+
+    // Extract diagonal entries
+    kernel_extract_diag_index<1024><<<(local_nrows_ - 1) / 1024 + 1, 1024>>>(
+        local_nrows_, ell_width_, ldi_, ldv_,
+        col_idxs_, values_, diag_idxs_, inv_diag_);
 }
 
 template class ELLMatrix<double, double>;
