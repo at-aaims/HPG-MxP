@@ -33,10 +33,12 @@ class MGData {
 public:
   typedef Vector<SC> Vector_type;
 
-  MGData(DeviceCtx *const dctx, local_int_t *f2c_operator, Vector<SC> *rvec, Vector<SC> *xvec,
+  MGData(DeviceCtx *const dctx, local_int_t *f2c_operator, local_int_t* d_f2c_operator,
+         local_int_t* d_c2f_operator,
+         Vector<SC> *rvec, Vector<SC> *xvec,
          Vector<SC>* axfvec)
   {
-      initialize(dctx, f2c_operator, rvec, xvec, axfvec);
+      initialize(dctx, f2c_operator, d_f2c_operator, d_c2f_operator, rvec, xvec, axfvec);
   }
 
   /** @brief Move-initializer for MG-related vectors.
@@ -44,11 +46,15 @@ public:
    * This class takes ownership of these Vectors and buffer,
    * and deallocates them when it's destroyed.
    */
-  void initialize(DeviceCtx *const dctx, local_int_t *f2c_operator, Vector<SC> *rvec, Vector<SC> *xvec,
+  void initialize(DeviceCtx *const dctx, local_int_t *f2c_operator,
+                  local_int_t *d_f2c_operator, local_int_t *d_c2f_operator,
+                  Vector<SC> *rvec, Vector<SC> *xvec,
                   Vector<SC>* axfvec)
   {
       dctx_ = dctx;
       f2cOperator = f2c_operator;
+      d_f2cOperator = d_f2c_operator;
+      d_c2fOperator = d_c2f_operator;
       rc = rvec;
       xc = xvec;
       Axf = axfvec;
@@ -57,6 +63,8 @@ public:
   ~MGData()
   {
       delete [] f2cOperator;
+      dctx_->device_free(d_f2cOperator);
+      dctx_->device_free(d_c2fOperator);
       delete Axf;
       delete rc;
       delete xc;
@@ -64,10 +72,12 @@ public:
       dctx_->device_free(buffer_P);
   }
 
-  DeviceCtx *dctx_;
+  DeviceCtx *dctx_ = nullptr;
   int numberOfPresmootherSteps = 1; // Call ComputeSYMGS this many times prior to coarsening
   int numberOfPostsmootherSteps = 1; // Call ComputeSYMGS this many times after coarsening
   local_int_t * f2cOperator = nullptr; //!< 1D array containing the fine operator local IDs that will be injected into coarse space.
+  local_int_t * d_f2cOperator = nullptr;
+  local_int_t * d_c2fOperator = nullptr;
   Vector_type * rc = nullptr; // coarse grid residual vector
   Vector_type * xc = nullptr; // coarse grid solution vector
   Vector_type * Axf = nullptr; // fine grid residual vector
@@ -76,8 +86,8 @@ public:
    used inside optimized ComputeSPMV().
    */
   void * optimizationData = nullptr;
-  size_t buffer_size_R;
-  size_t buffer_size_P;
+  size_t buffer_size_R{};
+  size_t buffer_size_P{};
   void* buffer_R = nullptr;
   void* buffer_P = nullptr;
   #if defined(HPGMP_WITH_CUDA) | defined(HPGMP_WITH_HIP)

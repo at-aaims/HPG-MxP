@@ -20,17 +20,16 @@
  HPGMP routine
  */
 
-//#include "ComputeMG_ref.hpp"
 #include "ComputeMG.hpp"
 
 #include <cassert>
 
 #include "ComputeSYMGS.hpp"
-//#include "ComputeGS_Forward.hpp"
 #include "ell_multicolor_gs.hpp"
 #include "ComputeSPMV.hpp"
 #include "ComputeRestriction_ref.hpp"
-#include "ComputeProlongation_ref.hpp"
+#include "restriction.hpp"
+#include "prolongation.hpp"
 #include "mytimer.hpp"
 
 /*!
@@ -45,9 +44,6 @@
 template<class SparseMatrix_type, class Vector_type>
 int ComputeMG(const SparseMatrix_type & A, const Vector_type & r, Vector_type & x, bool symmetric) {
 
-  // This line and the next two lines should be removed and your version of ComputeSYMGS should be used.
-  //A.isMgOptimized = false;
-  //return ComputeMG_ref(A, r, x, symmetric);
   using scalar_type = typename SparseMatrix_type::scalar_type;
 
   // Optimized versions of calls
@@ -77,17 +73,19 @@ int ComputeMG(const SparseMatrix_type & A, const Vector_type & r, Vector_type & 
         return ierr;
 
     // Compute residual vector
-    TICK();
-    double time1 = x.time1, time2 = x.time2;
-    ierr = ComputeSPMV(A, x, *A.mgData->Axf);
-    if (ierr!=0)
-        return ierr;
-    x.time1 = time1; x.time2 = time2;
-    TOCK(x.time1);
+    //TICK();
+    //double time1 = x.time1, time2 = x.time2;
+    //ierr = ComputeSPMV(A, x, *A.mgData->Axf);
+    //if (ierr!=0)
+    //    return ierr;
+    //x.time1 = time1; x.time2 = time2;
+    //TOCK(x.time1);
 
     // Restriction operation
     TICK();
-    ierr = ComputeRestriction_ref(A, r);
+    //ierr = ComputeRestriction_ref(A, r);
+    //ierr = restriction(A, r);
+    ierr = fused_spmv_restriction(A, r, x);
     if (ierr!=0)
         return ierr;
     TOCK(x.time3);
@@ -103,7 +101,7 @@ int ComputeMG(const SparseMatrix_type & A, const Vector_type & r, Vector_type & 
 
     // Prolongation operation
     TICK();
-    ierr = ComputeProlongation_ref(A, x);
+    ierr = prolongation(A, x);
     if (ierr!=0)
         return ierr;
     TOCK(x.time4);

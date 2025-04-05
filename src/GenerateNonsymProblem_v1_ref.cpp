@@ -91,14 +91,14 @@ void GenerateNonsymProblem_v1_ref(DeviceCtx *const dctx, SparseMatrix_type & A, 
   matrix_scalar_type ** matrixDiagonal = new matrix_scalar_type*[localNumberOfRows];
 
   vector_scalar_type * bv = 0;
-  vector_scalar_type * xv = 0;
+  //vector_scalar_type * xv = 0;
   vector_scalar_type * xexactv = 0;
   if (init_vect) {
     b->initialize(localNumberOfRows, A.comm, dctx);
     x->initialize(localNumberOfRows, A.comm, dctx);
     xexact->initialize(localNumberOfRows, A.comm, dctx);
     bv = b->values(); // Only compute exact solution if requested
-    xv = x->values(); // Only compute exact solution if requested
+    //xv = x->values(); // Only compute exact solution if requested
     xexactv = xexact->values(); // Only compute exact solution if requested
   }
   A.localToGlobalMap.resize(localNumberOfRows);
@@ -214,7 +214,7 @@ void GenerateNonsymProblem_v1_ref(DeviceCtx *const dctx, SparseMatrix_type & A, 
         localNumberOfNonzeros += numberOfNonzerosInRow; // Protect this with an atomic
         if (init_vect) {
           bv[currentLocalRow] = bi; //26.0 - ((double) (numberOfNonzerosInRow-1));
-          xv[currentLocalRow] = 0.0;
+          //xv[currentLocalRow] = 0.0;
           xexactv[currentLocalRow] = 1.0;
         }
 

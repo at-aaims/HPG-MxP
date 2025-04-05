@@ -61,6 +61,9 @@ template <typename mat_scalar, typename solver_scalar, typename vec_scalar>
 int OptimizeProblemELL(SparseMatrix<mat_scalar>& A, GMRESData<solver_scalar>& data,
                        Vector<vec_scalar>& b, Vector<vec_scalar>& x, Vector<vec_scalar>& xexact)
 {
+    b.update_device_data();
+    xexact.update_device_data();
+
     auto dctx = A.dctx;
     const int local_nrows = A.localNumberOfRows;
 
@@ -178,6 +181,7 @@ int OptimizeProblemELL(SparseMatrix<mat_scalar>& A, GMRESData<solver_scalar>& da
 
         dctx->device_free(M->d_mtxIndL);
         dctx->device_free(M->d_matrixValues);
+
         // Go to next level in hierarchy
         M = M->Ac;
         igrid++;

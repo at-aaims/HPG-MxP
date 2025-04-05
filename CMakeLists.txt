@@ -81,7 +81,7 @@ endif()
 set(device_sources
     src/Vector.dev.cpp src/ExchangeHalo_gpu.cpp src/ComputeWAXPBY_opt.dev.cpp
     src/ell_matrix.cpp src/multicoloring.dev.cpp src/permute.dev.cpp
-    src/ell_multicolor_gs.cpp
+    src/ell_multicolor_gs.cpp src/restriction.cpp src/prolongation.cpp
 )
 
 # Flag source files as device source files
