@@ -20,6 +20,6 @@
 #include "Vector.hpp"
 
 template<class SparseMatrix_type, class Vector_type>
-int ComputeMG(const SparseMatrix_type & A, const Vector_type & r, Vector_type & x, bool symmetric=true);
+int ComputeMG(const SparseMatrix_type & A, const Vector_type & r, Vector_type & x, bool symmetric=false);
 
 #endif // COMPUTEMG_HPP

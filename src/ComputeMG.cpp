@@ -26,8 +26,6 @@
 
 #include "ComputeSYMGS.hpp"
 #include "ell_multicolor_gs.hpp"
-#include "ComputeSPMV.hpp"
-#include "ComputeRestriction_ref.hpp"
 #include "restriction.hpp"
 #include "prolongation.hpp"
 #include "mytimer.hpp"
@@ -51,8 +49,14 @@ int ComputeMG(const SparseMatrix_type & A, const Vector_type & r, Vector_type & 
   double t0 = 0.0;
   x.fill_zero();
 
+  //const int rank = A.geom->rank;
+  //auto comm = r.get_comm();
+
   std::shared_ptr<const ELLMatrix<scalar_type>> mat =
       dynamic_cast<EllOptData<scalar_type>*>(A.optimizationData)->mat;
+  //if(rank == 0) {
+  //    printf("  MG: Got ELL struct\n"); fflush(stdout);
+  //}
 
   int ierr = 0;
   if (A.mgData!=0) { // Go to next coarse level if defined

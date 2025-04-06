@@ -133,7 +133,7 @@ add_library(hpgmp
     src/GenerateNonsymCoarseProblem.cpp
     src/ComputeOptimalShapeXYZ.cpp src/MixedBaseCounter.cpp
     src/CheckAspectRatio.cpp src/OutputFile.cpp src/matrix_base.cpp
-    src/optimize_ell.cpp)
+    src/optimize_problem_ell_rb.cpp src/optimize_problem_ref.cpp)
 
 if(HPGMP_BUILD_REFERENCE)
     message(WARNING "Building reference mode without optimizations.")

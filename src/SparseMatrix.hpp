@@ -104,44 +104,44 @@ public:
   #elif defined(HPGMP_WITH_HIP)
   rocsparse_spmat_descr descrA;
   #endif
-  size_t buffer_size_A;
-  void* buffer_A;
+  size_t buffer_size_A{};
+  void* buffer_A = nullptr;
 
   // to store the local matrix on device
-  int *d_row_ptr;
-  int *d_col_idx;
-  SC  *d_nzvals;   //!< values of matrix entries
+  int *d_row_ptr = nullptr;
+  int *d_col_idx = nullptr;
+  SC  *d_nzvals = nullptr;   //!< values of matrix entries
 
   // to store the lower-triangular matrix on device
-  local_int_t nnzL;
+  local_int_t nnzL{};
   #if defined(HPGMP_WITH_CUDA)
   cusparseMatDescr_t descrL;
   #if (CUDA_VERSION >= 11000)
-  void* buffer_L;
+  void* buffer_L = nullptr;
   csrsv2Info_t infoL;
   #else
   cusparseSolveAnalysisInfo_t infoL;
   #endif
   #elif defined(HPGMP_WITH_HIP)
   rocsparse_spmat_descr descrL;
-  size_t buffer_size_L;
-  void* buffer_L;
+  size_t buffer_size_L{};
+  void* buffer_L = nullptr;
   #endif
-  int *d_Lrow_ptr;
-  int *d_Lcol_idx;
-  SC  *d_Lnzvals;   //!< values of matrix entries
+  int *d_Lrow_ptr = nullptr;
+  int *d_Lcol_idx = nullptr;
+  SC  *d_Lnzvals = nullptr;   //!< values of matrix entries
   // to store the strictly upper-triangular matrix on device
-  local_int_t nnzU;
+  local_int_t nnzU{};
   #if defined(HPGMP_WITH_CUDA)
   cusparseMatDescr_t descrU;
   #elif defined(HPGMP_WITH_HIP)
   rocsparse_spmat_descr descrU;
   #endif
-  size_t buffer_size_U;
-  void* buffer_U;
-  int *d_Urow_ptr;
-  int *d_Ucol_idx;
-  SC  *d_Unzvals;   //!< values of matrix entries
+  size_t buffer_size_U{};
+  void* buffer_U = nullptr;
+  int *d_Urow_ptr = nullptr;
+  int *d_Ucol_idx = nullptr;
+  SC  *d_Unzvals = nullptr;   //!< values of matrix entries
 
   // workspace vector for reference (vendor library) GS
   mutable Vector<SC> workx; // nrow
@@ -165,7 +165,7 @@ public:
   local_int_t* offsets = nullptr;   //!< Pointer to the first row of each independent set
   local_int_t* perm = nullptr;      //!< Permutation obtained by independent set coloring
 
-  double time1, time2;
+  double time1{}, time2{};
 };
 
 /*!

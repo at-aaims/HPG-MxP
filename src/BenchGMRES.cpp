@@ -37,16 +37,16 @@ using std::endl;
 #include "GMRES.hpp"
 #include "GMRES_IR.hpp"
 
-#include "ComputeSPMV_ref.hpp"
-#include "ComputeMG_ref.hpp"
+#include "ComputeSPMV.hpp"
+#include "ComputeMG.hpp"
 
 #include "BenchGMRES.hpp"
 #include "mytimer.hpp"
 #include "ReportResults.hpp"
 
-/// Record execution time of reference SpMV and MG kernels for reporting times
+/// Record execution time of SpMV and MG kernels for reporting times
 template<class TestGMRESDataType, class SparseMatrixType, class VectorType>
-void test_mg_spmv_ref(MPI_Comm comm, DeviceCtx *dctx, const Geometry *const geom,
+void test_mg_spmv(MPI_Comm comm, DeviceCtx *dctx, const Geometry *const geom,
                       const SparseMatrixType& A, TestGMRESDataType& test_data);
 
 /*!
@@ -89,6 +89,11 @@ int BenchGMRES(int argc, char **argv, comm_type comm, DeviceCtx *const dctx, int
   GMRESData_type2 data_lo;
 
   Vector_type b, x;
+//#ifdef HPGMP_VERBOSE
+//  if(geom->rank == 0) {
+//      std::cout << "BenchGMRES: Seting up problem..." << std::endl;
+//  }
+//#endif
   SetupProblem("bench_",argc, argv, comm, dctx, numberOfMgLevels, verbose, geom, A, data, A_lo, data_lo, b, x, test_data);
 #ifdef HPGMP_VERBOSE
   MPI_Barrier(comm);
@@ -99,7 +104,7 @@ int BenchGMRES(int argc, char **argv, comm_type comm, DeviceCtx *const dctx, int
 #endif
 
   // Record execution time of reference SpMV and MG kernels for reporting times
-  test_mg_spmv_ref<TestGMRESDataType, SparseMatrix_type, Vector_type>(comm, dctx, geom, A, test_data);
+  test_mg_spmv<TestGMRESDataType, SparseMatrix_type, Vector_type>(comm, dctx, geom, A, test_data);
 
   // =====================================================================
   // Benchmark parameters
@@ -134,7 +139,8 @@ int BenchGMRES(int argc, char **argv, comm_type comm, DeviceCtx *const dctx, int
   {
     //warmup
     x.fill_zero();
-    GMRES_IR(A, A_lo, data, data_lo, b, x, restart_length, maxIters, tolerance, niters, normr, normr0, precond, verbose, test_data);
+    GMRES_IR(A, A_lo, data, data_lo, b, x, restart_length, maxIters, tolerance, niters,
+             normr, normr0, precond, verbose, test_data);
 #ifdef HPGMP_VERBOSE
     MPI_Barrier(comm);
     if(geom->rank == 0) {
@@ -155,12 +161,13 @@ int BenchGMRES(int argc, char **argv, comm_type comm, DeviceCtx *const dctx, int
         test_data.times_comp[i] = 0.0;
         test_data.times_comm[i] = 0.0;
     }
-    for (int i=0; i< numberOfGmresCalls; ++i) {
+    for (int i=0; i < numberOfGmresCalls; ++i) {
       x.fill_zero();
 
       const double time_tic = mytimer();
       const int ierr = GMRES_IR(A, A_lo, data, data_lo, b, x,
-                          restart_length, maxIters, tolerance, niters, normr, normr0, precond, verbose, test_data);
+                                restart_length, maxIters, tolerance, niters, normr, normr0,
+                                precond, verbose, test_data);
       const double time_toc = (mytimer() - time_tic);
       time_solve_total += time_toc;
 
@@ -310,13 +317,14 @@ int BenchGMRES(int argc, char **argv, comm_type comm, DeviceCtx *const dctx, int
   // cleanup
   DeleteMatrix(A);  
   DeleteMatrix(A_lo);
-  delete geom;
 
   if (verbose && A.geom->rank==0) {
     const auto total_benchmark_time = (mytimer() - benchmark_begin_time);
     HPGMP_fout << " Total benchmark time : " << total_benchmark_time << " seconds." << endl;
     std::cout << " Total benchmark time : " << total_benchmark_time << " seconds." << endl;
   }
+
+  delete geom;
   return 0;
 }
 
@@ -342,7 +350,8 @@ int BenchGMRES< TestGMRESData<double>, double, float, float >
 
 
 template<class TestGMRESDataType, class SparseMatrixType, class VectorType>
-void test_mg_spmv_ref(MPI_Comm comm, DeviceCtx *const dctx, const Geometry *const geom, const SparseMatrixType& A, TestGMRESDataType& test_data)
+void test_mg_spmv(MPI_Comm comm, DeviceCtx *const dctx, const Geometry *const geom,
+                  const SparseMatrixType& A, TestGMRESDataType& test_data)
 {
     const local_int_t nrow = A.localNumberOfRows;
     const local_int_t ncol = A.localNumberOfColumns;
@@ -357,9 +366,20 @@ void test_mg_spmv_ref(MPI_Comm comm, DeviceCtx *const dctx, const Geometry *cons
     const int numberOfCalls = 10;
     const double t_begin = mytimer();
     for (int i=0; i< numberOfCalls; ++i) {
-      ierr = ComputeSPMV_ref(A, x_overlap, b_computed); // b_computed = A*x_overlap
+      ierr = ComputeSPMV(A, x_overlap, b_computed); // b_computed = A*x_overlap
+#ifdef HPGMP_VERBOSE
+      MPI_Barrier(comm);
+      if(geom->rank == 0) {
+          std::cout << "  test_mg_spmv: Completed SpMV." << std::endl;
+      }
+      hipError_t err = hipGetLastError();
+      if (err != hipSuccess) {
+          printf("Error after ComputeSPMV: %s\n", hipGetErrorString(err));
+          return;  // Handle error
+      }
+#endif
       if (ierr) HPGMP_fout << "Error in call to SpMV: " << ierr << ".\n" << endl;
-      ierr = ComputeMG_ref(A, b_computed, x_overlap); // b_computed = Minv*y_overlap
+      ierr = ComputeMG(A, b_computed, x_overlap); // b_computed = Minv*y_overlap
       if (ierr) HPGMP_fout << "Error in call to MG: " << ierr << ".\n" << endl;
     }
 #ifdef HPGMP_VERBOSE

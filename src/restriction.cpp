@@ -218,7 +218,7 @@ int fused_spmv_restriction(const SparseMatrix<mscalar>& A, const Vector<vscalar>
                                                threads,
                                                0,
                                                stream_interior>>>(
-            ell->get_num_halo_rows(), A.localNumberOfColumns,
+            ell->get_num_halo_rows(), ell->get_local_num_cols(),
             A.mgData->d_c2fOperator,
             ell->get_ell_width(), ell->get_halo_ld_indices(), ell->get_halo_ld_values(),
             ell->get_halo_row_indices(), ell->get_halo_col_idxs(),

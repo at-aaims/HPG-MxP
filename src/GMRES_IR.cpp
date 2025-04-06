@@ -405,7 +405,8 @@ int GMRES_IR(const SparseMatrix_type & A, const SparseMatrix_type2 & A_lo,
     ComputeTRSM(k-1, one_pr, H, t);
     if (doPreconditioning) {
       #ifdef HPGMRES_IR_UPDATE_X_IN_HIGH
-      ComputeGEMV (nrow, k-1, one, Q, t, zero_hi, r_hi, A.isGemvOptimized); flops += (itwo*Nrow*(k-ione)); // r = Q*t
+      ComputeGEMV (nrow, k-1, one, Q, t, zero_hi, r_hi, A.isGemvOptimized);
+      flops += (itwo*Nrow*(k-ione)); // r = Q*t
 
       z.time1 = z.time2 = z.time3 = z.time4 = 0.0;
       TICK();
@@ -415,7 +416,8 @@ int GMRES_IR(const SparseMatrix_type & A, const SparseMatrix_type2 & A_lo,
       t7 += z.time1; t8 += z.time2; t9 += z.time3; t10 += z.time4;
 
       // (mixed-precision) x += z
-      TICK(); ComputeWAXPBY_opt(nrow, one_hi, x_hi, one_hi, z_hi, x_hi, A.isWaxpbyOptimized); flops += (itwo*Nrow); TOCK(t11);
+      TICK(); ComputeWAXPBY_opt(nrow, one_hi, x_hi, one_hi, z_hi, x_hi, A.isWaxpbyOptimized);
+      flops += (itwo*Nrow); TOCK(t11);
       #else
       ComputeGEMV (nrow, k-1, one, Q, t, zero, r, A.isGemvOptimized); flops += (itwo*Nrow*(k-ione)); // r = Q*t
 
@@ -427,11 +429,13 @@ int GMRES_IR(const SparseMatrix_type & A, const SparseMatrix_type2 & A_lo,
       t7 += z.time1; t8 += z.time2; t9 += z.time3; t10 += z.time4;
 
       // mixed-precision
-      TICK(); ComputeWAXPBY_opt(nrow, one_hi, x_hi, one, z, x_hi, A.isWaxpbyOptimized); flops += (itwo*Nrow); TOCK(t11); // x += z
+      TICK(); ComputeWAXPBY_opt(nrow, one_hi, x_hi, one, z, x_hi, A.isWaxpbyOptimized);
+      flops += (itwo*Nrow); TOCK(t11); // x += z
       #endif
     } else {
       // mixed-precision
-      ComputeGEMV (nrow, k-1, one_hi, Q, t, one_hi, x_hi, A.isGemvOptimized); flops += (itwo*Nrow*(k-ione)); // x += Q*t
+      ComputeGEMV (nrow, k-1, one_hi, Q, t, one_hi, x_hi, A.isGemvOptimized);
+      flops += (itwo*Nrow*(k-ione)); // x += Q*t
     }
   } // end of outer-loop
 

@@ -39,7 +39,7 @@ Vector<scalar>::Vector(local_int_t localLength, comm_type comm, DeviceCtx *const
 {
     initialize(localLength, comm, dev_ctx);
 }
-  
+ 
 template <typename scalar>
 void Vector<scalar>::initialize(local_int_t localLength, comm_type comm, DeviceCtx *dev_ctx)
 {

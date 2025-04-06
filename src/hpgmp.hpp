@@ -15,9 +15,10 @@
 //@HEADER
 
 /*!
- @file hpgmp.hpp
-
- HPGMP data structures and functions
+ * @file hpgmp.hpp
+ * @copyright Modifications (c) 2025 Oak Ridge National Laboratory.
+ *
+ * HPGMP parameters and helper functions.
  */
 
 #ifndef HPGMP_HPP
@@ -66,6 +67,30 @@ struct HPGMP_Params_STRUCT {
   local_int_t zl; //!< nz for processors in the z dimension with value less than pz
   local_int_t zu; //!< nz for processors in the z dimension with value greater than pz
 };
+
+/// Type of sparse matrix format to use for benchmark
+enum class sp_matrix_format_t {
+    mcsr,
+    ell
+};
+
+/// Type of matrix ordering to use.
+enum class ordering_t {
+    lex,
+    indep_set
+};
+
+/// Format types
+enum class prec_format_t {
+    fp64, fp32, fp16
+};
+
+/// Algorithm and data structure options
+struct hpgmp_options {
+    sp_matrix_format_t sp_mat_format;
+    ordering_t gs_ordering;
+};
+
 /*!
   HPGMP_Params is a shorthand for HPGMP_Params_STRUCT
  */

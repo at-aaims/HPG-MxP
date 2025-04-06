@@ -187,18 +187,18 @@ int ValidGMRES(const int argc, char **argv, comm_type comm, DeviceCtx *const dct
   // cleanup
   DeleteMatrix(A);
   DeleteMatrix(A_lo);
-  delete geom;
-
-  if (verbose && A.geom->rank==0) {
-    total_validation_time = (mytimer() - total_validation_time);
-    HPGMP_fout << " Total validation time : " << total_validation_time << " seconds." << std::endl;
-  }
 #ifdef HPGMP_VERBOSE
   MPI_Barrier(comm);
   if(A.geom->rank == 0) {
       std::cout << "ValidGMRES: Completed optimized GMRES-IR." << std::endl;
   }
 #endif
+  if (verbose && A.geom->rank==0) {
+    total_validation_time = (mytimer() - total_validation_time);
+    HPGMP_fout << " Total validation time : " << total_validation_time << " seconds." << std::endl;
+  }
+
+  delete geom;
   return fail;
 }
 

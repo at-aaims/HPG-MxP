@@ -67,14 +67,14 @@ void DeleteMatrix(SparseMatrix_type & A)
   cudaFree (A.d_Ucol_idx);
   cudaFree (A.d_Unzvals);
 
-  cusparseDestroyMatDescr(A.descrA);
-  cusparseDestroyMatDescr(A.descrL);
-  cusparseDestroyMatDescr(A.descrU);
-  #if (CUDA_VERSION >= 11000)
-  cusparseDestroyCsrsv2Info(A.infoL);
-  #else
-  cusparseDestroySolveAnalysisInfo(A.infoL);
-  #endif
+  //cusparseDestroyMatDescr(A.descrA);
+  //cusparseDestroyMatDescr(A.descrL);
+  //cusparseDestroyMatDescr(A.descrU);
+  //#if (CUDA_VERSION >= 11000)
+  //cusparseDestroyCsrsv2Info(A.infoL);
+  //#else
+  //cusparseDestroySolveAnalysisInfo(A.infoL);
+  //#endif
 #elif defined(HPGMP_WITH_HIP)
   hipFree (A.d_row_ptr);
   hipFree (A.d_col_idx);
@@ -90,9 +90,9 @@ void DeleteMatrix(SparseMatrix_type & A)
   hipFree (A.d_Ucol_idx);
   hipFree (A.d_Unzvals);
 
-  rocsparse_destroy_spmat_descr(A.descrA);
-  rocsparse_destroy_spmat_descr(A.descrL);
-  rocsparse_destroy_spmat_descr(A.descrU);
+  //rocsparse_destroy_spmat_descr(A.descrA);
+  //rocsparse_destroy_spmat_descr(A.descrL);
+  //rocsparse_destroy_spmat_descr(A.descrU);
 #endif
 
   A.dctx->device_free(A.perm);

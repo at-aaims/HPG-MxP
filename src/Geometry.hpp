@@ -53,7 +53,6 @@ struct Geometry_STRUCT {
   global_int_t gix0;  //!< Base global x index for this rank in the npx by npy by npz processor grid
   global_int_t giy0;  //!< Base global y index for this rank in the npx by npy by npz processor grid
   global_int_t giz0;  //!< Base global z index for this rank in the npx by npy by npz processor grid
-
 };
 typedef struct Geometry_STRUCT Geometry;
 
