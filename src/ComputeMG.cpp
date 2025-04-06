@@ -31,17 +31,18 @@
 #include "mytimer.hpp"
 
 /*!
-  @param[in] A the known system matrix
-  @param[in] r the input vector
-  @param[inout] x On exit contains the result of the multigrid V-cycle with r as the RHS, x is the approximation to Ax = r.
-
-  @return returns 0 upon success and non-zero otherwise
-
-  @see ComputeMG_ref
-*/
+ * @param[in] A the known system matrix
+ * @param[in] r the input vector
+ * @param[inout] x On exit contains the result of the multigrid V-cycle with r as the RHS,
+ *                 x is the approximation to Ax = r.
+ *
+ * @return returns 0 upon success and non-zero otherwise
+ *
+ * @see ComputeMG_ref
+ */
 template<class SparseMatrix_type, class Vector_type>
-int ComputeMG(const SparseMatrix_type & A, const Vector_type & r, Vector_type & x, bool symmetric) {
-
+int ComputeMG(const SparseMatrix_type & A, const Vector_type & r, Vector_type & x, const bool symmetric)
+{
   using scalar_type = typename SparseMatrix_type::scalar_type;
 
   // Optimized versions of calls
@@ -50,13 +51,9 @@ int ComputeMG(const SparseMatrix_type & A, const Vector_type & r, Vector_type & 
   x.fill_zero();
 
   //const int rank = A.geom->rank;
-  //auto comm = r.get_comm();
 
   std::shared_ptr<const ELLMatrix<scalar_type>> mat =
       dynamic_cast<EllOptData<scalar_type>*>(A.optimizationData)->mat;
-  //if(rank == 0) {
-  //    printf("  MG: Got ELL struct\n"); fflush(stdout);
-  //}
 
   int ierr = 0;
   if (A.mgData!=0) { // Go to next coarse level if defined

@@ -37,6 +37,8 @@ void DeleteMatrix(SparseMatrix_type & A)
     A.geom = 0;
   }*/
   if (A.Ac!=0) {
+    // Delete coarse geometry
+    delete A.Ac->geom;
     // Delete coarse matrix
     DeleteMatrix(*A.Ac);
     delete A.Ac; 

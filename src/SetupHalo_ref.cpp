@@ -157,9 +157,11 @@ void SetupHalo_ref(SparseMatrix_type & A) {
     for (int j=0; j<nonzerosInRow[i]; j++) {
       const global_int_t curIndex = mtxIndG[i][j];
       const int rankIdOfColumnEntry = ComputeRankOfMatrixRow(*(A.geom), curIndex);
-      if (A.geom->rank==rankIdOfColumnEntry) { // My column index, so convert to local index
+      if(A.geom->rank == rankIdOfColumnEntry) {
+        // My column index, so convert to local index
         mtxIndL[i][j] = A.globalToLocalMap[curIndex];
-      } else { // If column index is not a row index, then it comes from another processor
+      } else {
+        // If column index is not a row index, then it comes from another processor
         mtxIndL[i][j] = externalToLocalMap[curIndex];
       }
     }

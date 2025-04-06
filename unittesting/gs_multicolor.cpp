@@ -49,7 +49,6 @@ local_int_t simulate_halos(SparseMatrix<scalar_type>& A)
     const int max_nnz_per_row = 27;
     const local_int_t nrows = A.localNumberOfRows;
     A.numberOfSendNeighbors = 1;
-    A.totalToBeSent = 8;
     auto oldmtxIndL = A.mtxIndL[0];
     auto nnz_row = A.nonzerosInRow;
     auto nonzerosInRow = A.nonzerosInRow;
@@ -86,6 +85,10 @@ local_int_t simulate_halos(SparseMatrix<scalar_type>& A)
     }
     const local_int_t num_external_nz = ihalo - nrows;
     A.numberOfExternalValues = A.totalToBeSent = num_external_nz;
+    if(A.elementsToSend) {
+        delete [] A.elementsToSend;
+    }
+    A.elementsToSend = new local_int_t[A.totalToBeSent];
     const int num_external_dofs = 2*(ln[0]*ln[1] + ln[1]*ln[2] + ln[2]*ln[0]) + 8*4;
     A.localNumberOfColumns = nrows + num_external_dofs;
     printf("simulate_halos: Added %d halo DOFs and %d halo dependencies.\n", num_external_dofs,

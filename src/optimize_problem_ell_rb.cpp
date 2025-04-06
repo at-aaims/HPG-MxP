@@ -216,82 +216,25 @@ void seemingly_necessary_stuff_from_reference(SparseMatrix<SC>* M)
       const global_int_t totalToBeSent = curLevelMatrix->totalToBeSent;
 
       // copy CSR(A) to device
-#if defined(HPGMP_WITH_CUDA)
-      if (cudaSuccess != cudaMalloc ((void**)&(curLevelMatrix->d_row_ptr), (nrow+1)*sizeof(int))) {
-        printf( " Failed to allocate A.d_row_ptr(nrow=%d)\n",nrow );
-      }
-      if (cudaSuccess != cudaMalloc ((void**)&(curLevelMatrix->d_col_idx), nnz*sizeof(int))) {
-        printf( " Failed to allocate A.d_col_idx(nnz=%lld)\n",nnz );
-      }
-      if (cudaSuccess != cudaMalloc ((void**)&(curLevelMatrix->d_nzvals),  nnz*sizeof(SC))) {
-        printf( " Failed to allocate A.d_nzvals(nnz=%lld)\n",nnz );
-      }
+      curLevelMatrix->d_row_ptr = static_cast<int*>(dctx->device_alloc((nrow+1)*sizeof(int)));
+      curLevelMatrix->d_col_idx = static_cast<int*>(dctx->device_alloc(nnz*sizeof(int)));
+      curLevelMatrix->d_nzvals = static_cast<SC*>(dctx->device_alloc(nnz*sizeof(SC)));
   #ifndef HPGMP_NO_MPI
-      if (cudaSuccess != cudaMalloc ((void**)&(curLevelMatrix->d_sendBuffer), totalToBeSent*sizeof(SC))) {
-        printf( " Failed to allocate A.d_sendBuffer(totalToBeSent=%lld)\n",totalToBeSent );
-      }
-      if (cudaSuccess != cudaMalloc ((void**)&(curLevelMatrix->d_elementsToSend), totalToBeSent*sizeof(local_int_t))) {
-        printf( " Failed to allocate A.d_elementsToSend(totalToBeSent=%lld)\n",totalToBeSent );
-      }
+      curLevelMatrix->d_sendBuffer = static_cast<SC*>(dctx->device_alloc(nnz*sizeof(SC)));
+      curLevelMatrix->d_elementsToSend = static_cast<local_int_t*>(
+                                    dctx->device_alloc(totalToBeSent*sizeof(local_int_t)));
   #endif
-
-
-      if (cudaSuccess != cudaMemcpy(curLevelMatrix->d_row_ptr, h_row_ptr, (nrow+1)*sizeof(int), cudaMemcpyHostToDevice)) {
-        printf( " Failed to memcpy A.d_row_ptr\n" );
-      }
-      if (cudaSuccess != cudaMemcpy(curLevelMatrix->d_col_idx, h_col_ind, nnz*sizeof(int), cudaMemcpyHostToDevice)) {
-        printf( " Failed to memcpy A.d_col_idx\n" );
-      }
-      if (cudaSuccess != cudaMemcpy(curLevelMatrix->d_nzvals,  h_nzvals,  nnz*sizeof(SC),  cudaMemcpyHostToDevice)) {
-        printf( " Failed to memcpy A.d_nzvals\n" );
-      }
+      dctx->copy_host_to_device_sync(curLevelMatrix->d_row_ptr, h_row_ptr, (nrow+1)*sizeof(int));
+      dctx->copy_host_to_device_sync(curLevelMatrix->d_col_idx, h_col_ind, nnz*sizeof(int));
+      dctx->copy_host_to_device_sync(curLevelMatrix->d_nzvals, h_nzvals, nnz*sizeof(SC));
   #ifndef HPGMP_NO_MPI
-      if (cudaSuccess != cudaMemcpy(curLevelMatrix->d_elementsToSend, curLevelMatrix->elementsToSend, totalToBeSent*sizeof(local_int_t), cudaMemcpyHostToDevice)) {
-        printf( " Failed to memcpy A.d_elementsToSend\n" );
-      }
+      dctx->copy_host_to_device_sync(curLevelMatrix->d_elementsToSend,
+              curLevelMatrix->elementsToSend, totalToBeSent*sizeof(local_int_t));
   #endif
       // free matrix on host
       free(h_row_ptr);
       free(h_col_ind);
       free(h_nzvals);
-#elif defined(HPGMP_WITH_HIP)
-      if (hipSuccess != hipMalloc ((void**)&(curLevelMatrix->d_row_ptr), (nrow+1)*sizeof(int))) {
-        printf( " Failed to allocate A.d_row_ptr(nrow=%d)\n",nrow );
-      }
-      if (hipSuccess != hipMalloc ((void**)&(curLevelMatrix->d_col_idx), nnz*sizeof(int))) {
-        printf( " Failed to allocate A.d_col_idx(nnz=%lld)\n",nnz );
-      }
-      if (hipSuccess != hipMalloc ((void**)&(curLevelMatrix->d_nzvals),  nnz*sizeof(SC))) {
-        printf( " Failed to allocate A.d_nzvals(nnz=%lld)\n",nnz );
-      }
-  #ifndef HPGMP_NO_MPI
-      if (hipSuccess != hipMalloc ((void**)&(curLevelMatrix->d_sendBuffer),  nnz*sizeof(SC))) {
-        printf( " Failed to allocate A.d_sendBuffer(totalToBeSent=%lld)\n",totalToBeSent );
-      }
-      if (hipSuccess != hipMalloc ((void**)&(curLevelMatrix->d_elementsToSend), totalToBeSent*sizeof(local_int_t))) {
-        printf( " Failed to allocate A.d_elementsToSend(totalToBeSent=%lld)\n",totalToBeSent );
-      }
-  #endif
-
-      if (hipSuccess != hipMemcpy(curLevelMatrix->d_row_ptr, h_row_ptr, (nrow+1)*sizeof(int), hipMemcpyHostToDevice)) {
-        printf( " Failed to memcpy A.d_row_ptr\n" );
-      }
-      if (hipSuccess != hipMemcpy(curLevelMatrix->d_col_idx, h_col_ind, nnz*sizeof(int), hipMemcpyHostToDevice)) {
-        printf( " Failed to memcpy A.d_col_idx\n" );
-      }
-      if (hipSuccess != hipMemcpy(curLevelMatrix->d_nzvals,  h_nzvals,  nnz*sizeof(SC), hipMemcpyHostToDevice)) {
-        printf( " Failed to memcpy A.d_nzvals\n" );
-      }
-  #ifndef HPGMP_NO_MPI
-      if (hipSuccess != hipMemcpy(curLevelMatrix->d_elementsToSend, curLevelMatrix->elementsToSend, totalToBeSent*sizeof(local_int_t), hipMemcpyHostToDevice)) {
-        printf( " Failed to memcpy A.d_elementsToSend\n" );
-      }
-  #endif
-      // free matrix on host
-      free(h_row_ptr);
-      free(h_col_ind);
-      free(h_nzvals);
-#endif
 
       // Extract lower/upper-triangular matrix
       global_int_t nnzU = nnz-nnzL;
@@ -328,90 +271,20 @@ void seemingly_necessary_stuff_from_reference(SparseMatrix<SC>* M)
       curLevelMatrix->nnzU = nnzU;
 
       // copy CSR(L) to device
-  #if defined(HPGMP_WITH_CUDA)
-      if (cudaSuccess != cudaMalloc ((void**)&(curLevelMatrix->d_Lrow_ptr), (nrow+1)*sizeof(int))) {
-        printf( " Failed to allocate A.d_Lrow_ptr\n" );
-      }
-      if (cudaSuccess != cudaMalloc ((void**)&(curLevelMatrix->d_Lcol_idx), nnzL*sizeof(int))) {
-        printf( " Failed to allocate A.d_Lcol_idx\n" );
-      }
-      if (cudaSuccess != cudaMalloc ((void**)&(curLevelMatrix->d_Lnzvals),  nnzL*sizeof(SC))) {
-        printf( " Failed to allocate A.d_Lrow_ptr\n" );
-      }
-
-      if (cudaSuccess != cudaMemcpy(curLevelMatrix->d_Lrow_ptr, h_Lrow_ptr, (nrow+1)*sizeof(int), cudaMemcpyHostToDevice)) {
-        printf( " Failed to memcpy A.d_Lrow_ptr\n" );
-      }
-      if (cudaSuccess != cudaMemcpy(curLevelMatrix->d_Lcol_idx, h_Lcol_ind, nnzL*sizeof(int), cudaMemcpyHostToDevice)) {
-        printf( " Failed to memcpy A.d_Lcol_idx\n" );
-      }
-      if (cudaSuccess != cudaMemcpy(curLevelMatrix->d_Lnzvals,  h_Lnzvals,  nnzL*sizeof(SC),  cudaMemcpyHostToDevice)) {
-        printf( " Failed to memcpy A.d_Lrow_ptr\n" );
-      }
-  #elif defined(HPGMP_WITH_HIP)
-      if (hipSuccess != hipMalloc ((void**)&(curLevelMatrix->d_Lrow_ptr), (nrow+1)*sizeof(int))) {
-        printf( " Failed to allocate A.d_Lrow_ptr\n" );
-      }
-      if (hipSuccess != hipMalloc ((void**)&(curLevelMatrix->d_Lcol_idx), nnzL*sizeof(int))) {
-        printf( " Failed to allocate A.d_Lcol_idx\n" );
-      }
-      if (hipSuccess != hipMalloc ((void**)&(curLevelMatrix->d_Lnzvals),  nnzL*sizeof(SC))) {
-        printf( " Failed to allocate A.d_Lrow_ptr\n" );
-      }
-
-      if (hipSuccess != hipMemcpy(curLevelMatrix->d_Lrow_ptr, h_Lrow_ptr, (nrow+1)*sizeof(int), hipMemcpyHostToDevice)) {
-        printf( " Failed to memcpy A.d_Lrow_ptr\n" );
-      }
-      if (hipSuccess != hipMemcpy(curLevelMatrix->d_Lcol_idx, h_Lcol_ind, nnzL*sizeof(int), hipMemcpyHostToDevice)) {
-        printf( " Failed to memcpy A.d_Lcol_idx\n" );
-      }
-      if (hipSuccess != hipMemcpy(curLevelMatrix->d_Lnzvals,  h_Lnzvals,  nnzL*sizeof(SC),  hipMemcpyHostToDevice)) {
-        printf( " Failed to memcpy A.d_Lrow_ptr\n" );
-      }
-  #endif
+      curLevelMatrix->d_Lrow_ptr = static_cast<int*>(dctx->device_alloc((nrow+1)*sizeof(int)));
+      curLevelMatrix->d_Lcol_idx = static_cast<int*>(dctx->device_alloc(nnzL*sizeof(int)));
+      curLevelMatrix->d_Lnzvals = static_cast<SC*>(dctx->device_alloc(nnzL*sizeof(SC)));
+      dctx->copy_host_to_device_sync(curLevelMatrix->d_Lrow_ptr, h_Lrow_ptr, (nrow+1)*sizeof(int));
+      dctx->copy_host_to_device_sync(curLevelMatrix->d_Lcol_idx, h_Lcol_ind, nnzL*sizeof(int));
+      dctx->copy_host_to_device_sync(curLevelMatrix->d_Lnzvals, h_Lnzvals, nnzL*sizeof(SC));
 
       // copy CSR(U) to device
-  #if defined(HPGMP_WITH_CUDA)
-      if (cudaSuccess != cudaMalloc ((void**)&(curLevelMatrix->d_Urow_ptr), (nrow+1)*sizeof(int))) {
-        printf( " Failed to allocate A.d_Urow_ptr(nrow=%d)\n",nrow );
-      }
-      if (cudaSuccess != cudaMalloc ((void**)&(curLevelMatrix->d_Ucol_idx), nnzU*sizeof(int))) {
-        printf( " Failed to allocate A.d_Ucol_idx(nnzU=%d)\n",nnzU );
-      }
-      if (cudaSuccess != cudaMalloc ((void**)&(curLevelMatrix->d_Unzvals),  nnzU*sizeof(SC))) {
-        printf( " Failed to allocate A.d_Urow_ptr(nnzU=%d)\n",nnzU );
-      }
-
-      if (cudaSuccess != cudaMemcpy(curLevelMatrix->d_Urow_ptr, h_Urow_ptr, (nrow+1)*sizeof(int), cudaMemcpyHostToDevice)) {
-        printf( " Failed to memcpy A.d_Urow_ptr\n" );
-      }
-      if (cudaSuccess != cudaMemcpy(curLevelMatrix->d_Ucol_idx, h_Ucol_ind, nnzU*sizeof(int), cudaMemcpyHostToDevice)) {
-        printf( " Failed to memcpy A.d_Ucol_idx\n" );
-      }
-      if (cudaSuccess != cudaMemcpy(curLevelMatrix->d_Unzvals,  h_Unzvals,  nnzU*sizeof(SC),  cudaMemcpyHostToDevice)) {
-        printf( " Failed to memcpy A.d_Urow_ptr\n" );
-      }
-  #elif defined(HPGMP_WITH_HIP)
-      if (hipSuccess != hipMalloc ((void**)&(curLevelMatrix->d_Urow_ptr), (nrow+1)*sizeof(int))) {
-        printf( " Failed to allocate A.d_Urow_ptr(nrow=%d)\n",nrow );
-      }
-      if (hipSuccess != hipMalloc ((void**)&(curLevelMatrix->d_Ucol_idx), nnzU*sizeof(int))) {
-        printf( " Failed to allocate A.d_Ucol_idx(nnzU=%lld)\n",nnzU );
-      }
-      if (hipSuccess != hipMalloc ((void**)&(curLevelMatrix->d_Unzvals),  nnzU*sizeof(SC))) {
-        printf( " Failed to allocate A.d_Urow_ptr(nnzU=%lld)\n",nnzU );
-      }
-
-      if (hipSuccess != hipMemcpy(curLevelMatrix->d_Urow_ptr, h_Urow_ptr, (nrow+1)*sizeof(int), hipMemcpyHostToDevice)) {
-        printf( " Failed to memcpy A.d_Urow_ptr\n" );
-      }
-      if (hipSuccess != hipMemcpy(curLevelMatrix->d_Ucol_idx, h_Ucol_ind, nnzU*sizeof(int), hipMemcpyHostToDevice)) {
-        printf( " Failed to memcpy A.d_Ucol_idx\n" );
-      }
-      if (hipSuccess != hipMemcpy(curLevelMatrix->d_Unzvals,  h_Unzvals,  nnzU*sizeof(SC),  hipMemcpyHostToDevice)) {
-        printf( " Failed to memcpy A.d_Urow_ptr\n" );
-      }
-  #endif
+      curLevelMatrix->d_Urow_ptr = static_cast<int*>(dctx->device_alloc((nrow+1)*sizeof(int)));
+      curLevelMatrix->d_Ucol_idx = static_cast<int*>(dctx->device_alloc(nnzU*sizeof(int)));
+      curLevelMatrix->d_Unzvals = static_cast<SC*>(dctx->device_alloc(nnzU*sizeof(SC)));
+      dctx->copy_host_to_device_sync(curLevelMatrix->d_Urow_ptr, h_Urow_ptr, (nrow+1)*sizeof(int));
+      dctx->copy_host_to_device_sync(curLevelMatrix->d_Ucol_idx, h_Ucol_ind, nnzU*sizeof(int));
+      dctx->copy_host_to_device_sync(curLevelMatrix->d_Unzvals,  h_Unzvals, nnzU*sizeof(SC));
 
       // free matrix on host
       free(h_Lrow_ptr);

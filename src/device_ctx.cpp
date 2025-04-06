@@ -43,8 +43,13 @@
 #define HPGMP_THROW_ON_ERROR(_expr, _msg) static_assert(true, "dummy assert for semicolon")
 #endif
 
+bool DeviceCtx::is_instantiated = false;
+
 DeviceCtx::DeviceCtx(const int process_rank) : rank_{process_rank}
 {
+    if(is_instantiated) {
+        throw std::runtime_error("Should not instantiate more than 1 device context!");
+    }
 #if defined(HPGMP_WITH_CUDA)
     if(cudaSuccess != cudaStreamCreate(&halo_stream_)) {
         throw HandleNotCreatedError("halo stream");
@@ -76,6 +81,7 @@ DeviceCtx::DeviceCtx(const int process_rank) : rank_{process_rank}
         std::cout << "Created device context." << std::endl;
     }
     workspace_ = device_alloc(1024*sizeof(local_int_t));
+    is_instantiated = true;
 }
  
 DeviceCtx::~DeviceCtx()

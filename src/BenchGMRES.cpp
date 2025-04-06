@@ -368,14 +368,9 @@ void test_mg_spmv(MPI_Comm comm, DeviceCtx *const dctx, const Geometry *const ge
     for (int i=0; i< numberOfCalls; ++i) {
       ierr = ComputeSPMV(A, x_overlap, b_computed); // b_computed = A*x_overlap
 #ifdef HPGMP_VERBOSE
-      MPI_Barrier(comm);
+      //MPI_Barrier(comm);
       if(geom->rank == 0) {
           std::cout << "  test_mg_spmv: Completed SpMV." << std::endl;
-      }
-      hipError_t err = hipGetLastError();
-      if (err != hipSuccess) {
-          printf("Error after ComputeSPMV: %s\n", hipGetErrorString(err));
-          return;  // Handle error
       }
 #endif
       if (ierr) HPGMP_fout << "Error in call to SpMV: " << ierr << ".\n" << endl;
@@ -383,7 +378,7 @@ void test_mg_spmv(MPI_Comm comm, DeviceCtx *const dctx, const Geometry *const ge
       if (ierr) HPGMP_fout << "Error in call to MG: " << ierr << ".\n" << endl;
     }
 #ifdef HPGMP_VERBOSE
-    MPI_Barrier(comm);
+    //MPI_Barrier(comm);
     if(geom->rank == 0) {
         std::cout << "test_mg_spmv: Completed SpMV and MG refs." << std::endl;
     }

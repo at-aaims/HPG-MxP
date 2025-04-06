@@ -75,9 +75,9 @@ int ComputeDotProduct_ref(const local_int_t n, const Vector_type & x, const Vect
   const input_scalar_type* d_x = x.d_values();
   const input_scalar_type* d_y = y.d_values();
 
-  #ifdef HPGMP_DEBUG
+#ifdef HPGMP_DEBUG
   output_scalar_type local_tmp = local_result;
-  #endif
+#endif
   
   auto handle = x.get_blas_handle();
 
@@ -129,7 +129,7 @@ int ComputeDotProduct_ref(const local_int_t n, const Vector_type & x, const Vect
   }
   time_allreduce += mytimer() - t0;
 
-  #if defined(HPGMP_WITH_CUDA) & defined(HPGMP_DEBUG)
+  #if defined(HPGMP_DEBUG) && defined(HPGMP_WITH_CUDA)
   output_scalar_type global_tmp (0.0);
   MPI_Allreduce(&local_tmp, &global_tmp, 1, MPI_SCALAR_TYPE, MPI_SUM, x.comm);
   int rank = 0;

@@ -413,12 +413,12 @@ int ell_multicolor_gs_zero_initial(const ELLMatrix<mscalar> *const A,
     // Solve U
     //for(local_int_t i = A.ublocks; i >= 0; --i)
     //{
-    //    kernel_backward_sweep_0<1024><<<(A.sizes[i] - 1) / 1024 + 1,
+    //    kernel_backward_sweep_0<1024><<<(A->get_independent_set_sizes()[i] - 1) / 1024 + 1,
     //                                    1024,
     //                                    0,
     //                                    stream_interior>>>(
     //        A.get_local_num_rows(),
-    //        A.get_independent_set_sizes()[i], A.get_independent_set_offsets()[i],
+    //        A.get_independent_set_sizes()[i], A->get_independent_set_offsets()[i],
     //        A.get_ell_width(),
     //        A->get_ld_indices(), A->get_ld_values(),
     //        A.ell_col_ind, A.ell_val,

@@ -26,6 +26,8 @@ struct stream_t {};
 /**
  * A context class to manage the accelerator device context independent of type.
  *
+ * Only one object of this type is allowed per process per thread.
+ *
  * WARNING: The functionality in this class is not thread-safe.
  * It is assumed that an object is created, used and destroyed only by one, fixed thread.
  */
@@ -86,6 +88,8 @@ private:
     dev_spblas_ctx sparse_handle_;
     const int rank_;
     void *workspace_ = nullptr;
+    /// Keep track of whether an object has already been created.
+    static bool is_instantiated;
 };
 
 /// Padding multiple for GPU allocation of multi-vectors.
