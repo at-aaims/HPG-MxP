@@ -18,6 +18,7 @@
 #include "Vector.hpp"
 
 #include <cassert>
+#include <string>
 
 #ifdef HPGMP_WITH_HIP
 #include <rocrand/rocrand.hpp>
@@ -382,11 +383,14 @@ void Vector<scalar>::update_halos_finalize(const DistMatrixBase *const mat) cons
 
     TICK_S(halo_stream, t0_);
 
-    if(MPI_SUCCESS != MPI_Waitall(num_neighbors, recv_reqs_.data(), MPI_STATUSES_IGNORE)) {
-        throw MPICommError(" Vector: update_halo: receives failed!");
+    //std::vector<MPI_Status> send_statuses(num_neighbors), recv_statuses(num_neighbors);
+    int ierr = MPI_Waitall(num_neighbors, recv_reqs_.data(), MPI_STATUSES_IGNORE);
+    if(ierr != MPI_SUCCESS) {
+        throw MPICommError(" Vector: update_halo: receives failed! error = " + std::to_string(ierr));
     }
-    if(MPI_SUCCESS != MPI_Waitall(num_neighbors, send_reqs_.data(), MPI_STATUSES_IGNORE)) {
-        throw MPICommError(" Vector: update_halo: sends failed!");
+    ierr = MPI_Waitall(num_neighbors, send_reqs_.data(), MPI_STATUSES_IGNORE);
+    if(ierr != MPI_SUCCESS) {
+        throw MPICommError(" Vector: update_halo: sends failed! error = " + std::to_string(ierr));
     }
     
     // sync halo stream and record time taken for comms in time2.
