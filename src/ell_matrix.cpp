@@ -426,15 +426,19 @@ __global__ void simple_ell_spmv(const local_int_t nrows, const int ldv, const in
     }
     vscalar partial = 0;
     for(int j = 0; j < width; j++) {
-        const auto col = col_idxs[row_idx + j*ldi];
+        //const auto col = col_idxs[row_idx + j*ldi];
+        const local_int_t col = __builtin_nontemporal_load(col_idxs + row_idx + j*ldi);
         if(col < 0 || col >= nrows) {
             // skip over halo dependencies; these are taken care of in the halo kernel.
             continue;
         }
-        partial += static_cast<vscalar>(mvalues[row_idx + j*ldv])
-            * static_cast<vscalar>(xvals[col]);
+        //partial += static_cast<vscalar>(mvalues[row_idx + j*ldv])
+        //    * static_cast<vscalar>(xvals[col]);
+        partial = fma(static_cast<vscalar>(__builtin_nontemporal_load(mvalues + row_idx + j*ldv)),
+                      xvals[col], partial);
     }
-    yvals[row_idx] = partial;
+    //yvals[row_idx] = partial;
+    __builtin_nontemporal_store(partial, yvals + row_idx);
 }
 
 template <typename mscalar, typename vscalar>
