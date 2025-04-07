@@ -54,6 +54,7 @@ void DeleteMatrix(SparseMatrix_type & A)
   //DeleteVector (A.workx);
   //DeleteVector (A.y);
 
+#ifdef HPGMP_REFERENCE
 #ifdef HPGMP_WITH_CUDA
   cudaFree (A.d_row_ptr);
   cudaFree (A.d_col_idx);
@@ -96,11 +97,12 @@ void DeleteMatrix(SparseMatrix_type & A)
   //rocsparse_destroy_spmat_descr(A.descrL);
   //rocsparse_destroy_spmat_descr(A.descrU);
 #endif
+#else // HPGMP_REFERENCE
 
   A.dctx->device_free(A.perm);
   delete [] A.sizes;
   delete [] A.offsets;
-  return;
+#endif // HPGMP_REFERENCE
 }
 
 template void DeleteMatrix(SparseMatrix<double>&);

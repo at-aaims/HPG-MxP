@@ -22,8 +22,11 @@ template<class SparseMatrix_type, class GMRESData_type, class Vector_type>
 int OptimizeProblem(SparseMatrix_type & A, GMRESData_type & data, Vector_type & b, Vector_type & x,
                     Vector_type & xexact)
 {
-    //OptimizeProblem_ref(A, data, b, x, xexact);
+#ifdef HPGMP_REFERENCE
+    OptimizeProblem_ref(A, data, b, x, xexact);
+#else
     OptimizeProblemELL(A, data, b, x, xexact);
+#endif
     return 0;
 }
 

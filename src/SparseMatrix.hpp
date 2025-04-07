@@ -20,8 +20,8 @@
  HPGMP data structures for the sparse matrix
  */
 
-#ifndef SPARSEMATRIX_HPP
-#define SPARSEMATRIX_HPP
+#ifndef HPGMP_SPARSEMATRIX_HPP
+#define HPGMP_SPARSEMATRIX_HPP
 
 #include <vector>
 #include <cassert>
@@ -98,6 +98,8 @@ public:
   SC * d_sendBuffer = nullptr; //!< send buffer for non-blocking sends (on GPU)
   #endif
 #endif
+
+#ifdef HPGMP_REFERENCE
 #if defined(HPGMP_WITH_CUDA) | defined(HPGMP_WITH_HIP)
   #if defined(HPGMP_WITH_CUDA)
   cusparseMatDescr_t descrA;
@@ -145,10 +147,9 @@ public:
 
   // workspace vector for reference (vendor library) GS
   mutable Vector<SC> workx; // nrow
+  #endif
 
-  // TODO: remove
-  //Vector<SC> y; // ncol
-#endif
+#else // HPGMP_REFERENCE
   
   const int max_nnz_per_row = 27;
 
@@ -164,6 +165,7 @@ public:
   local_int_t* sizes = nullptr;     //!< Number of rows of each independent set
   local_int_t* offsets = nullptr;   //!< Pointer to the first row of each independent set
   local_int_t* perm = nullptr;      //!< Permutation obtained by independent set coloring
+#endif
 
   double time1{}, time2{};
 };

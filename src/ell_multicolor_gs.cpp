@@ -311,32 +311,9 @@ __global__ void kernel_backward_sweep_0(const local_int_t m,
     __builtin_nontemporal_store(sum, x + row);
 }
 
-/*!
- * @brief Routine to compute one step of forward Gauss-Seidel.
- *
- * Assumption about the structure of matrix A:
- * - Each row 'i' of the matrix has nonzero diagonal value whose address is matrixDiagonal[i]
- * - Entries in row 'i' are ordered such that:
- *      - lower triangular terms are stored before the diagonal element.
- *      - upper triangular terms are stored after the diagonal element.
- *      - No other assumptions are made about entry ordering.
- *
- * Symmetric Gauss-Seidel notes:
- * - We use the input vector x as the RHS and start with an initial guess for y of all zeros.
- * - We perform one forward sweep.  Since y is initially zero we can ignore the upper triangular terms of A.
- * - We then perform one back sweep.
- *      - For simplicity we include the diagonal contribution in the for-j loop, then correct the sum after
- *
- * @param[in] A the known system matrix
- * @param[in] r the input vector
- * @param[inout] x On entry, x should contain relevant values, on exit x contains
- *                 the result of one GS sweep with r as the RHS.
- *
- * @return returns 0 upon success and non-zero otherwise
- */
 template <typename mscalar, typename vscalar>
-int ell_multicolor_gs(const ELLMatrix<mscalar> *const A, const Vector<vscalar> *const r,
-                      Vector<vscalar> *const x)
+int ell_multicolor_gs(const bool symmetric, const ELLMatrix<mscalar> *const A,
+                      const Vector<vscalar> *const r, Vector<vscalar> *const x)
 {
     assert(x->local_length() == A->get_local_num_cols());
     auto dctx = A->get_device_context();
@@ -372,18 +349,21 @@ int ell_multicolor_gs(const ELLMatrix<mscalar> *const A, const Vector<vscalar> *
         }
     }
 
-    // Solve U
-    //for(i = A.ublocks; i >= 0; --i)
-    //{
-    //    if(A->get_ell_width() == 27) LAUNCH_SYMGS_SWEEP(1024, 27);
-    //}
+    if(symmetric) {
+        throw std::runtime_error("symmetric not yet tested!");
+        // Solve U
+        //for(i = A.ublocks; i >= 0; --i)
+        //{
+        //    if(A->get_ell_width() == 27) LAUNCH_SYMGS_SWEEP(1024, 27);
+        //}
+    }
 
     return 0;
 }
 
 template <typename mscalar, typename vscalar>
-int ell_multicolor_gs_zero_initial(const ELLMatrix<mscalar> *const A,
-        const Vector<vscalar> *const r, Vector<vscalar> *const x)
+int ell_multicolor_gs_zero_initial(const bool symmetric, const ELLMatrix<mscalar> *const A,
+                                   const Vector<vscalar> *const r, Vector<vscalar> *const x)
 {
     assert(x->local_length() == A->get_local_num_cols());
     auto dctx = A->get_device_context();
@@ -410,35 +390,38 @@ int ell_multicolor_gs_zero_initial(const ELLMatrix<mscalar> *const A,
             A->get_diagonal_indices(), r->d_values(), x->d_values());
     }
 
-    // Solve U
-    //for(local_int_t i = A.ublocks; i >= 0; --i)
-    //{
-    //    kernel_backward_sweep_0<1024><<<(A->get_independent_set_sizes()[i] - 1) / 1024 + 1,
-    //                                    1024,
-    //                                    0,
-    //                                    stream_interior>>>(
-    //        A.get_local_num_rows(),
-    //        A.get_independent_set_sizes()[i], A->get_independent_set_offsets()[i],
-    //        A.get_ell_width(),
-    //        A->get_ld_indices(), A->get_ld_values(),
-    //        A.ell_col_ind, A.ell_val,
-    //        A.diag_idx, x.d_values);
-    //}
+    if(symmetric) {
+        throw std::runtime_error("symmetric not yet tested!");
+        // Solve U
+        //for(local_int_t i = A.ublocks; i >= 0; --i)
+        //{
+        //    kernel_backward_sweep_0<1024><<<(A->get_independent_set_sizes()[i] - 1) / 1024 + 1,
+        //                                    1024,
+        //                                    0,
+        //                                    stream_interior>>>(
+        //        A.get_local_num_rows(),
+        //        A.get_independent_set_sizes()[i], A->get_independent_set_offsets()[i],
+        //        A.get_ell_width(),
+        //        A->get_ld_indices(), A->get_ld_values(),
+        //        A.ell_col_ind, A.ell_val,
+        //        A.diag_idx, x.d_values);
+        //}
+    }
 
     return 0;
 }
 
 template
-int ell_multicolor_gs(const ELLMatrix<double> *const A, const Vector<double> *const r,
+int ell_multicolor_gs(bool sym, const ELLMatrix<double> *const A, const Vector<double> *const r,
                      Vector<double> *const x);
 template
-int ell_multicolor_gs(const ELLMatrix<float> *const A, const Vector<float> *const r,
+int ell_multicolor_gs(bool sym, const ELLMatrix<float> *const A, const Vector<float> *const r,
                      Vector<float> *const x);
 
 template
-int ell_multicolor_gs_zero_initial(const ELLMatrix<double> *const A,
+int ell_multicolor_gs_zero_initial(bool sym, const ELLMatrix<double> *const A,
         const Vector<double> *const r, Vector<double> *const x);
 template
-int ell_multicolor_gs_zero_initial(const ELLMatrix<float> *const A,
+int ell_multicolor_gs_zero_initial(bool sym, const ELLMatrix<float> *const A,
         const Vector<float> *const r, Vector<float> *const x);
 

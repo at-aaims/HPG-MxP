@@ -46,8 +46,8 @@
 */
 template<class SparseMatrix_type, class GMRESData_type, class Vector_type>
 int OptimizeProblem_ref(SparseMatrix_type & A, GMRESData_type & data, Vector_type & b,
-                        Vector_type & x, Vector_type & xexact) {
-
+                        Vector_type & x, Vector_type & xexact)
+{
   // This function can be used to completely transform any part of the data structures.
   // Right now it does nothing, so compiling with a check for unused variables results in complaints
 
@@ -751,9 +751,7 @@ int OptimizeProblem_ref(SparseMatrix_type & A, GMRESData_type & data, Vector_typ
 // Helper function (see OptimizeProblem.hpp for details)
 template<class SparseMatrix_type>
 double OptimizeProblemMemoryUse(const SparseMatrix_type & A) {
-
   return 0.0;
-
 }
 
 

@@ -21,8 +21,11 @@
  */
 
 #include "ComputeSPMV.hpp"
+#ifdef HPGMP_REFERENCE
 #include "ComputeSPMV_ref.hpp"
+#else // HPGMP_REFERENCE
 #include "ell_matrix.hpp"
+#endif // HPGMP_REFERENCE
 
 /*!
   Routine to compute sparse matrix vector product y = Ax where:
@@ -41,12 +44,15 @@
   @see ComputeSPMV_ref
 */
 template<class SparseMatrix_type, class Vector_type>
-int ComputeSPMV(const SparseMatrix_type & A, Vector_type & x, Vector_type & y) {
-
+int ComputeSPMV(const SparseMatrix_type & A, Vector_type & x, Vector_type & y)
+{
+#ifdef HPGMP_REFERENCE
   // This line and the next two lines should be removed and your version of ComputeSPMV should be used.
-  //A.isSpmvOptimized = false;
-  //return ComputeSPMV_ref(A, x, y);
+  A.isSpmvOptimized = false;
+  return ComputeSPMV_ref(A, x, y);
+#else
   return ComputeSPMV_ell(A, x, y);
+#endif
 }
 
 

@@ -188,7 +188,7 @@ int main(int argc, char * argv[])
 
     std::shared_ptr<const ELLMatrix<scalar_type>> mat =
         dynamic_cast<EllOptData<scalar_type>*>(A.optimizationData)->mat;
-    ierr = ell_multicolor_gs(mat.get(), &b, &xl);
+    ierr = ell_multicolor_gs(false, mat.get(), &b, &xl);
 
     assert(ierr == 0);
 

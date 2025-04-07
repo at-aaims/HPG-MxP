@@ -69,7 +69,7 @@ int OptimizeProblemELL(SparseMatrix<mat_scalar>& A, GMRESData<solver_scalar>& da
     auto dctx = A.dctx;
     const int local_nrows = A.localNumberOfRows;
 
-    seemingly_necessary_stuff_from_reference(&A);
+    //seemingly_necessary_stuff_from_reference(&A);
 
     SparseMatrix<mat_scalar>* M = &A;
     int igrid = 0;
@@ -311,4 +311,15 @@ void seemingly_necessary_stuff_from_reference(SparseMatrix<SC>* M)
       curLevelMatrix = curLevelMatrix->Ac;
     } while (curLevelMatrix != nullptr);
 }
+
+// Helper function (see OptimizeProblem.hpp for details)
+template<class SparseMatrix_type>
+double OptimizeProblemMemoryUse(const SparseMatrix_type & A) {
+  return 0.0;
+}
+
+template
+double OptimizeProblemMemoryUse(const SparseMatrix<double>&);
+template
+double OptimizeProblemMemoryUse(const SparseMatrix<float>&);
 

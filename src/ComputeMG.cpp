@@ -24,7 +24,6 @@
 
 #include <cassert>
 
-#include "ComputeSYMGS.hpp"
 #include "ell_multicolor_gs.hpp"
 #include "restriction.hpp"
 #include "prolongation.hpp"
@@ -46,7 +45,6 @@ int ComputeMG(const SparseMatrix_type & A, const Vector_type & r, Vector_type & 
   using scalar_type = typename SparseMatrix_type::scalar_type;
 
   // Optimized versions of calls
-  // initialize x to zero
   double t0 = 0.0;
   x.fill_zero();
 
@@ -56,19 +54,16 @@ int ComputeMG(const SparseMatrix_type & A, const Vector_type & r, Vector_type & 
       dynamic_cast<EllOptData<scalar_type>*>(A.optimizationData)->mat;
 
   int ierr = 0;
-  if (A.mgData!=0) { // Go to next coarse level if defined
+  if (A.mgData!=0)
+  {
+    // Go to next coarse level if defined
     const int numberOfPresmootherSteps = A.mgData->numberOfPresmootherSteps;
-    if (symmetric) {
-      for (int i=0; i< numberOfPresmootherSteps; ++i)
-          ierr += ComputeSYMGS(A, r, x);
-    } else {
-      for (int i=0; i< numberOfPresmootherSteps; ++i)
-          //ierr += ComputeGS_Forward(A, r, x);
-          if(i = 0) {
-              ierr += ell_multicolor_gs_zero_initial(mat.get(), &r, &x);
-          } else {
-              ierr += ell_multicolor_gs(mat.get(), &r, &x);
-          }
+    for(int i=0; i < numberOfPresmootherSteps; ++i) {
+      if(i = 0) {
+        ierr += ell_multicolor_gs_zero_initial(symmetric, mat.get(), &r, &x);
+      } else {
+        ierr += ell_multicolor_gs(symmetric, mat.get(), &r, &x);
+      }
     }
     if (ierr!=0)
         return ierr;
@@ -84,11 +79,10 @@ int ComputeMG(const SparseMatrix_type & A, const Vector_type & r, Vector_type & 
 
     // Restriction operation
     TICK();
-    //ierr = ComputeRestriction_ref(A, r);
     //ierr = restriction(A, r);
     ierr = fused_spmv_restriction(A, r, x);
     if (ierr!=0)
-        return ierr;
+      return ierr;
     TOCK(x.time3);
 
     // MG on coarser-grid
@@ -96,7 +90,7 @@ int ComputeMG(const SparseMatrix_type & A, const Vector_type & r, Vector_type & 
     A.mgData->xc->time3 = A.mgData->xc->time4 = 0.0;
     ierr = ComputeMG(*A.Ac,*A.mgData->rc, *A.mgData->xc, symmetric);
     if (ierr!=0)
-        return ierr;
+      return ierr;
     x.time1 += A.mgData->xc->time1; x.time2 += A.mgData->xc->time2;
     x.time3 += A.mgData->xc->time3; x.time4 += A.mgData->xc->time4;
 
@@ -104,32 +98,22 @@ int ComputeMG(const SparseMatrix_type & A, const Vector_type & r, Vector_type & 
     TICK();
     ierr = prolongation(A, x);
     if (ierr!=0)
-        return ierr;
+      return ierr;
     TOCK(x.time4);
 
     // Post-smoothing
     const int numberOfPostsmootherSteps = A.mgData->numberOfPostsmootherSteps;
-    if (symmetric) {
-      for (int i=0; i< numberOfPostsmootherSteps; ++i)
-          ierr += ComputeSYMGS(A, r, x);
-    } else {
-      for (int i=0; i< numberOfPostsmootherSteps; ++i) {
-          //ierr += ComputeGS_Forward(A, r, x);
-          ierr += ell_multicolor_gs(mat.get(), &r, &x);
-      }
+    for (int i=0; i< numberOfPostsmootherSteps; ++i) {
+      ierr += ell_multicolor_gs(symmetric, mat.get(), &r, &x);
     }
     if (ierr!=0)
-        return ierr;
+      return ierr;
   }
   else {
     // coarsest grid
-    if (symmetric) {
-      ierr = ComputeSYMGS(A, r, x);
-    } else {
-      //ierr = ComputeGS_Forward(A, r, x);
-      ierr += ell_multicolor_gs(mat.get(), &r, &x);
-    }
-    if (ierr!=0) return ierr;
+    ierr += ell_multicolor_gs(symmetric, mat.get(), &r, &x);
+    if (ierr!=0)
+      return ierr;
   }
   return 0;
 }
