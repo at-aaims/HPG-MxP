@@ -37,6 +37,7 @@
 #ifdef HPGMP_WITH_HIP
 #include <rocprim/rocprim.hpp>
 #elif HPGMP_WITH_CUDA
+#include <thrust/device_ptr.h>
 #include <thrust/sort.h>
 #else
 #include <execution>
@@ -312,7 +313,8 @@ void ELLMatrix<hiscalar,loscalar>::convert_from_csr(const SparseMatrix<hiscalar>
     }
     dctx_->device_free(prim_buffer);
 #elif HPGMP_WITH_CUDA
-    thrust::stable_sort(halo_row_ind_, halo_row_ind_ + n_halo_rows_);
+    auto d_halo_row_ind = thrust::device_ptr<local_int_t>(halo_row_ind_);
+    thrust::stable_sort(d_halo_row_ind, d_halo_row_ind + n_halo_rows_);
 #else
     std::stable_sort(std::execution::par_unseq, halo_row_ind_, halo_row_ind_ + n_halo_rows_);
 #endif
