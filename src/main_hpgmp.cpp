@@ -79,6 +79,9 @@ int main(int argc, char * argv[]) {
 #endif
   HPGMP_Init(&argc, &argv);
 
+  double t0{};
+  TICK();
+
   int myRank = 0;
 #ifndef HPGMP_NO_MPI
   int numRanks = 1;
@@ -133,6 +136,12 @@ int main(int argc, char * argv[]) {
                 << " and projection precision " << project_precision << "." << std::endl;
   }
 
+  double t_setup{};
+  TOCK(t_setup);
+  if(myRank == 0) {
+      std::cout << "Main: setup took " << t_setup << " s." << std::endl;
+  }
+
 
 #ifdef HPGMP_DEBUG
   const bool verbose = true;
@@ -157,9 +166,15 @@ int main(int argc, char * argv[]) {
   test_data.tolerance = tolerance;
   test_data.restart_length = restart_length;
   if (myRank < sizeValidComm) {
+    TICK();
     global_failure = ValidGMRES<TestGMRESData_type, scalar_type, scalar_type2, project_type>(
                          argc, argv, validation_comm, ctx.get(), numberOfMgLevels, verbose,
                          test_data);
+    double t_valid{};
+    TOCK(t_valid);
+    if(myRank == 0) {
+      std::cout << "Main: Validation took " << t_valid << " s." << std::endl;
+    }
   }
 
 
@@ -168,9 +183,15 @@ int main(int argc, char * argv[]) {
   /////////////////////
   {
     bool runReference = true;
+    TICK();
     BenchGMRES<TestGMRESData_type, scalar_type, scalar_type2, project_type>(argc, argv,
             benchmark_comm, ctx.get(), numberOfMgLevels, verbose, runReference, global_failure,
             test_data);
+    double t_bench{};
+    TOCK(t_bench);
+    if(myRank == 0) {
+      std::cout << "Main: Benchmarking, reference run and reporting took " << t_bench << " s." << std::endl;
+    }
   }
 
  

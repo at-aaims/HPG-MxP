@@ -104,6 +104,8 @@ int BenchGMRES(int argc, char **argv, comm_type comm, DeviceCtx *const dctx, int
   // Record execution time of reference SpMV and MG kernels for reporting times
   test_mg_spmv<TestGMRESDataType, SparseMatrix_type, Vector_type>(comm, dctx, geom, A, test_data);
 
+  const double setup_done = mytimer();
+  std::cout << " BenchGMRES: setup time = " << setup_done - benchmark_begin_time << "s" << std::endl;
   // =====================================================================
   // Benchmark parameters
   int numberOfGmresCalls = 10;
@@ -246,6 +248,9 @@ int BenchGMRES(int argc, char **argv, comm_type comm, DeviceCtx *const dctx, int
     for (int i=0; i<n_timed_ops; i++) test_data.opt_times_comm[i] = test_data.times_comm[i];
   }
 
+  const double benchmark_done = mytimer();
+  std::cout << " BenchGMRES: Main benchmark time = " << benchmark_done - setup_done << "s" << std::endl;
+
   // =====================================================================
   // (Optional)
   // Run reference GMRES implementation for a fixed number of iterations
@@ -320,9 +325,21 @@ int BenchGMRES(int argc, char **argv, comm_type comm, DeviceCtx *const dctx, int
 #ifndef HPGMP_NO_MPI
   MPI_Barrier(MPI_COMM_WORLD);
 #endif
+
+  const double refrun_done = mytimer();
+  if(A.geom->rank == 0) {
+      std::cout << " BenchGMRES: Reference run time = " << refrun_done - benchmark_done << "s"
+          << std::endl;
+  }
     
   // Report results 
   ReportResults(A, numberOfMgLevels, test_data, validation_failure);
+
+  const double reporting_done = mytimer();
+  if(A.geom->rank == 0) {
+      std::cout << " BenchGMRES: Report generation time = " << reporting_done - refrun_done << "s"
+          << std::endl;
+  }
 
   // cleanup
   DeleteMatrix(A);  
