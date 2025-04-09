@@ -503,6 +503,42 @@ void Vector<scalar>::update_halos_send_receive(const DistMatrixBase *const mat) 
 #endif
 }
 
+namespace internal {
+
+void check_waitall_error(const int ierr, const std::string& type)
+{
+    char error_msg[1024];
+    int len{};
+    int jerr = MPI_Error_string(ierr, error_msg, &len);
+    if(jerr != MPI_SUCCESS) {
+        std::cout << " Vector: update_halo: All " << type << "s failed! error = " << ierr
+                  << std::endl;
+    } else {
+        std::cout << " Vector: update_halo: A " << type << " failed! error: " << error_msg
+                  << std::endl;
+    }
+}
+
+void check_waitall_statuses(const std::string&& type, const int ierr,
+                            const std::vector<MPI_Status>& statuses)
+{
+    if(ierr != MPI_SUCCESS) {
+        if(ierr == MPI_ERR_IN_STATUS) {
+            for(unsigned i = 0; i < statuses.size(); i++) {
+                check_waitall_error(statuses[i].MPI_ERROR, type);
+                std::cout << " Vector: MPI tag " << statuses[i].MPI_TAG << ", source = "
+                          << statuses[i].MPI_SOURCE << std::endl;
+            }
+        } else {
+            check_waitall_error(ierr, type);
+        }
+        std::cout << std::flush;
+        MPI_Abort(MPI_COMM_WORLD, -2025);
+    }
+}
+
+}
+
 template <typename scalar>
 void Vector<scalar>::update_halos_finalize(const DistMatrixBase *const mat) const
 {
@@ -512,19 +548,14 @@ void Vector<scalar>::update_halos_finalize(const DistMatrixBase *const mat) cons
     const local_int_t localNumberOfCols = mat->get_local_num_cols();
     const int num_neighbors = mat->get_num_neighbors();
     auto halo_stream = dctx_->get_halo_stream();
+    std::vector<MPI_Status> send_statuses(num_neighbors), recv_statuses(num_neighbors);
 
     TICK_STREAM_SYNC(halo_stream, t0_);
 
-    int ierr = MPI_Waitall(num_neighbors, recv_reqs_.data(), MPI_STATUSES_IGNORE);
-    if(ierr != MPI_SUCCESS) {
-        std::cout << " Vector: update_halo: receives failed! error = " << ierr << std::endl;
-        MPI_Abort(mat->get_comm(), -2025);
-    }
-    ierr = MPI_Waitall(num_neighbors, send_reqs_.data(), MPI_STATUSES_IGNORE);
-    if(ierr != MPI_SUCCESS) {
-        std::cout << " Vector: update_halo: sends failed!" << std::endl;
-        MPI_Abort(mat->get_comm(), -2025);
-    }
+    int ierr = MPI_Waitall(num_neighbors, recv_reqs_.data(), recv_statuses.data());
+    internal::check_waitall_statuses("recv", ierr, recv_statuses);
+    ierr = MPI_Waitall(num_neighbors, send_reqs_.data(), send_statuses.data());
+    internal::check_waitall_statuses("send", ierr, send_statuses);
     
     // sync halo stream and record time taken for comms in time2.
     TOCK_STREAM_SYNC(halo_stream, t0_, time2);

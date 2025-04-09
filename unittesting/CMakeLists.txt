@@ -14,3 +14,6 @@ add_test(NAME multicolor_reordering COMMAND multicoloring)
 add_executable(test_gs_multicolor gs_multicolor.cpp)
 target_link_libraries(test_gs_multicolor hpgmp hpgmp_device)
 add_test(NAME gs_ell_multicolor COMMAND test_gs_multicolor)
+
+add_executable(test_dot dot.cpp)
+target_link_libraries(test_dot hpgmp hpgmp_device)

@@ -277,9 +277,6 @@ void ELLMatrix<hiscalar,loscalar>::convert_from_csr(const SparseMatrix<hiscalar>
 
 #ifndef HPGMP_NO_MPI
     dctx_->copy_device_to_host_sync(&n_halo_rows_, d_n_halo_rows, sizeof(local_int_t));
-    if(geom_->rank == 0) {
-        std::printf("  ELL: num halo rows = %d\n", n_halo_rows_); std::fflush(stdout);
-    }
     assert(n_halo_rows_ <= A.totalToBeSent);
 
     const local_int_t ref_n_halos = ref_compute_num_halo_rows(

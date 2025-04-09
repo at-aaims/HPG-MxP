@@ -118,7 +118,8 @@ int GMRES(const SparseMatrix_type& A, GMRESData_type& data, const Vector_type& b
   double flops_gmg  = 0.0;
   double flops_spmv = 0.0;
   double flops_orth = 0.0;
-  const global_int_t numSpMVs_MG = 1+(A.mgData->numberOfPresmootherSteps + A.mgData->numberOfPostsmootherSteps);
+  const global_int_t numSpMVs_MG = 1 +
+      (A.mgData->numberOfPresmootherSteps + A.mgData->numberOfPostsmootherSteps);
   niters = 0;
   bool converged = false;
   double t_begin = mytimer();  // Start timing right away
@@ -127,9 +128,14 @@ int GMRES(const SparseMatrix_type& A, GMRESData_type& data, const Vector_type& b
     // In HIP/Cuda builds, this copies only device buffers.
     CopyVector(x, p);
     TICK(); ComputeSPMV(A, p, Ap); TOCK(t3); flops_spmv += (2*A.totalNumberOfNonzeros); // Ap = A*p
-    TICK(); ComputeWAXPBY(nrow, one, b, -one, Ap, r, A.isWaxpbyOptimized); TOCK(t11); flops += (itwo*Nrow); // r = b - Ax (x stored in p)
-    TICK(); ComputeDotProduct(nrow, r, r, normr, t4, A.isDotProductOptimized); flops += (itwo*Nrow); TOCK(t11);
+
+    TICK(); ComputeWAXPBY(nrow, one, b, -one, Ap, r, A.isWaxpbyOptimized); TOCK(t11);
+    flops += (itwo*Nrow); // r = b - Ax (x stored in p)
+
+    TICK(); ComputeDotProduct(nrow, r, r, normr, t4, A.isDotProductOptimized);
+    flops += (itwo*Nrow); TOCK(t11);
     normr = sqrt(normr);
+
     auto Qj = Q.get_vector(0);
     CopyVector(r, Qj);
     TICK(); Qj.scale(one/normr); TOCK(t11); flops += Nrow;
