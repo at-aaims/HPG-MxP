@@ -36,6 +36,8 @@
 
 #include "ell_matrix.hpp"
 
+#include "kernel_helpers.hpp.inc"
+
 template <unsigned int BLOCKSIZE, typename mscalar, typename vscalar>
 __launch_bounds__(BLOCKSIZE)
 __global__ void kernel_prolongation(const local_int_t size,
@@ -50,8 +52,8 @@ __global__ void kernel_prolongation(const local_int_t size,
         return;
     }
 
-    const local_int_t idx_fine = __builtin_nontemporal_load(f2cOperator + idx_coarse);
-    const local_int_t idx_perm = __builtin_nontemporal_load(perm_coarse + idx_coarse);
+    const local_int_t idx_fine = __ldcg(f2cOperator + idx_coarse);
+    const local_int_t idx_perm = __ldcg(perm_coarse + idx_coarse);
 
     fine[perm_fine[idx_fine]] += coarse[idx_perm];
 }

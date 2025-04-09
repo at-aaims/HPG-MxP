@@ -125,7 +125,8 @@ int GMRES_IR(const SparseMatrix_type & A, const SparseMatrix_type2 & A_lo,
   Vector_type & p_hi = data.p; // Direction vector (in MPI mode ncol>=nrow)
   Vector_type & Ap_hi = data.Ap;
 
-  if (!doPreconditioning && A.geom->rank==0) HPGMP_fout << "WARNING: PERFORMING UNPRECONDITIONED ITERATIONS" << std::endl;
+  if (!doPreconditioning && A.geom->rank==0)
+      HPGMP_fout << "WARNING: PERFORMING UNPRECONDITIONED ITERATIONS" << std::endl;
 
   int print_freq = 1;
   if (print_freq>50) print_freq=50;
@@ -150,7 +151,8 @@ int GMRES_IR(const SparseMatrix_type & A, const SparseMatrix_type2 & A_lo,
   double flops_gmg  = 0.0;
   double flops_spmv = 0.0;
   double flops_orth = 0.0;
-  global_int_t numSpMVs_MG = 1+(A.mgData->numberOfPresmootherSteps + A.mgData->numberOfPostsmootherSteps);
+  const global_int_t numSpMVs_MG = 1 + A.mgData->numberOfPresmootherSteps
+                                     + A.mgData->numberOfPostsmootherSteps;
   niters = 0;
   bool converged = false;
   double t_begin = mytimer();  // Start timing right away
@@ -164,8 +166,10 @@ int GMRES_IR(const SparseMatrix_type & A, const SparseMatrix_type2 & A_lo,
     TOCK(t3);
     t3_1 += p_hi.time1; t3_2 += p_hi.time2;
 
-    TICK(); ComputeWAXPBY_opt(nrow, one_hi, b_hi, -one_hi, Ap_hi, r_hi, A.isWaxpbyOptimized); flops += (itwo*Nrow);  TOCK(t11); // r = b - Ax (x stored in p)
-    TICK(); ComputeDotProduct(nrow, r_hi, r_hi, normr_hi, t4, A.isDotProductOptimized); flops += (itwo*Nrow); TOCK(t11);
+    TICK(); ComputeWAXPBY_opt(nrow, one_hi, b_hi, -one_hi, Ap_hi, r_hi, A.isWaxpbyOptimized);
+    flops += (itwo*Nrow);  TOCK(t11); // r = b - Ax (x stored in p)
+    TICK(); ComputeDotProduct(nrow, r_hi, r_hi, normr_hi, t4, A.isDotProductOptimized);
+    flops += (itwo*Nrow); TOCK(t11);
     normr_hi = sqrt(normr_hi);
     test_data.numOfSPCalls++;
     // Record initial residual for convergence testing

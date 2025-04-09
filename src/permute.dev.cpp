@@ -52,8 +52,13 @@
 template <typename scalar>
 __device__ void swap(local_int_t& key, scalar& val, int mask, int dir)
 {
-    local_int_t key1 = __shfl_xor(key, mask);
-    scalar val1 = __shfl_xor(val, mask);
+#ifdef HPGMP_WITH_HIP
+    const local_int_t key1 = __shfl_xor(key, mask);
+    const scalar val1 = __shfl_xor(val, mask);
+#elif HPGMP_WITH_CUDA
+    const local_int_t key1 = __shfl_xor_sync(0xffffffff, key, mask);
+    const scalar val1 = __shfl_xor_sync(0xffffffff, val, mask);
+#endif
 
     if(key < key1 == dir)
     {

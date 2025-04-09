@@ -33,10 +33,20 @@
 #include "ell_matrix.hpp"
 
 #include <iostream>
+
+#ifdef HPGMP_WITH_HIP
 #include <rocprim/rocprim.hpp>
+#elif HPGMP_WITH_CUDA
+#include <thrust/sort.h>
+#else
+#include <execution>
+#include <algorithm>
+#endif
 
 #include "Vector.hpp"
 #include "exceptions.hpp"
+
+#include "kernel_helpers.hpp.inc"
     
 template <typename hiscalar, typename loscalar>
 ELLMatrix<hiscalar,loscalar>::ELLMatrix(const SparseMatrix<hiscalar>& A)
@@ -50,9 +60,6 @@ ELLMatrix<hiscalar,loscalar>::ELLMatrix(const SparseMatrix<hiscalar>& A)
 #ifndef HPGMP_NO_MPI
     MPI_Comm_rank(comm_, &rank);
 #endif
-    if(rank == 0) {
-        std::cout << "ELL: Allocated everything.." << std::endl;
-    }
     convert_from_csr(A);
 }
 
@@ -260,13 +267,7 @@ void ELLMatrix<hiscalar,loscalar>::convert_from_csr(const SparseMatrix<hiscalar>
 
 #ifndef HPGMP_NO_MPI
 
-#   ifdef HPGMP_WITH_HIP
-    if(hipSuccess != hipMemset(d_n_halo_rows, 0, sizeof(local_int_t))) {
-        throw std::runtime_error("convert_from_ell: hipMemset failed!");
-    }
-#   else
-#   error "Only implemented for HIP!"
-#   endif
+    dctx_->device_memset(d_n_halo_rows, 0, sizeof(local_int_t));
 #endif
 
     if     (blocksize == 32) LAUNCH_TO_ELL_COL(27, 32)
@@ -293,25 +294,31 @@ void ELLMatrix<hiscalar,loscalar>::convert_from_csr(const SparseMatrix<hiscalar>
     halo_values_ = static_cast<hiscalar*>(
             dctx_->device_alloc(halo_ldv_*ell_width_*sizeof(hiscalar)));
 
-    size_t rocprim_size = 0;
+#ifdef HPGMP_WITH_HIP
+    size_t prim_size = 0;
     auto herr = rocprim::radix_sort_keys(nullptr,
-                                       rocprim_size,
+                                       prim_size,
                                        halo_row_ind_,
                                        halo_row_ind_,
                                        n_halo_rows_);
     if(herr != hipSuccess) {
         throw DeviceAPIError("rocprim radix_sort_keys storage estimation");
     }
-    auto rocprim_buffer = dctx_->device_alloc(rocprim_size);
-    herr = rocprim::radix_sort_keys(rocprim_buffer,
-                                       rocprim_size,
-                                       halo_row_ind_,
-                                       halo_row_ind_, // TODO inplace!
-                                       n_halo_rows_);
+    auto prim_buffer = dctx_->device_alloc(prim_size);
+    herr = rocprim::radix_sort_keys(prim_buffer,
+                                    prim_size,
+                                    halo_row_ind_,
+                                    halo_row_ind_, // TODO inplace!
+                                    n_halo_rows_);
     if(herr != hipSuccess) {
         throw DeviceAPIError("rocprim radix_sort_keys");
     }
-    dctx_->device_free(rocprim_buffer);
+    dctx_->device_free(prim_buffer);
+#elif HPGMP_WITH_CUDA
+    thrust::stable_sort(halo_row_ind_, halo_row_ind_ + n_halo_rows_);
+#else
+    std::stable_sort(std::execution::par_unseq, halo_row_ind_, halo_row_ind_ + n_halo_rows_);
+#endif
 
     kernel_to_halo<128><<<(n_halo_rows_ - 1) / 128 + 1, 128>>>(
         n_halo_rows_, local_nrows_, local_ncols_, ell_width_,
@@ -427,18 +434,18 @@ __global__ void simple_ell_spmv(const local_int_t nrows, const int ldv, const in
     vscalar partial = 0;
     for(int j = 0; j < width; j++) {
         //const auto col = col_idxs[row_idx + j*ldi];
-        const local_int_t col = __builtin_nontemporal_load(col_idxs + row_idx + j*ldi);
+        const local_int_t col = __ldcg(col_idxs + row_idx + j*ldi);
         if(col < 0 || col >= nrows) {
             // skip over halo dependencies; these are taken care of in the halo kernel.
             continue;
         }
         //partial += static_cast<vscalar>(mvalues[row_idx + j*ldv])
         //    * static_cast<vscalar>(xvals[col]);
-        partial = fma(static_cast<vscalar>(__builtin_nontemporal_load(mvalues + row_idx + j*ldv)),
+        partial = fma(static_cast<vscalar>(__ldcg(mvalues + row_idx + j*ldv)),
                       xvals[col], partial);
     }
     //yvals[row_idx] = partial;
-    __builtin_nontemporal_store(partial, yvals + row_idx);
+    __stcg(yvals + row_idx, partial);
 }
 
 template <typename mscalar, typename vscalar>
@@ -503,20 +510,18 @@ void ell_spmv(const ELLMatrix<hiscalar>* mat, const Vector<vscalar> *x, Vector<v
     
     // On halo stream: pack send buffer and copy to host if needed
     x->update_halos_pack_send_buffer(mat);
-    
-    x->update_halos_send_receive(mat);
 
     // On compute stream: launch interior computations
     ell_interior_spmv(mat, x, y);
 
-    //x->update_halos(mat);
-
     // wait for comms to complete
+    x->update_halos_send_receive(mat);
     x->update_halos_finalize(mat);
 
     ell_halo_spmv(mat, x, y);
 
     dctx->synchronize_halo_stream();
+    dctx->synchronize_compute_stream();
 }
 
 template<class SparseMatrix_type, class Vector_type>

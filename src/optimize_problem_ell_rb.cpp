@@ -156,10 +156,6 @@ int OptimizeProblemELL(SparseMatrix<mat_scalar>& A, GMRESData<solver_scalar>& da
     //    mg = M->mgData;
     //}
 #endif
-
-    if(A.geom->rank == 0) {
-        std::cout << "Finished building, reordering and preparing all ELL matrices." << std::endl;
-    }
     return 0;
 }
 

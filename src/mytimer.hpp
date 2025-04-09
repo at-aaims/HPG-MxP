@@ -35,8 +35,9 @@ void fence(stream_t stream);
 
 // Stream-specific timers
 //! record current time in _startvar after synchronizing the given stream.
-#define TICK_S(_stream, _startvar)  fence(_stream); _startvar = mytimer()
+#define TICK_STREAM_SYNC(_stream, _startvar)  fence(_stream); _startvar = mytimer()
 //! Add time difference into _endvar using time in _startvar after syncing the given stream.
-#define TOCK_S(_stream, _startvar, _endvar) fence(_stream); _endvar += mytimer() - _startvar
+#define TOCK_STREAM_SYNC(_stream, _startvar, _endvar) \
+    fence(_stream); _endvar += (mytimer() - _startvar)
 
 #endif // MYTIMER_HPP

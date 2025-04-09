@@ -19,11 +19,11 @@
 
 #include <cassert>
 #include <string>
+#include <iostream>
 
 #ifdef HPGMP_WITH_HIP
 #include <rocrand/rocrand.hpp>
 #elif defined HPGMP_WITH_CUDA
-#include <cub/cub.cuh>
 #include <curand.h>
 #endif
 
@@ -54,6 +54,7 @@ void Vector<scalar>::initialize(local_int_t localLength, comm_type comm, DeviceC
 #if defined(HPGMP_WITH_CUDA) || defined(HPGMP_WITH_HIP)
     d_values_ = (scalar*)dctx_->device_alloc(localLength*sizeof(scalar));
     values_ = (scalar*)dctx_->pinned_host_alloc(localLength*sizeof(scalar));
+    send_gather_ = dctx_->create_event();
 #else
     v.values = new scalar_type[localLength];
 #endif
@@ -79,6 +80,9 @@ void Vector<scalar>::initialize_view(local_int_t localLength, comm_type comm, De
     dctx_ = dev_ctx;
     d_values_ = d_v;
     values_ = v;
+#if defined(HPGMP_WITH_CUDA) || defined(HPGMP_WITH_HIP)
+    send_gather_ = dctx_->create_event();
+#endif
 }
 
 template <typename scalar>
@@ -241,6 +245,7 @@ Vector<scalar>::~Vector() {
 #if defined(HPGMP_WITH_CUDA) || defined(HPGMP_WITH_HIP)
         dctx_->device_free(d_values_);
         dctx_->pinned_host_free(values_);
+        dctx_->destroy_event(send_gather_);
 #else
         delete [] values_;
 #endif
@@ -268,167 +273,12 @@ __global__ void haloGather(const int totalToBeSent, const scalar *const d_x,
 
 }
 
+#ifdef HPGMP_ONLY_BLOCKING_COMMS
+
 template <typename scalar>
 void Vector<scalar>::update_halos_pack_send_buffer(const DistMatrixBase *const mat) const
 {
 #ifndef HPGMP_NO_MPI
-    const local_int_t totalToBeSent = mat->get_total_to_be_sent();
-    scalar_type * const d_xv = d_values_;
-    auto d_sendBuffer = static_cast<scalar_type*>(mat->get_device_send_buffer());
-    auto halo_stream = dctx_->get_halo_stream();
-
-    // Fill up send buffer
-    // timing
-    TICK_S(halo_stream, t0_);
-#if defined HPGMP_WITH_HIP || defined HPGMP_WITH_CUDA
-    const int num_threads = (totalToBeSent < 256 ? 512 : 256);
-    const int num_blocks = (totalToBeSent - 1)/num_threads + 1;
-    haloGather<<<num_blocks, num_threads, 0, halo_stream>>>(
-      totalToBeSent, d_xv, mat->get_elements_to_send(), mat->get_reordering_permutation(),
-      d_sendBuffer);
-#else
-#error "Halo gather not implented for host!"
-#endif
-
-#if !defined(HPGMP_USE_GPU_AWARE_MPI)
-    auto sendBuffer = static_cast<scalar*>(mat->get_host_send_buffer());
-    dctx_->copy_device_to_host_async(sendBuffer, d_sendBuffer, totalToBeSent*sizeof(scalar_type),
-                                     halo_stream);
-#endif
-    halos_buffer_packed_ = true;
-#endif // HPGMP_NO_MPI
-}
-
-template <typename scalar>
-void Vector<scalar>::update_halos_send_receive(const DistMatrixBase *const mat) const
-{
-#ifndef HPGMP_NO_MPI
-    const MPI_Datatype MPI_SCALAR_TYPE = MpiTypeTraits<scalar>::getType ();
-    const local_int_t localNumberOfRows = mat->get_local_num_rows();
-    const local_int_t totalToBeSent = mat->get_total_to_be_sent();
-    const int num_neighbors = mat->get_num_neighbors();
-    const local_int_t *const receiveLength = mat->get_receive_lengths();
-    const local_int_t *const sendLength = mat->get_send_lengths();
-    const int *const neighbors = mat->get_neighbors();
-    auto halo_stream = dctx_->get_halo_stream();
-
-    assert(localNumberOfRows + totalToBeSent <= localLength_);
-
-#if defined HPGMP_USE_GPU_AWARE_MPI
-    scalar_type * const d_xv = d_values_;
-#else
-    scalar_type * const xv = values_;
-#endif
-
-    int size, rank; // Number of MPI processes, My process ID
-    auto comm = mat->get_comm();
-    MPI_Comm_size(comm, &size);
-    MPI_Comm_rank(comm, &rank);
-    if (size == 1)
-        return;
-    
-    const int MPI_MY_TAG = 99;
-
-    // Externals are at end of locals
-
-#ifdef HPGMP_USE_GPU_AWARE_MPI
-    scalar_type * x_external = (scalar_type *) d_xv + localNumberOfRows;
-#else
-    scalar_type * x_external = (scalar_type *) xv + localNumberOfRows;
-#endif
-    
-    recv_reqs_.resize(num_neighbors);
-
-    // Post receives first
-    for (int i = 0; i < num_neighbors; i++) {
-        const local_int_t n_recv = receiveLength[i];
-        MPI_Irecv(x_external, n_recv, MPI_SCALAR_TYPE, neighbors[i], MPI_MY_TAG, comm, &recv_reqs_[i]);
-        x_external += n_recv;
-    }
-
-    auto send_buffer =    
-#ifdef HPGMP_USE_GPU_AWARE_MPI
-        static_cast<scalar_type*>(mat->get_device_send_buffer());
-#else
-        static_cast<scalar_type*>(mat->get_host_send_buffer());
-#endif
-
-    // Ensure buffers are packed
-    if(!halos_buffer_packed_) {
-        throw std::runtime_error("Attempting to send without packing the send buffer!");
-    }
-
-    send_reqs_.resize(num_neighbors);
-
-    // Wait for send-buffer packing and record the time in time1.
-    TOCK_S(halo_stream, t0_, time1);
-
-    for (int i = 0; i < num_neighbors; i++) {
-      const local_int_t n_send = sendLength[i];
-      MPI_Isend(send_buffer, n_send, MPI_SCALAR_TYPE, neighbors[i], MPI_MY_TAG, comm, &send_reqs_[i]);
-      send_buffer += n_send;
-    }
-#endif
-}
-
-template <typename scalar>
-void Vector<scalar>::update_halos_finalize(const DistMatrixBase *const mat) const
-{
-#ifndef HPGMP_NO_MPI
-    // Complete the sends and receives.
-    const local_int_t localNumberOfRows = mat->get_local_num_rows();
-    const local_int_t localNumberOfCols = mat->get_local_num_cols();
-    const int num_neighbors = mat->get_num_neighbors();
-    auto halo_stream = dctx_->get_halo_stream();
-
-    TICK_S(halo_stream, t0_);
-
-    //std::vector<MPI_Status> send_statuses(num_neighbors), recv_statuses(num_neighbors);
-    int ierr = MPI_Waitall(num_neighbors, recv_reqs_.data(), MPI_STATUSES_IGNORE);
-    if(ierr != MPI_SUCCESS) {
-        throw MPICommError(" Vector: update_halo: receives failed! error = " + std::to_string(ierr));
-    }
-    ierr = MPI_Waitall(num_neighbors, send_reqs_.data(), MPI_STATUSES_IGNORE);
-    if(ierr != MPI_SUCCESS) {
-        throw MPICommError(" Vector: update_halo: sends failed! error = " + std::to_string(ierr));
-    }
-    
-    // sync halo stream and record time taken for comms in time2.
-    TOCK_S(halo_stream, t0_, time2);
-
-#if !defined(HPGMP_USE_GPU_AWARE_MPI)
-    scalar_type * const xv = values_;
-    scalar_type * const d_xv = d_values_;
-    // copy received data to GPU - NOTE that the entire vector is not copied
-  #if defined(HPGMP_WITH_CUDA)
-    if (cudaSuccess != cudaMemcpyAsync(d_xv + localNumberOfRows, &xv[localNumberOfRows],
-                                       (localNumberOfCols-localNumberOfRows)*sizeof(scalar_type),
-                                       cudaMemcpyHostToDevice, halo_stream))
-    {
-      throw DeviceMemoryError( "! Failed to memcpy to finalize vector halo update\n" );
-    }
-  #elif defined(HPGMP_WITH_HIP)
-    if (hipSuccess != hipMemcpyAsync(d_xv + localNumberOfRows, &xv[localNumberOfRows],
-                                     (localNumberOfCols-localNumberOfRows)*sizeof(scalar_type),
-                                     hipMemcpyHostToDevice, halo_stream))
-    {
-      throw DeviceMemoryError( "! Failed to memcpy to finalize vector halo update\n" );
-    }
-  #endif
-#endif
-    // sync halo stream and add to time taken for HD copies in time1.
-    TOCK_S(halo_stream, t0_, time1);
-
-    halos_buffer_packed_ = false;
-    recv_reqs_.clear();
-    send_reqs_.clear();
-#endif
-}
-
-template <typename scalar>
-void Vector<scalar>::update_halos(const DistMatrixBase *const mat) const
-{
-#ifndef HPGMP_NO_MPI
     const MPI_Datatype MPI_SCALAR_TYPE = MpiTypeTraits<scalar>::getType ();
     const local_int_t localNumberOfRows = mat->get_local_num_rows();
     const local_int_t localNumberOfCols = mat->get_local_num_cols();
@@ -436,7 +286,6 @@ void Vector<scalar>::update_halos(const DistMatrixBase *const mat) const
     const local_int_t *const receiveLength = mat->get_receive_lengths();
     const local_int_t *const sendLength = mat->get_send_lengths();
     const int *const neighbors = mat->get_neighbors();
-    auto sendBuffer = static_cast<scalar*>(mat->get_host_send_buffer());
     const local_int_t totalToBeSent = mat->get_total_to_be_sent();
 
     assert(localNumberOfRows + totalToBeSent <= localLength_);
@@ -484,16 +333,27 @@ void Vector<scalar>::update_halos(const DistMatrixBase *const mat) const
     // Fill up send buffer
     TICK();
     auto d_sendBuffer = static_cast<scalar_type*>(mat->get_device_send_buffer());
+    const auto perm = mat->get_reordering_permutation();
+    const auto d_elemstosend = mat->get_elements_to_send();
 
+#if defined HPGMP_WITH_HIP || defined HPGMP_WITH_CUDA
     const int num_threads = (totalToBeSent < 256 ? totalToBeSent : 256);
     const int num_blocks = (totalToBeSent+num_threads-1)/num_threads;
     haloGather<<<num_blocks, num_threads, 0, halo_stream>>>(
-      totalToBeSent, d_xv, mat->get_elements_to_send(), mat->get_reordering_permutation(),
-      d_sendBuffer);
+        totalToBeSent, d_xv, d_elemstosend, perm, d_sendBuffer);
+#else
+    for(local_int_t i = 0; i < totalToBeSent; i++) {
+        d_sendBuffer[i] = d_xv[perm[d_elemstosend[i]]];
+    }
+#endif
 
-#if !defined(HPGMP_USE_GPU_AWARE_MPI)
+#ifdef HPGMP_USE_GPU_AWARE_MPI
+    auto sendBuffer = d_sendBuffer;
+#else
+    auto sendBuffer = static_cast<scalar*>(mat->get_host_send_buffer());
     dctx_->copy_device_to_host_async(sendBuffer, d_sendBuffer, totalToBeSent*sizeof(scalar_type),
                                      halo_stream);
+
 #endif
 
     // wait for buffer to be ready before sending
@@ -502,54 +362,194 @@ void Vector<scalar>::update_halos(const DistMatrixBase *const mat) const
     double time1 = 0.0;
     TOCK(time1);
 
-    //
     // Send to each neighbor
-    //
-    send_reqs_.resize(num_neighbors);
     TICK();
-    // Thread this loop
     for (int i = 0; i < num_neighbors; i++) {
-      local_int_t n_send = sendLength[i];
-#if defined(HPGMP_USE_GPU_AWARE_MPI)
-      MPI_Isend(d_sendBuffer, n_send, MPI_SCALAR_TYPE, neighbors[i], MPI_MY_TAG, comm, &send_reqs_[i]);
-      d_sendBuffer += n_send;
-#else
-      MPI_Isend(sendBuffer, n_send, MPI_SCALAR_TYPE, neighbors[i], MPI_MY_TAG, comm, &send_reqs_[i]);
-      sendBuffer += n_send;
-#endif
+        local_int_t n_send = sendLength[i];
+        MPI_Send(sendBuffer, n_send, MPI_SCALAR_TYPE, neighbors[i], MPI_MY_TAG, comm);
+        sendBuffer += n_send;
     }
 
-    //
-    // Complete the reads issued above
-    //
-
+    // Complete the recvs issued above
     if(MPI_SUCCESS != MPI_Waitall(num_neighbors, recv_reqs_.data(), MPI_STATUSES_IGNORE)) {
-        throw MPICommError(" Vector: update_halo: receives failed!");
-    }
-    if(MPI_SUCCESS != MPI_Waitall(num_neighbors, send_reqs_.data(), MPI_STATUSES_IGNORE)) {
-        throw MPICommError(" Vector: update_halo: sends failed!");
+        printf(" Vector: update_halo: receives failed!"); fflush(stdout);
+        MPI_Abort(comm, -2025);
     }
     TOCK(time2);
 
 #if !defined(HPGMP_USE_GPU_AWARE_MPI)
     // copy received data to GPU
     TICK();
-    #if defined(HPGMP_WITH_CUDA)
-    if (cudaSuccess != cudaMemcpyAsync(d_xv + localNumberOfRows, &xv[localNumberOfRows], (localNumberOfCols-localNumberOfRows)*sizeof(scalar_type), cudaMemcpyHostToDevice, halo_stream)) {
-      printf( " Failed to memcpy d_y\n" );
-    }
-    #elif defined(HPGMP_WITH_HIP)
-    if (hipSuccess != hipMemcpyAsync(d_xv + localNumberOfRows, &xv[localNumberOfRows], (localNumberOfCols-localNumberOfRows)*sizeof(scalar_type), hipMemcpyHostToDevice, halo_stream)) {
-      printf( " Failed to memcpy d_y\n" );
-    }
-    #endif
+    dctx_->copy_host_to_device_async(d_xv + localNumberOfRows, xv + localNumberOfRows,
+                                     (localNumberOfCols-localNumberOfRows)*sizeof(scalar_type),
+                                     halo_stream);
     TOCK(time1);
 #endif
-
     recv_reqs_.clear();
-    send_reqs_.clear();
 #endif // HPGMP_NO_MPI
 }
+
+template <typename scalar>
+void Vector<scalar>::update_halos_send_receive(const DistMatrixBase *const mat) const { }
+
+template <typename scalar>
+void Vector<scalar>::update_halos_finalize(const DistMatrixBase *const mat) const { }
+
+#else // HPGMP_ONLY_BLOCKING_COMMS
+
+template <typename scalar>
+void Vector<scalar>::update_halos_pack_send_buffer(const DistMatrixBase *const mat) const
+{
+#ifndef HPGMP_NO_MPI
+    const local_int_t totalToBeSent = mat->get_total_to_be_sent();
+    scalar_type * const d_xv = d_values_;
+    auto d_sendBuffer = static_cast<scalar_type*>(mat->get_device_send_buffer());
+    const auto perm = mat->get_reordering_permutation();
+    const auto d_elemstosend = mat->get_elements_to_send();
+    auto halo_stream = dctx_->get_halo_stream();
+    auto interior_stream = dctx_->get_compute_stream();
+
+    // Fill up send buffer
+    // timing
+    TICK_STREAM_SYNC(halo_stream, t0_);
+#if defined HPGMP_WITH_HIP || defined HPGMP_WITH_CUDA
+    const int num_threads = (totalToBeSent < 256 ? 512 : 256);
+    const int num_blocks = (totalToBeSent - 1)/num_threads + 1;
+    haloGather<<<num_blocks, num_threads, 0, halo_stream>>>(
+        totalToBeSent, d_xv, d_elemstosend, perm, d_sendBuffer);
+    // define an event that waits for the halo gather kernel to complete
+    dctx_->record_event(send_gather_,  halo_stream);
+#else
+    for(local_int_t i = 0; i < totalToBeSent; i++) {
+        d_sendBuffer[i] = d_xv[perm[d_elemstosend[i]]];
+    }
+#endif
+
+#if !defined(HPGMP_USE_GPU_AWARE_MPI)
+    auto sendBuffer = static_cast<scalar*>(mat->get_host_send_buffer());
+    dctx_->copy_device_to_host_async(sendBuffer, d_sendBuffer, totalToBeSent*sizeof(scalar_type),
+                                     halo_stream);
+#endif
+    halos_buffer_packed_ = true;
+
+    // make it so that any future work submitted to the compute stream
+    //   waits to execute till the send buffer is gathered
+    dctx_->stream_wait_on_event(interior_stream, send_gather_);
+#endif // HPGMP_NO_MPI
+}
+
+template <typename scalar>
+void Vector<scalar>::update_halos_send_receive(const DistMatrixBase *const mat) const
+{
+#ifndef HPGMP_NO_MPI
+    const MPI_Datatype MPI_SCALAR_TYPE = MpiTypeTraits<scalar>::getType ();
+    const local_int_t localNumberOfRows = mat->get_local_num_rows();
+    const local_int_t totalToBeSent = mat->get_total_to_be_sent();
+    const int num_neighbors = mat->get_num_neighbors();
+    const local_int_t *const receiveLength = mat->get_receive_lengths();
+    const local_int_t *const sendLength = mat->get_send_lengths();
+    const int *const neighbors = mat->get_neighbors();
+    auto send_buffer =    
+#ifdef HPGMP_USE_GPU_AWARE_MPI
+        static_cast<scalar_type*>(mat->get_device_send_buffer());
+#else
+        static_cast<scalar_type*>(mat->get_host_send_buffer());
+#endif
+    auto halo_stream = dctx_->get_halo_stream();
+    auto comm = mat->get_comm();
+
+    assert(localNumberOfRows + totalToBeSent <= localLength_);
+
+    int size, rank; // Number of MPI processes, My process ID
+    MPI_Comm_size(comm, &size);
+    MPI_Comm_rank(comm, &rank);
+    if (size == 1)
+        return;
+    
+    const int MPI_MY_TAG = 99;
+
+    // Externals are at end of locals
+
+#ifdef HPGMP_USE_GPU_AWARE_MPI
+    scalar_type * x_external = (scalar_type *) d_values_ + localNumberOfRows;
+#else
+    scalar_type * x_external = (scalar_type *) values_ + localNumberOfRows;
+#endif
+    
+    recv_reqs_.resize(num_neighbors);
+
+    // Post receives first
+    for (int i = 0; i < num_neighbors; i++) {
+        const local_int_t n_recv = receiveLength[i];
+        MPI_Irecv(x_external, n_recv, MPI_SCALAR_TYPE, neighbors[i], MPI_MY_TAG, comm, &recv_reqs_[i]);
+        x_external += n_recv;
+    }
+
+    // Ensure buffers are packed
+    if(!halos_buffer_packed_) {
+        throw std::runtime_error("Attempting to send without packing the send buffer!");
+    }
+
+    send_reqs_.resize(num_neighbors);
+
+    // Wait for send-buffer packing and record the time in time1.
+    TOCK_STREAM_SYNC(halo_stream, t0_, time1);
+
+    for (int i = 0; i < num_neighbors; i++) {
+      const local_int_t n_send = sendLength[i];
+      MPI_Isend(send_buffer, n_send, MPI_SCALAR_TYPE, neighbors[i], MPI_MY_TAG, comm, &send_reqs_[i]);
+      send_buffer += n_send;
+    }
+#endif
+}
+
+template <typename scalar>
+void Vector<scalar>::update_halos_finalize(const DistMatrixBase *const mat) const
+{
+#ifndef HPGMP_NO_MPI
+    // Complete the sends and receives.
+    const local_int_t localNumberOfRows = mat->get_local_num_rows();
+    const local_int_t localNumberOfCols = mat->get_local_num_cols();
+    const int num_neighbors = mat->get_num_neighbors();
+    auto halo_stream = dctx_->get_halo_stream();
+
+    TICK_STREAM_SYNC(halo_stream, t0_);
+
+    int ierr = MPI_Waitall(num_neighbors, recv_reqs_.data(), MPI_STATUSES_IGNORE);
+    if(ierr != MPI_SUCCESS) {
+        std::cout << " Vector: update_halo: receives failed! error = " << ierr << std::endl;
+        MPI_Abort(mat->get_comm(), -2025);
+    }
+    ierr = MPI_Waitall(num_neighbors, send_reqs_.data(), MPI_STATUSES_IGNORE);
+    if(ierr != MPI_SUCCESS) {
+        std::cout << " Vector: update_halo: sends failed!" << std::endl;
+        MPI_Abort(mat->get_comm(), -2025);
+    }
+    
+    // sync halo stream and record time taken for comms in time2.
+    TOCK_STREAM_SYNC(halo_stream, t0_, time2);
+
+    TICK_STREAM_SYNC(halo_stream, t0_);
+#if !defined(HPGMP_USE_GPU_AWARE_MPI)
+    scalar_type * const xv = values_;
+    scalar_type * const d_xv = d_values_;
+    // copy received data to GPU - NOTE that the entire vector is not copied
+    dctx_->copy_host_to_device_async(d_xv + localNumberOfRows, xv + localNumberOfRows,
+                                     (localNumberOfCols-localNumberOfRows)*sizeof(scalar_type),
+                                     halo_stream);
+#endif
+    // Sync halo stream and add to time taken for HD copies to time1.
+    // Note that synchronization is necessary here to ensure received halos are available
+    // for kernels on other streams.
+    TOCK_STREAM_SYNC(halo_stream, t0_, time1);
+
+    halos_buffer_packed_ = false;
+    recv_reqs_.clear();
+    send_reqs_.clear();
+#endif
+}
+
+#endif
 
 
 template <unsigned int BLOCKSIZE, typename scalar>

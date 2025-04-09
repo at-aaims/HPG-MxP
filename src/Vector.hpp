@@ -93,19 +93,23 @@ public:
 
   /// Updates the device data of the vector from the host buffer's data.
   void update_device_data() const;
-
-  /** Blocking halo update of distributed vector
-   * according to the discretization represented by a matrix.
-   */
-  void update_halos(const DistMatrixBase *mat) const;
  
-  /// Asynchronous packing of send buffer on the halo stream 
+  /** @brief Begin halo update for operations like SpMV and SpTRSV.
+   *
+   * For a non-blocking build, this performs asynchronous packing of the send buffer
+   * on the halo stream. It also inserts a wait event on the (interior) compute stream.
+   *
+   * For a blocking build, it packs the send buffer, issues MPI receives and sends,
+   * waits for these to complete, and if necessary, copies the received buffer to GPU.
+   *
+   * Builds are blocking if HPGMP_ONLY_BLOCKING_COMMS is set.
+   */
   void update_halos_pack_send_buffer(const DistMatrixBase *mat) const;
   
-  /// Issue asynchronous send and receive commands, synchronizing the halo stream
+  /// (Non-blocking builds only) Synchronize halos tream and issue asynchronous send and receives.
   void update_halos_send_receive(const DistMatrixBase *mat) const;
 
-  /// Wait for the communications and send data to GPU if necessary.
+  /// (Non-blocking builds only) Wait for the communications and send data to GPU if necessary.
   void update_halos_finalize(const DistMatrixBase *mat) const;
 
   // Some operations
@@ -146,6 +150,7 @@ private:
   bool is_view_ = false;
 
 #ifndef HPGMP_NO_MPI
+  event_t send_gather_;
   mutable std::vector<MPI_Request> send_reqs_;
   mutable std::vector<MPI_Request> recv_reqs_;
   mutable bool halos_buffer_packed_ = false;

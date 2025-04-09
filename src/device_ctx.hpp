@@ -17,10 +17,13 @@ using dev_spblas_ctx = cusparseHandle_t;
 
 #ifdef HPGMP_WITH_HIP
 using stream_t = hipStream_t;
+using event_t = hipEvent_t;
 #elif defined HPGMP_WITH_CUDA
 using stream_t = cudaStream_t;
+using event_t = cudaEvent_t;
 #else
 struct stream_t {};
+struct event_t {};
 #endif
 
 /**
@@ -77,6 +80,20 @@ public:
 
     /// Synchronize entire device
     void synchronize_device();
+
+    /// Set memory to repeated constant integer value
+    void device_memset(void *d_ptr, int value, size_t nbytes);
+    
+    /// Create default-type event
+    event_t create_event();
+    
+    void destroy_event(event_t event);
+
+    /// Create event which "happens" when all previous commands are complete.
+    void record_event(event_t event, stream_t stream);
+
+    /// Make the given stream wait for the given event.
+    void stream_wait_on_event(stream_t stream, event_t event);
 
     /// Get a pre-allocted workspace on the device
     void *get_device_workspace() const { return workspace_; }

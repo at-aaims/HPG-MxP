@@ -45,6 +45,8 @@
 #include "hpgmp.hpp"
 #include "DataTypes.hpp"
 
+#include "kernel_helpers.hpp.inc"
+
 #define LAUNCH_SYMGS_SWEEP(blocksize, width)                        \
     {                                                               \
         dim3 blocks((A->get_independent_set_sizes()[i] - 1) / blocksize + 1);     \
@@ -128,21 +130,20 @@ __global__ void kernel_symgs_sweep(const local_int_t m,
 
     const local_int_t row = gid + offset;
     
-    vscalar sum = __builtin_nontemporal_load(x + row);
+    vscalar sum = __ldcg(x + row);
 
 #pragma unroll
     for(local_int_t p = 0; p < WIDTH; ++p)
     {
-        const local_int_t col = __builtin_nontemporal_load(ell_col_ind + row + ldi*p);
+        const local_int_t col = __ldcg(ell_col_ind + row + ldi*p);
 
         if(col >= 0 && col < n && col != row) {
-            sum = fma(- static_cast<vscalar>(__builtin_nontemporal_load(ell_val + row + ldv*p)),
+            sum = fma(- static_cast<vscalar>(__ldcg(ell_val + row + ldv*p)),
                       y[col], sum);
         }
     }
-    __builtin_nontemporal_store(
-            sum * static_cast<vscalar>(__builtin_nontemporal_load(inv_diag + row)),
-            y + row);
+    __stcg(y+row,
+           sum * static_cast<vscalar>(__ldcg(inv_diag + row)));
 }
 
 template <unsigned int BLOCKSIZE, unsigned int WIDTH,
@@ -162,20 +163,20 @@ __global__ void kernel_symgs_interior(const local_int_t m,
         return;
     }
 
-    vscalar sum = __builtin_nontemporal_load(x + row);
+    vscalar sum = __ldcg(x + row);
 
 #pragma unroll
     for(local_int_t p = 0; p < WIDTH; ++p)
     {
-        const local_int_t col = __builtin_nontemporal_load(ell_col_ind + row + p*ldi);
+        const local_int_t col = __ldcg(ell_col_ind + row + p*ldi);
 
         if(col >= 0 && col < m && col != row) {
-            sum = fma(-static_cast<vscalar>(__builtin_nontemporal_load(ell_val + row + p*ldv)),
+            sum = fma(-static_cast<vscalar>(__ldcg(ell_val + row + p*ldv)),
                     __ldg(y + col), sum);
         }
     }
-    __builtin_nontemporal_store(
-            sum * static_cast<vscalar>(__builtin_nontemporal_load(inv_diag + row)), y + row);
+    __stcg(y+row,
+           sum * static_cast<vscalar>(__ldcg(inv_diag + row)));
 }
 
 template <unsigned int BLOCKSIZE, unsigned int WIDTH,
@@ -198,7 +199,7 @@ __global__ void kernel_symgs_halo(const local_int_t m,
         return;
     }
 
-    const local_int_t halo_idx = __builtin_nontemporal_load(halo_row_ind + row);
+    const local_int_t halo_idx = __ldcg(halo_row_ind + row);
     const local_int_t perm_idx = perm[halo_idx];
     if(perm_idx >= block_nrow) {
         return;
@@ -209,10 +210,10 @@ __global__ void kernel_symgs_halo(const local_int_t m,
 #pragma unroll
     for(local_int_t p = 0; p < WIDTH; ++p)
     {
-        const local_int_t col = __builtin_nontemporal_load(halo_col_ind + row + p*ldi);
+        const local_int_t col = __ldcg(halo_col_ind + row + p*ldi);
 
         if(col >= 0 && col < n) {
-            sum = fma(-static_cast<vscalar>(__builtin_nontemporal_load(halo_val + row + p*ldv)),
+            sum = fma(-static_cast<vscalar>(__ldcg(halo_val + row + p*ldv)),
                     y[col], sum);
         }
     }
@@ -251,22 +252,22 @@ __global__ void kernel_forward_sweep_0(const local_int_t m,
     }
 
     const local_int_t row  = gid + offset;
-    const local_int_t idiag = __builtin_nontemporal_load(diag_idx + row);
+    const local_int_t idiag = __ldcg(diag_idx + row);
 
-    vscalar sum = __builtin_nontemporal_load(x + row);
+    vscalar sum = __ldcg(x + row);
 
     for(local_int_t p = 0; p < idiag; ++p)
     {
-        const local_int_t col = __builtin_nontemporal_load(ell_col_ind + row + p*ldi);
+        const local_int_t col = __ldcg(ell_col_ind + row + p*ldi);
 
         // Every entry above offset is zero
         if(col >= 0 && col < offset) {
-            sum = fma(-static_cast<vscalar>(__builtin_nontemporal_load(ell_val + row + p*ldv)),
+            sum = fma(-static_cast<vscalar>(__ldcg(ell_val + row + p*ldv)),
                       y[col], sum);
         }
     }
-    sum = sum /  static_cast<vscalar>(__builtin_nontemporal_load(ell_val + row + idiag*ldv));
-    __builtin_nontemporal_store(sum, y + row);
+    sum = sum /  static_cast<vscalar>(__ldcg(ell_val + row + idiag*ldv));
+    __stcg(y+row, sum);
 }
 
 template <unsigned int BLOCKSIZE, typename mscalar, typename vscalar>
@@ -287,28 +288,25 @@ __global__ void kernel_backward_sweep_0(const local_int_t m,
     }
 
     const local_int_t row  = gid + offset;
-    const local_int_t idiag = __builtin_nontemporal_load(diag_idx + row);
-    //local_int_t idx  = idiag * m + row;
+    const local_int_t idiag = __ldcg(diag_idx + row);
 
-    const mscalar diag_val = __builtin_nontemporal_load(ell_val + row + idiag*ldv);
-    //idx += m;
+    const mscalar diag_val = __ldcg(ell_val + row + idiag*ldv);
 
     // Scale result with diagonal entry
     vscalar sum = x[row] * static_cast<vscalar>(diag_val);
 
     for(local_int_t p = idiag + 1; p < ell_width; ++p)
     {
-        const local_int_t col = __builtin_nontemporal_load(ell_col_ind + row + p*ldi);
+        const local_int_t col = __ldcg(ell_col_ind + row + p*ldi);
 
         // Every entry below offset should not be taken into account
         if(col >= offset && col < m) {
-            sum = fma(-static_cast<vscalar>(__builtin_nontemporal_load(ell_val + row + p*ldv)),
+            sum = fma(-static_cast<vscalar>(__ldcg(ell_val + row + p*ldv)),
                     x[col], sum);
         }
-        //idx += m;
     }
     sum /= static_cast<vscalar>(diag_val);
-    __builtin_nontemporal_store(sum, x + row);
+    __stcg(x + row, sum);
 }
 
 template <typename mscalar, typename vscalar>
@@ -358,6 +356,8 @@ int ell_multicolor_gs(const bool symmetric, const ELLMatrix<mscalar> *const A,
         //}
     }
 
+    dctx->synchronize_compute_stream();
+    dctx->synchronize_halo_stream();
     return 0;
 }
 
@@ -407,6 +407,8 @@ int ell_multicolor_gs_zero_initial(const bool symmetric, const ELLMatrix<mscalar
         //        A.diag_idx, x.d_values);
         //}
     }
+
+    dctx->synchronize_compute_stream();
 
     return 0;
 }

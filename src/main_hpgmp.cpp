@@ -71,7 +71,11 @@ typedef GMRESData<scalar_type2, project_type> GMRESData_type2;
 int main(int argc, char * argv[]) {
 
 #ifndef HPGMP_NO_MPI
-  MPI_Init(&argc, &argv);
+  int provided_thread_support = -1;
+  MPI_Init_thread(&argc, &argv, MPI_THREAD_FUNNELED, &provided_thread_support);
+  if(provided_thread_support != MPI_THREAD_FUNNELED) {
+      printf("!!Unsuppored threading mode!!\n"); fflush(stdout);
+  }
 #endif
   HPGMP_Init(&argc, &argv);
 
@@ -153,8 +157,9 @@ int main(int argc, char * argv[]) {
   test_data.tolerance = tolerance;
   test_data.restart_length = restart_length;
   if (myRank < sizeValidComm) {
-    global_failure = ValidGMRES<TestGMRESData_type, scalar_type, scalar_type2, project_type>
-                         (argc, argv, validation_comm, ctx.get(), numberOfMgLevels, verbose, test_data);
+    global_failure = ValidGMRES<TestGMRESData_type, scalar_type, scalar_type2, project_type>(
+                         argc, argv, validation_comm, ctx.get(), numberOfMgLevels, verbose,
+                         test_data);
   }
 
 
@@ -163,11 +168,9 @@ int main(int argc, char * argv[]) {
   /////////////////////
   {
     bool runReference = true;
-    BenchGMRES<TestGMRESData_type, scalar_type, scalar_type2, project_type>
-        (argc, argv, benchmark_comm, ctx.get(), numberOfMgLevels, verbose, runReference, global_failure, test_data);
-#ifndef HPGMP_NO_MPI
-    MPI_Barrier(MPI_COMM_WORLD);
-#endif
+    BenchGMRES<TestGMRESData_type, scalar_type, scalar_type2, project_type>(argc, argv,
+            benchmark_comm, ctx.get(), numberOfMgLevels, verbose, runReference, global_failure,
+            test_data);
   }
 
  

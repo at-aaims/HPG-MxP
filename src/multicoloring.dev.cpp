@@ -37,9 +37,17 @@
 #include <map>
 #include <list>
 #include <algorithm>
+
+#ifdef HPGMP_WITH_HIP
 #include <rocprim/rocprim.hpp>
+#endif
+#ifdef HPGMP_WITH_CUDA
+#include <cub/device/device_radix_sort.cuh>
+#endif
 
 #include "exceptions.hpp"
+
+#include "kernel_helpers.hpp.inc"
 
 #define LAUNCH_JPL(blocksizex, blocksizey)                             \
     {                                                                  \
@@ -216,7 +224,7 @@ __global__ void kernel_jpl(const local_int_t m,
     local_int_t row_hash = hash[row];
 
     local_int_t idx = row * BLOCKSIZEX + threadIdx.x;
-    local_int_t col = __builtin_nontemporal_load(mtxIndL + idx);
+    local_int_t col = __ldcg(mtxIndL + idx);
 
     if(col >= 0 && col < m)
     {
@@ -276,13 +284,10 @@ void multicolor_JPL(SparseMatrix<scalar>& A)
     delete [] A.rowHash;
 
     A.perm = reinterpret_cast<local_int_t*>(A.dctx->device_alloc(m * sizeof(local_int_t)));
-#ifdef HPGMP_WITH_HIP
-    if(hipMemset(A.perm, -1, sizeof(local_int_t) * m) != hipSuccess) {
-        throw DeviceAPIError("memset failed in multicolor_JPL!");
-    }
-#else
-#error "Multicolor GS is currently only supported on HIP."
-#endif
+    A.dctx->device_memset(A.perm, -1, sizeof(local_int_t)*m);
+    //if(hipMemset(A.perm, -1, sizeof(local_int_t) * m) != hipSuccess) {
+    //    throw DeviceAPIError("memset failed in multicolor_JPL!");
+    //}
 
     A.nblocks = 0;
 
@@ -369,8 +374,8 @@ void multicolor_JPL(SparseMatrix<scalar>& A)
 
     kernel_identity<1024><<<(m - 1) / 1024 + 1, 1024>>>(m, perm);
 
-    int startbit = 0;
-    int endbit = 32 - __builtin_clz(A.nblocks);
+    const int startbit = 0;
+    const int endbit = 32 - __builtin_clz(A.nblocks);
     size_t size;
 
 #ifdef HPGMP_WITH_HIP    
@@ -380,16 +385,35 @@ void multicolor_JPL(SparseMatrix<scalar>& A)
     if(rocprim::radix_sort_pairs(nullptr, size, keys, vals, m, startbit, endbit) != hipSuccess) {
         throw DeviceAPIError(" JPL multicoloring: rocprim buffer size estimation failed!");
     }
+#elif HPGMP_WITH_CUDA
+    cub::DoubleBuffer<local_int_t> keys(A.perm, tmp_color);
+    cub::DoubleBuffer<local_int_t> vals(perm, tmp_perm);
+    auto ierr = cub::DeviceRadixSort::SortPairs(
+        nullptr, size, keys, vals, m, startbit, endbit);
+    if(ierr != cudaSuccess) {
+        throw DeviceAPIError(" JPL multicoloring: cub buffer size estimation failed!");
+    }
 #else
-#error "JPL multicoloring only implemented for HIP!"
+#error "Not implemented on host!"
 #endif
     auto buf = A.dctx->device_alloc(size);
+#ifdef HPGMP_WITH_HIP    
     if(rocprim::radix_sort_pairs(buf, size, keys, vals, m, startbit, endbit) != hipSuccess) {
         throw DeviceAPIError(" JPL multicoloring: rocprim radix sort failed!");
     }
+    auto cur_vals = vals.current();
+#elif HPGMP_WITH_CUDA
+    ierr = cub::DeviceRadixSort::SortPairs(buf, size, keys, vals, m, startbit, endbit);
+    if(ierr != cudaSuccess) {
+        throw DeviceAPIError(" JPL multicoloring: cub radix sort failed!");
+    }
+    auto cur_vals = vals.Current();
+#else
+#error "Not implemented on host!"
+#endif
     A.dctx->device_free(buf);
 
-    kernel_create_perm<1024><<<(m - 1) / 1024 + 1, 1024>>>(m, vals.current(), A.perm);
+    kernel_create_perm<1024><<<(m - 1) / 1024 + 1, 1024>>>(m, cur_vals, A.perm);
 
     A.dctx->device_free(tmp_color);
     A.dctx->device_free(tmp_perm);

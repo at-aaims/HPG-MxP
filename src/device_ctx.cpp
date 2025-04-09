@@ -262,6 +262,77 @@ void DeviceCtx::synchronize_device()
 #endif
 }
 
+event_t DeviceCtx::create_event()
+{
+    event_t event;
+#if defined(HPGMP_WITH_CUDA)
+    if(cudaSuccess != cudaEventCreate(&event)) {
+        throw DeviceAPIError("Could not create event!");
+    }
+#elif defined(HPGMP_WITH_HIP)
+    if(hipSuccess != hipEventCreate(&event)) {
+        throw DeviceAPIError("Could not create event!");
+    }
+#endif
+    return event;
+}
+
+void DeviceCtx::destroy_event(event_t event)
+{
+#if defined(HPGMP_WITH_CUDA)
+    if(cudaSuccess != cudaEventDestroy(event)) {
+        throw DeviceAPIError("Could not create event!");
+    }
+#elif defined(HPGMP_WITH_HIP)
+    if(hipSuccess != hipEventDestroy(event)) {
+        throw DeviceAPIError("Could not create event!");
+    }
+#endif
+}
+
+void DeviceCtx::record_event(event_t event, stream_t stream)
+{
+#if defined(HPGMP_WITH_CUDA)
+    if(cudaSuccess != cudaEventRecord(event, stream)) {
+        throw DeviceAPIError("Could not record event!");
+    }
+#elif defined(HPGMP_WITH_HIP)
+    if(hipSuccess != hipEventRecord(event, stream)) {
+        throw DeviceAPIError("Could not record event!");
+    }
+#else
+#error "Events not supported on host yet!"
+#endif
+}
+    
+void DeviceCtx::stream_wait_on_event(stream_t stream, event_t event)
+{
+#if defined(HPGMP_WITH_CUDA)
+    if(cudaSuccess != cudaStreamWaitEvent(stream, event, 0)) {
+        throw DeviceAPIError("Could not record event!");
+    }
+#elif defined(HPGMP_WITH_HIP)
+    if(hipSuccess != hipStreamWaitEvent(stream, event, 0)) {
+        throw DeviceAPIError("Could not record event!");
+    }
+#else
+#error "Events not supported on host yet!"
+#endif
+}
+
+void DeviceCtx::device_memset(void *d_ptr, int value, size_t nbytes)
+{
+#if defined(HPGMP_WITH_CUDA)
+    if(cudaSuccess != cudaMemset(d_ptr, value, nbytes)) {
+        throw DeviceAPIError("memset");
+    }
+#elif defined(HPGMP_WITH_HIP)
+    if(hipSuccess != hipMemset(d_ptr, value, nbytes)) {
+        throw DeviceAPIError("memset");
+    }
+#endif
+}
+
 #ifdef HPGMP_WITH_HIP
 const std::string DeviceAPIError::platform = "HIP";
 #elif HPGMP_WITH_CUDA

@@ -34,6 +34,8 @@
 #include "hpgmp.hpp"
 #include "ell_matrix.hpp"
 
+#include "kernel_helpers.hpp.inc"
+
 #define LAUNCH_FUSED_RESTRICT_SPMV(blocksize, width)                                           \
     {                                                                                          \
         dim3 blocks((A.mgData->rc->local_length() - 1) / blocksize + 1);                          \
@@ -90,24 +92,24 @@ __global__ void kernel_fused_restrict_spmv(const local_int_t size,
     if(idx_coarse >= size) {
         return;
     }
-    const local_int_t idx_fine = __builtin_nontemporal_load(f2cOperator + idx_coarse);
-    const local_int_t idx_perm_fine = __builtin_nontemporal_load(perm_fine + idx_fine);
-    const local_int_t idx_perm_coarse = __builtin_nontemporal_load(perm_coarse + idx_coarse);
+    const local_int_t idx_fine = __ldcg(f2cOperator + idx_coarse);
+    const local_int_t idx_perm_fine = __ldcg(perm_fine + idx_fine);
+    const local_int_t idx_perm_coarse = __ldcg(perm_coarse + idx_coarse);
 
-    vec_scalar sum = __builtin_nontemporal_load(r_fine + idx_perm_fine);
+    vec_scalar sum = __ldcg(r_fine + idx_perm_fine);
 
 #pragma unroll
     for(local_int_t p = 0; p < WIDTH; ++p)
     {
-        const local_int_t col = __builtin_nontemporal_load(ell_col_ind + idx_perm_fine + p*ldi);
+        const local_int_t col = __ldcg(ell_col_ind + idx_perm_fine + p*ldi);
 
         if(col >= 0 && col < m) {
             sum = fma(-static_cast<vec_scalar>(
-                        __builtin_nontemporal_load(ell_val + idx_perm_fine + p*ldv)),
+                        __ldcg(ell_val + idx_perm_fine + p*ldv)),
                       xf[col], sum);
         }
     }
-    __builtin_nontemporal_store(sum, r_coarse + idx_perm_coarse);
+    __stcg(r_coarse + idx_perm_coarse, sum);
 }
 
 template <unsigned int BLOCKSIZE, typename mat_scalar, typename vec_scalar>
@@ -194,7 +196,6 @@ int fused_spmv_restriction(const SparseMatrix<mscalar>& A, const Vector<vscalar>
 #ifndef HPCG_NO_MPI
     if(A.geom->size > 1)
     {
-        //PrepareSendBuffer(A, xf);
         xf.update_halos_pack_send_buffer(ell.get());
     }
 #endif
@@ -206,8 +207,6 @@ int fused_spmv_restriction(const SparseMatrix<mscalar>& A, const Vector<vscalar>
 #ifndef HPCG_NO_MPI
     if(A.geom->size > 1)
     {
-        //ExchangeHaloAsync(A, xf);
-        //ObtainRecvBuffer(A, xf, mo);
         xf.update_halos_send_receive(ell.get());
         xf.update_halos_finalize(ell.get());
 
@@ -228,6 +227,7 @@ int fused_spmv_restriction(const SparseMatrix<mscalar>& A, const Vector<vscalar>
     }
 #endif
     ell->get_device_context()->synchronize_compute_stream();
+    ell->get_device_context()->synchronize_halo_stream();
     return 0;
 }
 
