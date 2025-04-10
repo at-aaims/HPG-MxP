@@ -169,7 +169,7 @@ int main(int argc, char * argv[]) {
   // Validation phase //
   //////////////////////
   int global_failure = 0;
-  const int restart_length = 40;
+  const int restart_length = 30;
   const scalar_type tolerance = 1e-9;
 
   test_data.tolerance = tolerance;
@@ -199,7 +199,8 @@ int main(int argc, char * argv[]) {
     double t_bench{};
     TOCK(t_bench);
     if(myRank == 0) {
-      std::cout << "Main: Benchmarking, reference run and reporting took " << t_bench << " s." << std::endl;
+      std::cout << "Main: Benchmarking, reference run and reporting took " << t_bench << " s."
+                << std::endl;
     }
   }
 
