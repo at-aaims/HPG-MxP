@@ -106,6 +106,15 @@ int main(int argc, char * argv[]) {
   MPI_Comm validation_comm = MPI_COMM_WORLD;
   MPI_Comm benchmark_comm = MPI_COMM_WORLD;
   MPI_Comm_split(MPI_COMM_WORLD, color, myRank, &validation_comm);
+
+  int ierr = MPI_Comm_set_errhandler(validation_comm, MPI_ERRORS_RETURN);
+  if(ierr != MPI_SUCCESS) {
+      printf("! Could not set MPI error handler on validation!\n"); fflush(stdout);
+  }
+  ierr = MPI_Comm_set_errhandler(benchmark_comm, MPI_ERRORS_RETURN);
+  if(ierr != MPI_SUCCESS) {
+      printf("! Could not set MPI error handler!\n"); fflush(stdout);
+  }
 # ifdef HPGMP_VERBOSE
   if (myRank == 0) {
       std::cout << "main: created split validation comm." << std::endl;

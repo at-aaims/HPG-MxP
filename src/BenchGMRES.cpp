@@ -105,7 +105,10 @@ int BenchGMRES(int argc, char **argv, comm_type comm, DeviceCtx *const dctx, int
   test_mg_spmv<TestGMRESDataType, SparseMatrix_type, Vector_type>(comm, dctx, geom, A, test_data);
 
   const double setup_done = mytimer();
-  std::cout << " BenchGMRES: setup time = " << setup_done - benchmark_begin_time << "s" << std::endl;
+  if(geom->rank == 0) {
+      std::cout << " BenchGMRES: setup time = " << setup_done - benchmark_begin_time << "s"
+                << std::endl;
+  }
   // =====================================================================
   // Benchmark parameters
   int numberOfGmresCalls = 10;

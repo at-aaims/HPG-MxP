@@ -1,3 +1,7 @@
+/**
+ * @file kernel_helpers.hpp.inc
+ * @copyright (c) 2025, Oak Ridge National Laboratory.
+ */
 
 #ifdef HPGMP_WITH_HIP
 
