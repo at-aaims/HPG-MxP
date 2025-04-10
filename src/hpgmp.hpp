@@ -25,6 +25,8 @@
 #define HPGMP_HPP
 
 #include <fstream>
+#include <array>
+
 /*!
   This defines the type for integers that have local subdomain dimension.
 
@@ -102,10 +104,23 @@ typedef HPGMP_Params_STRUCT HPGMP_Params;
   typedef MPI_Comm comm_type;
 #endif
 
-extern int HPGMP_Init_Params(const char *title, int * argc_p, char ** *argv_p, HPGMP_Params & params, comm_type comm);
-extern int HPGMP_Init_Params(int * argc_p, char ** *argv_p, HPGMP_Params & params, comm_type comm);
-extern int HPGMP_Init(int * argc_p, char ** *argv_p);
-extern int HPGMP_Finalize(void);
+int HPGMP_Init_Params(const char *title, int * argc_p, char ** *argv_p, HPGMP_Params & params, comm_type comm);
+int HPGMP_Init_Params(int * argc_p, char ** *argv_p, HPGMP_Params & params, comm_type comm);
+int HPGMP_Init(int * argc_p, char ** *argv_p);
+int HPGMP_Finalize(void);
+
+/** Stores the number of floating point operations (flops) and
+ * loads and stores from memory (mem_traffic) in any kernel.
+ *
+ * Stores flops and memory traffic separately for every precision used,
+ * stored highest precision to lowest precision.
+ */
+struct flops_and_traffic {
+    static constexpr int n_precs = 2;
+    std::array<int, n_precs> flops;
+    std::array<int, n_precs> f_mem_traffic;
+    int i_mem_traffic;
+};
 
 #define IS_NAN(a) (std::isinf(a) || std::isnan(a) || !(a == a))
 

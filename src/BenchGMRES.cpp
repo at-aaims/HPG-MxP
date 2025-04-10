@@ -389,6 +389,7 @@ void test_mg_spmv(MPI_Comm comm, DeviceCtx *const dctx, const Geometry *const ge
 {
     const local_int_t nrow = A.localNumberOfRows;
     const local_int_t ncol = A.localNumberOfColumns;
+    const bool symmetric = false;
 
     VectorType x_overlap(ncol, A.comm, dctx),  // overlapped copy of x vector
                b_computed(nrow, A.comm, dctx);
@@ -407,7 +408,8 @@ void test_mg_spmv(MPI_Comm comm, DeviceCtx *const dctx, const Geometry *const ge
       }
 #endif
       if (ierr) HPGMP_fout << "Error in call to SpMV: " << ierr << ".\n" << endl;
-      ierr = ComputeMG(A, b_computed, x_overlap); // b_computed = Minv*y_overlap
+      flops_and_traffic ft;
+      ierr = ComputeMG(A, b_computed, x_overlap, symmetric, ft); // b_computed = Minv*y_overlap
       if (ierr) HPGMP_fout << "Error in call to MG: " << ierr << ".\n" << endl;
     }
 #ifdef HPGMP_VERBOSE

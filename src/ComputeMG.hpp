@@ -16,10 +16,13 @@
 
 #ifndef COMPUTEMG_HPP
 #define COMPUTEMG_HPP
+
+#include "hpgmp.hpp"
 #include "SparseMatrix.hpp"
 #include "Vector.hpp"
 
 template<class SparseMatrix_type, class Vector_type>
-int ComputeMG(const SparseMatrix_type & A, const Vector_type & r, Vector_type & x, bool symmetric=false);
+int ComputeMG(const SparseMatrix_type & A, const Vector_type & r, Vector_type & x,
+              bool symmetric, flops_and_traffic& ft);
 
 #endif // COMPUTEMG_HPP

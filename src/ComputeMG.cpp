@@ -34,21 +34,29 @@
  * @param[in] r the input vector
  * @param[inout] x On exit contains the result of the multigrid V-cycle with r as the RHS,
  *                 x is the approximation to Ax = r.
+ * @param[inout] ft  It is updated with the flops, memory traffic etc. for the global multigrid
+ *                   preconditioner.
+ *
+ * The total number of flops in the entire MG preconditioner with n levels is
+ * 2*nnz_allgrids*(1 + n_presmooth + n_postsmooth) - 2*(nnz_finest - nnz_coarsest).
+ * Note that this is cheaper than the reference ComputeMG_ref because of fusing the residual
+ * calculation and restriction.
  *
  * @return returns 0 upon success and non-zero otherwise
  *
  * @see ComputeMG_ref
  */
 template<class SparseMatrix_type, class Vector_type>
-int ComputeMG(const SparseMatrix_type & A, const Vector_type & r, Vector_type & x, const bool symmetric)
+int ComputeMG(const SparseMatrix_type & A, const Vector_type & r, Vector_type & x,
+              const bool symmetric, flops_and_traffic& ft)
 {
   using scalar_type = typename SparseMatrix_type::scalar_type;
+  const int mpisize = A.geom->size;
 
   // Optimized versions of calls
   double t0 = 0.0;
   x.fill_zero();
-
-  //const int rank = A.geom->rank;
+  ft.f_mem_traffic[0] += x.local_length();
 
   std::shared_ptr<const ELLMatrix<scalar_type>> mat =
       dynamic_cast<EllOptData<scalar_type>*>(A.optimizationData)->mat;
@@ -61,26 +69,20 @@ int ComputeMG(const SparseMatrix_type & A, const Vector_type & r, Vector_type & 
     for(int i=0; i < numberOfPresmootherSteps; ++i) {
       if(i = 0) {
         ierr += ell_multicolor_gs_zero_initial(symmetric, mat.get(), &r, &x);
+        ft.flops[0] += A.totalNumberOfNonzeros;
       } else {
         ierr += ell_multicolor_gs(symmetric, mat.get(), &r, &x);
+        ft.flops[0] += 2*A.totalNumberOfNonzeros;
       }
     }
     if (ierr!=0)
         return ierr;
 
-    // Compute residual vector
-    //TICK();
-    //double time1 = x.time1, time2 = x.time2;
-    //ierr = ComputeSPMV(A, x, *A.mgData->Axf);
-    //if (ierr!=0)
-    //    return ierr;
-    //x.time1 = time1; x.time2 = time2;
-    //TOCK(x.time1);
-
     // Restriction operation
     TICK();
     //ierr = restriction(A, r);
     ierr = fused_spmv_restriction(A, r, x);
+    ft.flops[0] += 2*A.Ac->totalNumberOfNonzeros;
     if (ierr!=0)
       return ierr;
     TOCK(x.time3);
@@ -88,7 +90,7 @@ int ComputeMG(const SparseMatrix_type & A, const Vector_type & r, Vector_type & 
     // MG on coarser-grid
     A.mgData->xc->time1 = A.mgData->xc->time2 = 0.0;
     A.mgData->xc->time3 = A.mgData->xc->time4 = 0.0;
-    ierr = ComputeMG(*A.Ac,*A.mgData->rc, *A.mgData->xc, symmetric);
+    ierr = ComputeMG(*A.Ac,*A.mgData->rc, *A.mgData->xc, symmetric, ft);
     if (ierr!=0)
       return ierr;
     x.time1 += A.mgData->xc->time1; x.time2 += A.mgData->xc->time2;
@@ -97,6 +99,7 @@ int ComputeMG(const SparseMatrix_type & A, const Vector_type & r, Vector_type & 
     // Prolongation operation
     TICK();
     ierr = prolongation(A, x);
+    ft.flops[0] += mpisize*A.mgData->rc->local_length();
     if (ierr!=0)
       return ierr;
     TOCK(x.time4);
@@ -105,6 +108,7 @@ int ComputeMG(const SparseMatrix_type & A, const Vector_type & r, Vector_type & 
     const int numberOfPostsmootherSteps = A.mgData->numberOfPostsmootherSteps;
     for (int i=0; i< numberOfPostsmootherSteps; ++i) {
       ierr += ell_multicolor_gs(symmetric, mat.get(), &r, &x);
+      ft.flops[0] += 2*A.totalNumberOfNonzeros;
     }
     if (ierr!=0)
       return ierr;
@@ -112,6 +116,7 @@ int ComputeMG(const SparseMatrix_type & A, const Vector_type & r, Vector_type & 
   else {
     // coarsest grid
     ierr += ell_multicolor_gs(symmetric, mat.get(), &r, &x);
+    ft.flops[0] += 2*A.totalNumberOfNonzeros;
     if (ierr!=0)
       return ierr;
   }
@@ -124,8 +129,10 @@ int ComputeMG(const SparseMatrix_type & A, const Vector_type & r, Vector_type & 
  * --------------- */
 
 template
-int ComputeMG< SparseMatrix<double>, Vector<double> >(SparseMatrix<double> const&, Vector<double> const&, Vector<double>&, bool);
+int ComputeMG(SparseMatrix<double> const&, Vector<double> const&, Vector<double>&, bool,
+              flops_and_traffic&);
 
 template
-int ComputeMG< SparseMatrix<float>, Vector<float> >(SparseMatrix<float> const&, Vector<float> const&, Vector<float>&, bool);
+int ComputeMG(SparseMatrix<float> const&, Vector<float> const&, Vector<float>&, bool,
+              flops_and_traffic&);
 

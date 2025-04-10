@@ -119,11 +119,19 @@ int GMRES(const SparseMatrix_type& A, GMRESData_type& data, const Vector_type& b
   double flops_spmv = 0.0;
   double flops_orth = 0.0;
   const global_int_t numSpMVs_MG = 1 +
-      (A.mgData->numberOfPresmootherSteps + A.mgData->numberOfPostsmootherSteps);
+      A.mgData->numberOfPresmootherSteps + A.mgData->numberOfPostsmootherSteps;
   niters = 0;
   bool converged = false;
   double t_begin = mytimer();  // Start timing right away
-  while (niters <= max_iter && !converged) {
+  while (niters <= max_iter && !converged)
+  {
+    flops_and_traffic mgft;
+    for(int i = 0; i < flops_and_traffic::n_precs; i++) {
+        mgft.flops[i] = 0;
+        mgft.f_mem_traffic[i] = 0;
+    }
+    mgft.i_mem_traffic = 0;
+
     // p is of length ncols, copy x to p for sparse MV operation
     // In HIP/Cuda builds, this copies only device buffers.
     CopyVector(x, p);
@@ -168,8 +176,8 @@ int GMRES(const SparseMatrix_type& A, GMRESData_type& data, const Vector_type& b
       TICK();
       if (doPreconditioning) {
         z.time1 = z.time2 = z.time3 = z.time4 = 0.0;
-        ComputeMG(A, Qkm1, z, symmetric);
-        flops_gmg += (2*numSpMVs_MG*A.totalNumberOfMGNonzeros); // Apply preconditioner
+        ComputeMG(A, Qkm1, z, symmetric, mgft);
+        //flops_gmg += (2*numSpMVs_MG*A.totalNumberOfMGNonzeros); // Apply preconditioner
         t7 += z.time1; t8 += z.time2; t9 += z.time3; t10 += z.time4;
       } else {
         CopyVector(Qkm1, z);              // copy r to z (no preconditioning)
@@ -287,7 +295,8 @@ int GMRES(const SparseMatrix_type& A, GMRESData_type& data, const Vector_type& b
 
       z.time1 = z.time2 = z.time3 = z.time4 = 0.0;
       TICK();
-      ComputeMG(A, r, z, symmetric); flops_gmg += (2*numSpMVs_MG*A.totalNumberOfMGNonzeros);      // z = M*r
+      ComputeMG(A, r, z, symmetric, mgft);
+      //flops_gmg += (2*numSpMVs_MG*A.totalNumberOfMGNonzeros);      // z = M*r
       TOCK(t5); // Preconditioner apply time
       t7 += z.time1; t8 += z.time2; t9 += z.time3; t10 += z.time4;
 
@@ -295,6 +304,7 @@ int GMRES(const SparseMatrix_type& A, GMRESData_type& data, const Vector_type& b
     } else {
       ComputeGEMV(nrow, k-1, one, Q, t, one, x, A.isGemvOptimized); flops += (itwo*Nrow*(k-ione)); // x += Q*t
     }
+    flops_gmg += mgft.flops[0];
   } // end of outer-loop
 
 

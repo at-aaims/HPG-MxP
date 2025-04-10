@@ -59,16 +59,18 @@ __global__ void kernel_prolongation(const local_int_t size,
 }
 
 /*!
-  Routine to compute the coarse residual vector.
-
-  @param[in]  Af - Fine grid sparse matrix object containing pointers to current coarse grid correction and the f2c operator.
-  @param[inout] xf - Fine grid solution vector, update with coarse grid correction.
-
-  Note that the fine grid residual is never explicitly constructed.
-  We only compute it for the fine grid points that will be injected into corresponding coarse grid points.
-
-  @return Returns zero on success and a non-zero value otherwise.
-*/
+ * Adds the correction computed on the coarse grid to fine-grid solution vector.
+ *
+ * @param[in] Af  Fine grid sparse matrix object,
+ *                containing pointers to current coarse grid correction and the f2c operator.
+ * @param[inout] xf - Fine grid solution vector, update with coarse grid correction.
+ *
+ * Note that the fine grid residual is never explicitly constructed.
+ * We only compute it for the fine grid points that will be injected into
+ * corresponding coarse grid points.
+ *
+ * @return Returns zero on success and a non-zero value otherwise.
+ */
 template <typename mat_scalar, typename vec_scalar>
 int prolongation(const SparseMatrix<mat_scalar>& Af, Vector<vec_scalar>& xf)
 {

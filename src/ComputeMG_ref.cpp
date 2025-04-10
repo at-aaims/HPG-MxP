@@ -41,6 +41,8 @@
 
   @return returns 0 upon success and non-zero otherwise
 
+  The total number of flops in MG with N levels is 2*nnz_allgrids*(1 + n_presmooth + n_postsmooth).
+
   @see ComputeMG
 */
 template<class SparseMatrix_type, class Vector_type>
