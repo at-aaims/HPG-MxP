@@ -69,8 +69,6 @@ int OptimizeProblemELL(SparseMatrix<mat_scalar>& A, GMRESData<solver_scalar>& da
     auto dctx = A.dctx;
     const int local_nrows = A.localNumberOfRows;
 
-    //seemingly_necessary_stuff_from_reference(&A);
-
     SparseMatrix<mat_scalar>* M = &A;
     int igrid = 0;
     while(M != NULL)
@@ -94,6 +92,11 @@ int OptimizeProblemELL(SparseMatrix<mat_scalar>& A, GMRESData<solver_scalar>& da
         permute_columns(*M);
 
         // Convert matrix to ELL format
+#ifdef HPGMP_VERBOSE
+        if(A.geom->rank == 0) {
+            std::cout << "Setting up ELL on grid " << igrid << "." << std::endl;
+        }
+#endif
         auto moptdata = new EllOptData<mat_scalar>;
         moptdata->mat = std::make_shared<ELLMatrix<mat_scalar>>(*M);
         M->optimizationData = moptdata;
@@ -104,27 +107,11 @@ int OptimizeProblemELL(SparseMatrix<mat_scalar>& A, GMRESData<solver_scalar>& da
         }
 #endif
 
-        // Defrag matrix arrays and permutation vector
-        //HIP_CHECK(deviceDefrag((void**)&M->ell_col_ind,
-        //                       sizeof(local_int_t) * M->ell_width * M->localNumberOfRows));
-        //HIP_CHECK(deviceDefrag((void**)&M->ell_val, sizeof(double) * M->ell_width * M->localNumberOfRows));
-        //HIP_CHECK(deviceDefrag((void**)&M->perm, sizeof(local_int_t) * M->localNumberOfRows));
-
         // Permute matrix rows
         moptdata->mat->permute_rows(M->perm);
 
         // Extract diagonal indices and inverse values
         moptdata->mat->extract_diagonal();
-
-        // Defrag
-#ifdef HPGMP_MEMORY_MANAGEMENT
-        //HIP_CHECK(deviceDefrag((void**)&M->diag_idx, sizeof(local_int_t) * M->localNumberOfRows));
-        //HIP_CHECK(deviceDefrag((void**)&M->inv_diag, sizeof(double) * M->localNumberOfRows));
-#ifndef HPGMP_NO_MPI
-        //HIP_CHECK(deviceDefrag((void**)&M->d_send_buffer, sizeof(double) * M->totalToBeSent));
-        //HIP_CHECK(deviceDefrag((void**)&M->d_elementsToSend, sizeof(local_int_t) * M->totalToBeSent));
-#endif
-#endif
 
         dctx->device_free(M->d_mtxIndL);
         dctx->device_free(M->d_matrixValues);
@@ -135,27 +122,9 @@ int OptimizeProblemELL(SparseMatrix<mat_scalar>& A, GMRESData<solver_scalar>& da
     }
 
     // Permute vectors
-    //PermuteVector(A.localNumberOfRows, b, A.perm);
-    //PermuteVector(A.localNumberOfRows, xexact, A.perm);
     b.permute(A.perm);
     xexact.permute(A.perm);
 
-    // Defrag hierarchy structures
-#ifdef HPGMP_MEMORY_MANAGEMENT
-    //M = &A;
-    //MGData* mg = M->mgData;
-
-    //while(mg != NULL)
-    //{
-    //    M = M->Ac;
-
-    //    HIP_CHECK(deviceDefrag((void**)&mg->d_f2cOperator, sizeof(local_int_t) * M->localNumberOfRows));
-    //    HIP_CHECK(deviceDefrag((void**)&mg->rc->d_values, sizeof(double) * mg->rc->localLength));
-    //    HIP_CHECK(deviceDefrag((void**)&mg->xc->d_values, sizeof(double) * mg->xc->localLength));
-
-    //    mg = M->mgData;
-    //}
-#endif
     return 0;
 }
 

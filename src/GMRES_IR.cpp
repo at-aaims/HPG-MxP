@@ -414,7 +414,8 @@ int GMRES_IR(const SparseMatrix_type & A, const SparseMatrix_type2 & A_lo,
 
       z.time1 = z.time2 = z.time3 = z.time4 = 0.0;
       TICK();
-      ComputeMG(A, r_hi, z_hi, symmetric); flops_gmg += (2*numSpMVs_MG*A.totalNumberOfMGNonzeros);    // z = M*r
+      ComputeMG(A, r_hi, z_hi, symmetric);
+      flops_gmg += (2*numSpMVs_MG*A.totalNumberOfMGNonzeros);    // z = M*r
       TOCK(t5); // Preconditioner apply time
       test_data.numOfMGCalls++;
       t7 += z.time1; t8 += z.time2; t9 += z.time3; t10 += z.time4;

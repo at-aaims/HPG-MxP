@@ -15,8 +15,8 @@ DistMatrixBase::DistMatrixBase(const SparseMatrix<scalar>& A)
                       dctx_->device_alloc(totalToBeSent_*sizeof(local_int_t)))},
     n_independent_sets_{A.nblocks}, ind_perm_{A.perm}, ind_sizes_{A.sizes},
     ind_offsets_{A.offsets},
-    sendBuffer_{dctx_->pinned_host_alloc(totalToBeSent_*sizeof(double))},
-    d_sendBuffer_{dctx_->device_alloc(totalToBeSent_*sizeof(double))}
+    sendBuffer_{dctx_->pinned_host_alloc(totalToBeSent_*sizeof(scalar))},
+    d_sendBuffer_{dctx_->device_alloc(totalToBeSent_*sizeof(scalar))}
 {
     dctx_->copy_host_to_device_sync(elementsToSend_, A.elementsToSend,
                                     totalToBeSent_*sizeof(local_int_t));

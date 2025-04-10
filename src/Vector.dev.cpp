@@ -496,9 +496,9 @@ void Vector<scalar>::update_halos_send_receive(const DistMatrixBase *const mat) 
     TOCK_STREAM_SYNC(halo_stream, t0_, time1);
 
     for (int i = 0; i < num_neighbors; i++) {
-      const local_int_t n_send = sendLength[i];
-      MPI_Isend(send_buffer, n_send, MPI_SCALAR_TYPE, neighbors[i], MPI_MY_TAG, comm, &send_reqs_[i]);
-      send_buffer += n_send;
+        const local_int_t n_send = sendLength[i];
+        MPI_Isend(send_buffer, n_send, MPI_SCALAR_TYPE, neighbors[i], MPI_MY_TAG, comm, &send_reqs_[i]);
+        send_buffer += n_send;
     }
 #endif
 }
