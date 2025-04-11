@@ -177,7 +177,7 @@ int GMRES_IR(const SparseMatrix_type & A, const SparseMatrix_type2 & A_lo,
     TICK(); ComputeWAXPBY_opt(nrow, one_hi, b_hi, -one_hi, Ap_hi, r_hi, A.isWaxpbyOptimized);
     flops += (itwo*Nrow);  TOCK(t11); // r = b - Ax (x stored in p)
     TICK(); ComputeDotProduct(nrow, r_hi, r_hi, normr_hi, t4, A.isDotProductOptimized);
-    flops += (itwo*Nrow); TOCK(t11);
+    flops += (itwo*Nrow); TOCK(t1_);
     normr_hi = sqrt(normr_hi);
     test_data.numOfSPCalls++;
     // Record initial residual for convergence testing
@@ -271,7 +271,8 @@ int GMRES_IR(const SparseMatrix_type & A, const SparseMatrix_type2 & A_lo,
                          (nrow, Qk, Qj, beta, t4, A.isDotProductOptimized); STOP_T(t1);
 
             // Qk = Qk - beta * Qj
-            START_T(); ComputeWAXPBY_opt(nrow, one, Qk, -beta, Qj, Qk, A.isWaxpbyOptimized); STOP_T(t2);
+            START_T(); ComputeWAXPBY_opt(nrow, one, Qk, -beta, Qj, Qk, A.isWaxpbyOptimized);
+            STOP_T(t2);
             alpha += beta;
           }
           H.set_value(j, k-1, alpha);
@@ -281,9 +282,11 @@ int GMRES_IR(const SparseMatrix_type & A, const SparseMatrix_type2 & A_lo,
         // CGS2
         // first orthogonalization
         auto P = Q.get_multi_vector(0, k-1);
-        // h = Q(1:k)'*q(k+1), mul and add in proj_type
+        // Batched dot to compute components along previoud vectors h = Q(1:k)'*q(k+1)
+        // mul and add in proj_type
         START_T(); ComputeGEMVT (nrow, k,  one, P, Qk, zero_pr, h, A.isGemvOptimized); STOP_T(t1);
-        START_T(); ComputeGEMV  (nrow, k, -one, P, h,  one,    Qk, A.isGemvOptimized); STOP_T(t2); // q(k+1) = q(k+1) - Q(1:k)*h
+        // Subtract components along previous vectors to orthogonalize: q(k+1) = q(k+1) - Q(1:k)*h
+        START_T(); ComputeGEMV  (nrow, k, -one, P, h,  one,    Qk, A.isGemvOptimized); STOP_T(t2);
         t1_comp += h.time1; t1_comm += h.time2;
         for(int i = 0; i < k; i++) {
           H.set_value(i, k-1, h.values()[i]);
@@ -295,8 +298,8 @@ int GMRES_IR(const SparseMatrix_type & A, const SparseMatrix_type2 & A_lo,
         // h = Q(1:k)'*q(k+1)
         ComputeGEMVT (nrow, k,  one, P, Qk, zero_pr, h, A.isGemvOptimized);
         STOP_T(t1);
-
-        START_T(); ComputeGEMV (nrow, k, -one, P, h,  one, Qk, A.isGemvOptimized); STOP_T(t2); // q(k+1) = q(k+1) - Q(1:k)*h
+        // q(k+1) = q(k+1) - Q(1:k)*h
+        START_T(); ComputeGEMV (nrow, k, -one, P, h,  one, Qk, A.isGemvOptimized); STOP_T(t2);
         t1_comp += h.time1; t1_comm += h.time2;
         for(int i = 0; i < k; i++) {
           H.add_value(i, k-1, h.values()[i]);
@@ -305,21 +308,20 @@ int GMRES_IR(const SparseMatrix_type & A, const SparseMatrix_type2 & A_lo,
       } // end or CGS2
 
       // beta = norm(Qk)
-      START_T(); ComputeDotProduct<Vector_type2, project_type>(nrow, Qk, Qk, beta, t4, A.isDotProductOptimized); STOP_T(t1_);
+      START_T();
+      ComputeDotProduct<Vector_type2, project_type>(nrow, Qk, Qk, beta, t4,
+                                                    A.isDotProductOptimized);
+      STOP_T(t1_);
       flops_orth += (itwo*Nrow);
       beta = sqrt(beta);
 
       // Qk = Qk / beta
       // NOTE: Qk is scalar_type2, so the scaling factor is cast to this type before scaling.
-      START_T(); Qk.scale(static_cast<scalar_type2>(one_pr/beta)); STOP_T(t2);
+      START_T(); Qk.scale(static_cast<scalar_type2>(one_pr/beta)); STOP_T(t11);
       flops_orth += (Nrow);
 
       TOCK(t6); // Ortho time
       H.set_value(k, k-1, beta);
-      #if 0
-      for (int i = 0; i <= k; ++i) HPGMP_fout << " + h[" << i << "] = " << GetMatrixValue(H, i, k-1) << std::endl;
-      HPGMP_fout << std::endl;
-      #endif
 
       // Given's rotation
       for(int j = 0; j < k-1; j++){
@@ -435,7 +437,8 @@ int GMRES_IR(const SparseMatrix_type & A, const SparseMatrix_type2 & A_lo,
       flops += (itwo*Nrow); TOCK(t11);
 #else
       // r = Q*t
-      ComputeGEMV (nrow, k-1, one, Q, t, zero, r, A.isGemvOptimized); flops += (itwo*Nrow*(k-ione));
+      ComputeGEMV (nrow, k-1, one, Q, t, zero, r, A.isGemvOptimized);
+      flops += (itwo*Nrow*(k-ione));
 
       z.time1_ = z.time2_ = z.time3_ = z.time4_ = 0.0;
       TICK();
@@ -464,7 +467,7 @@ int GMRES_IR(const SparseMatrix_type & A, const SparseMatrix_type2 & A_lo,
   double tt = mytimer() - t_begin;
   test_data.times[0]  += tt;       // Total time. All done...
   test_data.times[1]  += t1 + t1_; // dot-product time
-  test_data.times[2]  += t2;       // WAXPBY time
+  test_data.times[2]  += t2;       // GEMV time in ortho
   test_data.times[3]  += t6;       // Ortho
   test_data.times[4]  += t3;       // SPMV time
   test_data.times[5]  += t4;       // AllReduce time

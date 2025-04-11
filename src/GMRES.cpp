@@ -141,7 +141,7 @@ int GMRES(const SparseMatrix_type& A, GMRESData_type& data, const Vector_type& b
     flops += (itwo*Nrow); // r = b - Ax (x stored in p)
 
     TICK(); ComputeDotProduct(nrow, r, r, normr, t4, A.isDotProductOptimized);
-    flops += (itwo*Nrow); TOCK(t11);
+    flops += (itwo*Nrow); TOCK(t1);
     normr = sqrt(normr);
 
     auto Qj = Q.get_vector(0);
@@ -236,8 +236,9 @@ int GMRES(const SparseMatrix_type& A, GMRESData_type& data, const Vector_type& b
       beta = sqrt(beta);
 
       // Qk = Qk / beta
-      START_T(); Qk.scale(one/beta); STOP_T(t2);
+      START_T(); Qk.scale(one/beta); STOP_T(t11);
       flops_orth += (Nrow);
+
       TOCK(t6); // Ortho time
 
       H.set_value(k, k-1, beta);
@@ -278,7 +279,6 @@ int GMRES(const SparseMatrix_type& A, GMRESData_type& data, const Vector_type& b
       if (verbose && A.geom->rank==0 && (k%print_freq == 0 || k+1 == restart_length)) {
         HPGMP_fout << "GMRES Iteration = "<< k << " (" << niters << ")   Scaled Residual = "
                   << normr << " / " << normr0 << " = " << normr/normr0 << std::endl;
-        //HPGMP_fout << "Flop count : GMG = " << flops_gmg << " SpMV = " << flops_spmv << " Ortho = " << flops_orth << std::endl;
       }
       niters ++;
       k ++;
@@ -290,8 +290,9 @@ int GMRES(const SparseMatrix_type& A, GMRESData_type& data, const Vector_type& b
     // > update x
     ComputeTRSM(k-1, one, H, t);
     if (doPreconditioning) {
-      // t is on host, so ComputeGEMV first copies it to device before computation
-      ComputeGEMV(nrow, k-1, one, Q, t, zero, r, A.isGemvOptimized); flops += (itwo*Nrow*(k-ione)); // r = Q*t
+      // r = Q*t. t is on host, so ComputeGEMV first copies it to device before computation
+      ComputeGEMV(nrow, k-1, one, Q, t, zero, r, A.isGemvOptimized);
+      flops += (itwo*Nrow*(k-ione));
 
       z.time1_ = z.time2_ = z.time3_ = z.time4_ = 0.0;
       TICK();
@@ -300,9 +301,11 @@ int GMRES(const SparseMatrix_type& A, GMRESData_type& data, const Vector_type& b
       TOCK(t5); // Preconditioner apply time
       t7 += z.time1_; t8 += z.time2_; t9 += z.time3_; t10 += z.time4_;
 
-      TICK(); ComputeWAXPBY(nrow, one, x, one, z, x, A.isWaxpbyOptimized); TOCK(t11); flops += (itwo*Nrow); // x += z
+      TICK(); ComputeWAXPBY(nrow, one, x, one, z, x, A.isWaxpbyOptimized); TOCK(t11);
+      flops += (itwo*Nrow); // x += z
     } else {
-      ComputeGEMV(nrow, k-1, one, Q, t, one, x, A.isGemvOptimized); flops += (itwo*Nrow*(k-ione)); // x += Q*t
+      // x += Q*t
+      ComputeGEMV(nrow, k-1, one, Q, t, one, x, A.isGemvOptimized); flops += (itwo*Nrow*(k-ione));
     }
     flops_gmg += mgft.flops[0];
   } // end of outer-loop
@@ -312,7 +315,7 @@ int GMRES(const SparseMatrix_type& A, GMRESData_type& data, const Vector_type& b
   double tt = mytimer() - t_begin;
   test_data.times[0]  += tt;  // Total time. All done...
   test_data.times[1]  += t1;  // dot-product time
-  test_data.times[2]  += t2;  // WAXPBY time
+  test_data.times[2]  += t2;  // GEMV and scale time in ortho
   test_data.times[3]  += t6;  // Ortho
   test_data.times[4]  += t3;  // SPMV time
   test_data.times[5]  += t4;  // AllReduce time
