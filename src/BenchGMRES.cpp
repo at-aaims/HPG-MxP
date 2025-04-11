@@ -166,7 +166,11 @@ int BenchGMRES(int argc, char **argv, comm_type comm, DeviceCtx *const dctx, int
     gmresir_run_time /= timing_calls;
 
     double avg_run_time = 0;
+#ifndef HPGMP_NO_MPI
     MPI_Allreduce(&gmresir_run_time, &avg_run_time, 1, MPI_DOUBLE, MPI_SUM, comm);
+#else
+    avg_run_time = gmresir_run_time;
+#endif
     avg_run_time /= geom->size;
 
     // Get number of iterations to fill the required time
@@ -254,8 +258,10 @@ int BenchGMRES(int argc, char **argv, comm_type comm, DeviceCtx *const dctx, int
   }
 
   const double benchmark_done = mytimer();
-  std::cout << " BenchGMRES: Main benchmark time = " << benchmark_done - setup_done << "s"
-            << std::endl;
+  if(A.geom->rank == 0) {
+      std::cout << " BenchGMRES: Main benchmark time = " << benchmark_done - setup_done << "s"
+                << std::endl;
+  }
 
   // =====================================================================
   // (Optional)
@@ -311,7 +317,7 @@ int BenchGMRES(int argc, char **argv, comm_type comm, DeviceCtx *const dctx, int
                  << " (n = " << A.totalNumberOfRows << ")" << endl;
     }
     test_data.refTotalFlops = test_data.flops[0];
-    test_data.refTotalTime  = time_solve_total;
+    test_data.refTotalTime  = test_data.times[0];
 
     test_data.refNumOfMGCalls = test_data.numOfMGCalls;
     test_data.refNumOfSPCalls = test_data.numOfSPCalls;
