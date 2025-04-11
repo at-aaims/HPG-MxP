@@ -133,7 +133,8 @@ public:
    */
   void permute(const local_int_t *perm);
   
-  mutable double time1{}, time2{}, time3{}, time4{};
+  mutable double time1_{}, time2_{};
+  mutable double time3_{}, time4_{};
 
 private:
   local_int_t localLength_ = 0;  //!< length of local portion of the vector

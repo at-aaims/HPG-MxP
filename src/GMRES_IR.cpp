@@ -172,7 +172,7 @@ int GMRES_IR(const SparseMatrix_type & A, const SparseMatrix_type2 & A_lo,
     TICK(); ComputeSPMV(A, p_hi, Ap_hi);            // Ap = A*p
     flops_spmv += (2*A.totalNumberOfNonzeros);
     TOCK(t3);
-    t3_1 += p_hi.time1; t3_2 += p_hi.time2;
+    t3_1 += p_hi.time1_; t3_2 += p_hi.time2_;
 
     TICK(); ComputeWAXPBY_opt(nrow, one_hi, b_hi, -one_hi, Ap_hi, r_hi, A.isWaxpbyOptimized);
     flops += (itwo*Nrow);  TOCK(t11); // r = b - Ax (x stored in p)
@@ -237,12 +237,12 @@ int GMRES_IR(const SparseMatrix_type & A, const SparseMatrix_type2 & A_lo,
 
       TICK();
       if (doPreconditioning) {
-        z.time1 = z.time2 = z.time3 = z.time4 = 0.0;
+        z.time1_ = z.time2_ = z.time3_ = z.time4_ = 0.0;
         // Apply preconditioner
         ComputeMG(A_lo, Qkm1, z, symmetric, mgft);
         //flops_gmg += (2*numSpMVs_MG*A.totalNumberOfMGNonzeros);
         test_data.numOfMGCalls++;
-        t7 += z.time1; t8 += z.time2; t9 += z.time3; t10 += z.time4;
+        t7 += z.time1_; t8 += z.time2_; t9 += z.time3_; t10 += z.time4_;
       } else {
         CopyVector(Qkm1, z);       // copy r to z (no preconditioning)
       }
@@ -252,7 +252,7 @@ int GMRES_IR(const SparseMatrix_type & A, const SparseMatrix_type2 & A_lo,
       TICK(); ComputeSPMV(A_lo, z, Qk);
       flops_spmv += (2*A.totalNumberOfNonzeros);
       TOCK(t3);
-      t3_1 += z.time1; t3_2 += z.time2;
+      t3_1 += z.time1_; t3_2 += z.time2_;
       test_data.numOfSPCalls++;
 
       // orthogonalize z against Q(:,0:k-1), using dots
@@ -422,13 +422,13 @@ int GMRES_IR(const SparseMatrix_type & A, const SparseMatrix_type2 & A_lo,
       ComputeGEMV (nrow, k-1, one, Q, t, zero_hi, r_hi, A.isGemvOptimized);
       flops += (itwo*Nrow*(k-ione)); // r = Q*t
 
-      z.time1 = z.time2 = z.time3 = z.time4 = 0.0;
+      z_hi.time1_ = z_hi.time2_ = z_hi.time3_ = z_hi.time4_ = 0.0;
       TICK();
       ComputeMG(A, r_hi, z_hi, symmetric, mgft);
       //flops_gmg += (2*numSpMVs_MG*A.totalNumberOfMGNonzeros);    // z = M*r
       TOCK(t5); // Preconditioner apply time
       test_data.numOfMGCalls++;
-      t7 += z.time1; t8 += z.time2; t9 += z.time3; t10 += z.time4;
+      t7 += z_hi.time1_; t8 += z_hi.time2_; t9 += z_hi.time3_; t10 += z_hi.time4_;
 
       // (mixed-precision) x += z
       TICK(); ComputeWAXPBY_opt(nrow, one_hi, x_hi, one_hi, z_hi, x_hi, A.isWaxpbyOptimized);
@@ -437,14 +437,14 @@ int GMRES_IR(const SparseMatrix_type & A, const SparseMatrix_type2 & A_lo,
       // r = Q*t
       ComputeGEMV (nrow, k-1, one, Q, t, zero, r, A.isGemvOptimized); flops += (itwo*Nrow*(k-ione));
 
-      z.time1 = z.time2 = z.time3 = z.time4 = 0.0;
+      z.time1_ = z.time2_ = z.time3_ = z.time4_ = 0.0;
       TICK();
       // z = M*r
       ComputeMG(A_lo, r, z, symmetric, mgft);
       //flops_gmg += (2*numSpMVs_MG*A.totalNumberOfMGNonzeros);
       TOCK(t5); // Preconditioner apply time
       test_data.numOfMGCalls++;
-      t7 += z.time1; t8 += z.time2; t9 += z.time3; t10 += z.time4;
+      t7 += z.time1_; t8 += z.time2_; t9 += z.time3_; t10 += z.time4_;
 
       // mixed-precision
       TICK(); ComputeWAXPBY_opt(nrow, one_hi, x_hi, one, z, x_hi, A.isWaxpbyOptimized);
@@ -471,8 +471,8 @@ int GMRES_IR(const SparseMatrix_type & A, const SparseMatrix_type2 & A_lo,
   test_data.times[6]  += t5;       // preconditioner apply time
   test_data.times[7]  += t7;       // > SpTRSV for GS
   test_data.times[8]  += t8;       // > SpMV for GS
-  test_data.times[9]  += t9;       // > Restrict for GS
-  test_data.times[10] += t10;      // > Prolong for GS
+  test_data.times[9]  += t9;       // > Restrict for MG
+  test_data.times[10] += t10;      // > Prolong for MG
   test_data.times[11] += t11;      // Vector update time
 
   test_data.times_comp[1] += t1_comp; // dot-product time

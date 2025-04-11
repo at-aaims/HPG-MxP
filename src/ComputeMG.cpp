@@ -31,9 +31,10 @@
 
 /*!
  * @param[in] A the known system matrix
- * @param[in] r the input vector
- * @param[inout] x On exit contains the result of the multigrid V-cycle with r as the RHS,
+ * @param[in] r the residual or input RHS on the finest grid.
+ * @param[inout] x On exit contains the result of the multigrid V-cycle
  *                 x is the approximation to Ax = r.
+ *                 Also contains timing information of the whole multigrid preconditioner on exit.
  * @param[inout] ft  It is updated with the flops, memory traffic etc. for the global multigrid
  *                   preconditioner.
  *
@@ -64,8 +65,13 @@ int ComputeMG(const SparseMatrix_type & A, const Vector_type & r, Vector_type & 
   int ierr = 0;
   if (A.mgData!=0)
   {
-    // Go to next coarse level if defined
     const int numberOfPresmootherSteps = A.mgData->numberOfPresmootherSteps;
+
+    // Intentional abuse of Vector class timing variables
+    auto time_gs_sofar = x.time2_;
+    x.time2_ = 0.0;
+    TICK();
+
     for(int i=0; i < numberOfPresmootherSteps; ++i) {
       if(i = 0) {
         ierr += ell_multicolor_gs_zero_initial(symmetric, mat.get(), &r, &x);
@@ -75,6 +81,11 @@ int ComputeMG(const SparseMatrix_type & A, const Vector_type & r, Vector_type & 
         ft.flops[0] += 2*A.totalNumberOfNonzeros;
       }
     }
+    x.time1_ = 0.0;  // Apparently no one cares about GS comm time
+    // restore GS time so far
+    x.time2_ = time_gs_sofar;
+    TOCK(x.time2_);
+
     if (ierr!=0)
         return ierr;
 
@@ -85,16 +96,16 @@ int ComputeMG(const SparseMatrix_type & A, const Vector_type & r, Vector_type & 
     ft.flops[0] += 2*A.Ac->totalNumberOfNonzeros;
     if (ierr!=0)
       return ierr;
-    TOCK(x.time3);
+    TOCK(x.time3_);
 
     // MG on coarser-grid
-    A.mgData->xc->time1 = A.mgData->xc->time2 = 0.0;
-    A.mgData->xc->time3 = A.mgData->xc->time4 = 0.0;
+    A.mgData->xc->time1_ = A.mgData->xc->time2_ = 0.0;
+    A.mgData->xc->time3_ = A.mgData->xc->time4_ = 0.0;
     ierr = ComputeMG(*A.Ac,*A.mgData->rc, *A.mgData->xc, symmetric, ft);
     if (ierr!=0)
       return ierr;
-    x.time1 += A.mgData->xc->time1; x.time2 += A.mgData->xc->time2;
-    x.time3 += A.mgData->xc->time3; x.time4 += A.mgData->xc->time4;
+    x.time1_ += A.mgData->xc->time1_; x.time2_ += A.mgData->xc->time2_;
+    x.time3_ += A.mgData->xc->time3_; x.time4_ += A.mgData->xc->time4_;
 
     // Prolongation operation
     TICK();
@@ -102,20 +113,37 @@ int ComputeMG(const SparseMatrix_type & A, const Vector_type & r, Vector_type & 
     ft.flops[0] += mpisize*A.mgData->rc->local_length();
     if (ierr!=0)
       return ierr;
-    TOCK(x.time4);
+    TOCK(x.time4_);
 
     // Post-smoothing
+    time_gs_sofar = x.time2_;
+    x.time2_ = 0.0;
+    TICK();
+
     const int numberOfPostsmootherSteps = A.mgData->numberOfPostsmootherSteps;
     for (int i=0; i< numberOfPostsmootherSteps; ++i) {
       ierr += ell_multicolor_gs(symmetric, mat.get(), &r, &x);
       ft.flops[0] += 2*A.totalNumberOfNonzeros;
     }
+    x.time1_ = 0.0;  // Apparently no one cares about GS comm time
+    // restore GS time so far
+    x.time2_ = time_gs_sofar;
+    TOCK(x.time2_);
     if (ierr!=0)
       return ierr;
   }
   else {
     // coarsest grid
+    auto time_gs_sofar = x.time2_;
+    x.time2_ = 0.0;
+    TICK();
+
     ierr += ell_multicolor_gs(symmetric, mat.get(), &r, &x);
+
+    x.time1_ = 0.0;  // Apparently no one cares about GS comm time
+    // restore GS time so far
+    x.time2_ = time_gs_sofar;
+    TOCK(x.time2_);
     ft.flops[0] += 2*A.totalNumberOfNonzeros;
     if (ierr!=0)
       return ierr;

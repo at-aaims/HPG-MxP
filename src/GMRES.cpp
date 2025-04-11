@@ -175,10 +175,10 @@ int GMRES(const SparseMatrix_type& A, GMRESData_type& data, const Vector_type& b
 
       TICK();
       if (doPreconditioning) {
-        z.time1 = z.time2 = z.time3 = z.time4 = 0.0;
+        z.time1_ = z.time2_ = z.time3_ = z.time4_ = 0.0;
         ComputeMG(A, Qkm1, z, symmetric, mgft);
         //flops_gmg += (2*numSpMVs_MG*A.totalNumberOfMGNonzeros); // Apply preconditioner
-        t7 += z.time1; t8 += z.time2; t9 += z.time3; t10 += z.time4;
+        t7 += z.time1_; t8 += z.time2_; t9 += z.time3_; t10 += z.time4_;
       } else {
         CopyVector(Qkm1, z);              // copy r to z (no preconditioning)
       }
@@ -293,12 +293,12 @@ int GMRES(const SparseMatrix_type& A, GMRESData_type& data, const Vector_type& b
       // t is on host, so ComputeGEMV first copies it to device before computation
       ComputeGEMV(nrow, k-1, one, Q, t, zero, r, A.isGemvOptimized); flops += (itwo*Nrow*(k-ione)); // r = Q*t
 
-      z.time1 = z.time2 = z.time3 = z.time4 = 0.0;
+      z.time1_ = z.time2_ = z.time3_ = z.time4_ = 0.0;
       TICK();
       ComputeMG(A, r, z, symmetric, mgft);
       //flops_gmg += (2*numSpMVs_MG*A.totalNumberOfMGNonzeros);      // z = M*r
       TOCK(t5); // Preconditioner apply time
-      t7 += z.time1; t8 += z.time2; t9 += z.time3; t10 += z.time4;
+      t7 += z.time1_; t8 += z.time2_; t9 += z.time3_; t10 += z.time4_;
 
       TICK(); ComputeWAXPBY(nrow, one, x, one, z, x, A.isWaxpbyOptimized); TOCK(t11); flops += (itwo*Nrow); // x += z
     } else {

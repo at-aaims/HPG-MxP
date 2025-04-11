@@ -492,8 +492,8 @@ void Vector<scalar>::update_halos_send_receive(const DistMatrixBase *const mat) 
 
     send_reqs_.resize(num_neighbors);
 
-    // Wait for send-buffer packing and record the time in time1.
-    TOCK_STREAM_SYNC(halo_stream, t0_, time1);
+    // Wait for send-buffer packing and transfer, and record the time.
+    TOCK_STREAM_SYNC(halo_stream, t0_, time1_);
 
     for (int i = 0; i < num_neighbors; i++) {
         const local_int_t n_send = sendLength[i];
@@ -558,7 +558,7 @@ void Vector<scalar>::update_halos_finalize(const DistMatrixBase *const mat) cons
     internal::check_waitall_statuses("send", ierr, send_statuses);
     
     // sync halo stream and record time taken for comms in time2.
-    TOCK_STREAM_SYNC(halo_stream, t0_, time2);
+    TOCK_STREAM_SYNC(halo_stream, t0_, time2_);
 
     TICK_STREAM_SYNC(halo_stream, t0_);
 #if !defined(HPGMP_USE_GPU_AWARE_MPI)
@@ -572,7 +572,7 @@ void Vector<scalar>::update_halos_finalize(const DistMatrixBase *const mat) cons
     // Sync halo stream and add to time taken for HD copies to time1.
     // Note that synchronization is necessary here to ensure received halos are available
     // for kernels on other streams.
-    TOCK_STREAM_SYNC(halo_stream, t0_, time1);
+    TOCK_STREAM_SYNC(halo_stream, t0_, time1_);
 
     halos_buffer_packed_ = false;
     recv_reqs_.clear();
