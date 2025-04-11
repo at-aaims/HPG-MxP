@@ -290,7 +290,7 @@ void ReportResults(const SparseMatrix_type & A, int numberOfMgLevels,
       doc.get("Benchmark Time Summary")->add(" -  DDOT   (reference)",test_data.ref_times[1]);
       doc.get("Benchmark Time Summary")->add(" -   DDOT (comp)",  test_data.ref_times_comp[1]);
       doc.get("Benchmark Time Summary")->add(" -   DDOT (comm)",  test_data.ref_times_comm[1]);
-      doc.get("Benchmark Time Summary")->add(" -  WAXPBY (reference)",test_data.opt_times[2]);
+      doc.get("Benchmark Time Summary")->add(" -  GEMV (reference)",test_data.opt_times[2]);
       doc.get("Benchmark Time Summary")->add(" - SpMV    (reference)",test_data.ref_times[4]);
       doc.get("Benchmark Time Summary")->add(" - MG      (reference)",test_data.ref_times[6]);
       doc.get("Benchmark Time Summary")->add(" -  SpMV   (reference)",test_data.ref_times[7]);

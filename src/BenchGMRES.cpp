@@ -106,7 +106,6 @@ int BenchGMRES(int argc, char **argv, comm_type comm, DeviceCtx *const dctx, int
   }
   // =====================================================================
   // Benchmark parameters
-  int numberOfGmresCalls = 10;
   const int maxIters = 300;
   // Any official benchmark result must run at least this many seconds
   //double minOfficialTime = 1800;
