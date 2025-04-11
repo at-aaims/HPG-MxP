@@ -117,9 +117,9 @@ int HPGMP_Finalize(void);
  */
 struct flops_and_traffic {
     static constexpr int n_precs = 2;
-    std::array<int, n_precs> flops;
-    std::array<int, n_precs> f_mem_traffic;
-    int i_mem_traffic;
+    std::array<double, n_precs> flops;
+    std::array<double, n_precs> f_mem_traffic;
+    double i_mem_traffic;
 };
 
 #define IS_NAN(a) (std::isinf(a) || std::isnan(a) || !(a == a))

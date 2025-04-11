@@ -127,10 +127,10 @@ int GMRES(const SparseMatrix_type& A, GMRESData_type& data, const Vector_type& b
   {
     flops_and_traffic mgft;
     for(int i = 0; i < flops_and_traffic::n_precs; i++) {
-        mgft.flops[i] = 0;
-        mgft.f_mem_traffic[i] = 0;
+        mgft.flops[i] = 0.0;
+        mgft.f_mem_traffic[i] = 0.0;
     }
-    mgft.i_mem_traffic = 0;
+    mgft.i_mem_traffic = 0.0;
 
     // p is of length ncols, copy x to p for sparse MV operation
     // In HIP/Cuda builds, this copies only device buffers.

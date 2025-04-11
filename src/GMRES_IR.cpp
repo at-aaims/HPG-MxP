@@ -160,10 +160,10 @@ int GMRES_IR(const SparseMatrix_type & A, const SparseMatrix_type2 & A_lo,
   {
     flops_and_traffic mgft;
     for(int i = 0; i < flops_and_traffic::n_precs; i++) {
-        mgft.flops[i] = 0;
-        mgft.f_mem_traffic[i] = 0;
+        mgft.flops[i] = 0.0;
+        mgft.f_mem_traffic[i] = 0.0;
     }
-    mgft.i_mem_traffic = 0;
+    mgft.i_mem_traffic = 0.0;
 
     // > Compute residual vector (higher working precision)
     // p is of length ncols, copy x to p for sparse MV operation
