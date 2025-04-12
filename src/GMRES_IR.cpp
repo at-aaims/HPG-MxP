@@ -169,6 +169,7 @@ int GMRES_IR(const SparseMatrix_type & A, const SparseMatrix_type2 & A_lo,
     // p is of length ncols, copy x to p for sparse MV operation
     CopyVector(x_hi, p_hi);
 
+    p_hi.time1_ = 0; p_hi.time2_ = 0;
     TICK(); ComputeSPMV(A, p_hi, Ap_hi);            // Ap = A*p
     flops_spmv += (2*A.totalNumberOfNonzeros);
     TOCK(t3);
@@ -232,7 +233,7 @@ int GMRES_IR(const SparseMatrix_type & A, const SparseMatrix_type2 & A_lo,
     while (k <= restart_length && normr/normr0 > tolerance && !IS_NAN(normr))
     {
       // Use ">" to exit when res=zero (continuing will cause NaN)
-      auto Qkm1 = Q.get_vector(k-1);
+      const auto Qkm1 = Q.get_vector(k-1);
       auto Qk = Q.get_vector(k);
 
       TICK();
@@ -249,6 +250,7 @@ int GMRES_IR(const SparseMatrix_type & A, const SparseMatrix_type2 & A_lo,
       TOCK(t5); // Preconditioner apply time
 
       // Qk = A*z
+      z.time1_ = 0; z.time2_ = 0;
       TICK(); ComputeSPMV(A_lo, z, Qk);
       flops_spmv += (2*A.totalNumberOfNonzeros);
       TOCK(t3);
@@ -281,6 +283,7 @@ int GMRES_IR(const SparseMatrix_type & A, const SparseMatrix_type2 & A_lo,
       } else {
         // CGS2
         // first orthogonalization
+        // P = Q[1:k] inclusive in 1-based indexing
         auto P = Q.get_multi_vector(0, k-1);
         // Batched dot to compute components along previoud vectors h = Q(1:k)'*q(k+1)
         // mul and add in proj_type
@@ -414,7 +417,7 @@ int GMRES_IR(const SparseMatrix_type & A, const SparseMatrix_type2 & A_lo,
       k ++;
     } // end of restart-cycle
 
-    // prepare to restart
+    // prepare to restart. At this point, k == m+1.
     if (verbose && A.geom->rank==0)
       HPGMP_fout << "GMRES_IR restart: k = "<< k << " (" << niters << ")" << std::endl;
     // > update x
