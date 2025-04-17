@@ -194,6 +194,7 @@ int BenchGMRES(int argc, char **argv, comm_type comm, DeviceCtx *const dctx, int
         test_data.times_comp[i] = 0.0;
         test_data.times_comm[i] = 0.0;
     }
+    test_data.ctrs_bench.reset();
 
     for (int i=0; i < numberOfGmresCalls; ++i) {
       x.fill_zero();
@@ -239,21 +240,24 @@ int BenchGMRES(int argc, char **argv, comm_type comm, DeviceCtx *const dctx, int
                  << (flops/1000000000.0)/time_solve_total
                  << " (n = " << A.totalNumberOfRows << ")" << endl;
     }
-    test_data.optTotalFlops = test_data.flops[0];
     test_data.optTotalTime = time_solve_total;
     test_data.numOfCalls = numberOfGmresCalls;
 
     test_data.optNumOfMGCalls = test_data.numOfMGCalls;
     test_data.optNumOfSPCalls = test_data.numOfSPCalls;
-    //test_data.opt_flops = (double*)malloc(num_flops * sizeof(double));
-    //test_data.opt_times = (double*)malloc(num_times * sizeof(double));
-    for (int i=0; i<n_fl_ops; i++) test_data.opt_flops[i] = test_data.flops[i];
-    for (int i=0; i<n_timed_ops; i++) test_data.opt_times[i] = test_data.times[i];
+    for (int i=0; i<n_fl_ops; i++)
+        test_data.opt_flops[i] = test_data.flops[i];
+    test_data.opt_flops[1] = test_data.ctrs_bench.mg_gs.get_total_flops() +
+                             test_data.ctrs_bench.mg_rp.get_total_flops();
+    test_data.opt_flops[0] += test_data.opt_flops[1];
+    test_data.optTotalFlops = test_data.opt_flops[0];
+    for (int i=0; i<n_timed_ops; i++)
+        test_data.opt_times[i] = test_data.times[i];
 
-    //test_data.opt_times_comp = (double*)malloc(num_times * sizeof(double));
-    //test_data.opt_times_comm = (double*)malloc(num_times * sizeof(double));
-    for (int i=0; i<n_timed_ops; i++) test_data.opt_times_comp[i] = test_data.times_comp[i];
-    for (int i=0; i<n_timed_ops; i++) test_data.opt_times_comm[i] = test_data.times_comm[i];
+    for (int i=0; i<n_timed_ops; i++)
+        test_data.opt_times_comp[i] = test_data.times_comp[i];
+    for (int i=0; i<n_timed_ops; i++)
+        test_data.opt_times_comm[i] = test_data.times_comm[i];
   }
 
   const double benchmark_done = mytimer();
@@ -275,11 +279,17 @@ int BenchGMRES(int argc, char **argv, comm_type comm, DeviceCtx *const dctx, int
 
     double time_solve_total = 0.0;
 
+    for (int i=0; i<n_fl_ops; i++) {
+        test_data.flops[i] = 0.0;
+    }
+    for (int i=0; i<n_timed_ops; i++) {
+        test_data.times[i] = 0.0;
+        test_data.times_comp[i] = 0.0;
+        test_data.times_comm[i] = 0.0;
+    }
+    test_data.ctrs_ref.reset();
+
     //benchmark runs
-    for (int i=0; i<n_fl_ops; i++) test_data.flops[i] = 0.0;
-    for (int i=0; i<n_timed_ops; i++) test_data.times[i] = 0.0;
-    for (int i=0; i<n_timed_ops; i++) test_data.times_comp[i] = 0.0;
-    for (int i=0; i<n_timed_ops; i++) test_data.times_comm[i] = 0.0;
     for (int i=0; i< n_ref_calls; ++i) {
       x.fill_zero();
 
@@ -315,20 +325,23 @@ int BenchGMRES(int argc, char **argv, comm_type comm, DeviceCtx *const dctx, int
                  << " = " << (flops/1000000000.0)/time_solve_total 
                  << " (n = " << A.totalNumberOfRows << ")" << endl;
     }
-    test_data.refTotalFlops = test_data.flops[0];
     test_data.refTotalTime  = test_data.times[0];
 
     test_data.refNumOfMGCalls = test_data.numOfMGCalls;
     test_data.refNumOfSPCalls = test_data.numOfSPCalls;
-    //test_data.ref_flops = (double*)malloc(num_flops * sizeof(double));
-    //test_data.ref_times = (double*)malloc(num_times * sizeof(double));
-    for (int i=0; i<n_fl_ops; i++) test_data.ref_flops[i] = test_data.flops[i];
-    for (int i=0; i<n_timed_ops; i++) test_data.ref_times[i] = test_data.times[i];
+    for (int i=0; i<n_fl_ops; i++)
+        test_data.ref_flops[i] = test_data.flops[i];
+    test_data.ref_flops[1] = test_data.ctrs_ref.mg_gs.get_total_flops() +
+                             test_data.ctrs_ref.mg_rp.get_total_flops();
+    test_data.ref_flops[0] += test_data.ref_flops[1];
+    test_data.refTotalFlops = test_data.ref_flops[0];
+    for (int i=0; i<n_timed_ops; i++)
+        test_data.ref_times[i] = test_data.times[i];
 
-    //test_data.ref_times_comp = (double*)malloc(num_times * sizeof(double));
-    //test_data.ref_times_comm = (double*)malloc(num_times * sizeof(double));
-    for (int i=0; i<n_timed_ops; i++) test_data.ref_times_comp[i] = test_data.times_comp[i];
-    for (int i=0; i<n_timed_ops; i++) test_data.ref_times_comm[i] = test_data.times_comm[i];
+    for (int i=0; i<n_timed_ops; i++)
+        test_data.ref_times_comp[i] = test_data.times_comp[i];
+    for (int i=0; i<n_timed_ops; i++)
+        test_data.ref_times_comm[i] = test_data.times_comm[i];
   } else {
     test_data.refTotalFlops = 0.0;
     test_data.refTotalTime  = 0.0;
@@ -405,6 +418,8 @@ void test_mg_spmv(MPI_Comm comm, DeviceCtx *const dctx, const Geometry *const ge
     int ierr = 0;
     const int numberOfCalls = 10;
     const double t_begin = mytimer();
+    double mgtime = 0, t0 = 0;
+    perf_counters ft, ft0;
     for (int i=0; i< numberOfCalls; ++i) {
       ierr = ComputeSPMV(A, x_overlap, b_computed); // b_computed = A*x_overlap
 #ifdef HPGMP_VERBOSE
@@ -413,8 +428,14 @@ void test_mg_spmv(MPI_Comm comm, DeviceCtx *const dctx, const Geometry *const ge
       }
 #endif
       if (ierr) HPGMP_fout << "Error in call to SpMV: " << ierr << ".\n" << endl;
-      flops_and_traffic ft;
-      ierr = ComputeMG(A, b_computed, x_overlap, symmetric, ft); // b_computed = Minv*y_overlap
+
+      if(i == 0) {
+          ierr = ComputeMG(A, b_computed, x_overlap, symmetric, ft0); // b_computed = Minv*y_overlap
+      } else {
+          TICK();
+          ierr = ComputeMG(A, b_computed, x_overlap, symmetric, ft); // b_computed = Minv*y_overlap
+          TOCK(mgtime);
+      }
       if (ierr) HPGMP_fout << "Error in call to MG: " << ierr << ".\n" << endl;
     }
 #ifdef HPGMP_VERBOSE
@@ -424,4 +445,13 @@ void test_mg_spmv(MPI_Comm comm, DeviceCtx *const dctx, const Geometry *const ge
 #endif
     // Total time divided by number of calls.
     test_data.SpmvMgTime = (mytimer() - t_begin)/((double) numberOfCalls);
+
+    const double mgbytes = ft.mg_gs.get_total_memory_bytes() + ft.mg_rp.get_total_memory_bytes();
+    const double mgflops = ft.mg_gs.get_total_flops() + ft.mg_rp.get_total_flops();
+    if(geom->rank == 0) {
+        std::cout << "BenchGMRES:  test_mg_spmv: MG = " << mgbytes / mgtime / 1e9
+            << " GB/s" << std::endl;
+        std::cout << "BenchGMRES:  test_mg_spmv: MG = " << mgflops / mgtime / 1e9
+            << " GFLOP/s" << std::endl;
+    }
 }

@@ -148,7 +148,6 @@ int GMRES_IR(const SparseMatrix_type & A, const SparseMatrix_type2 & A_lo,
       HPGMP_fout << " Projection precision : float" << std::endl;
   }
   double flops = 0.0;
-  double flops_gmg  = 0.0;
   double flops_spmv = 0.0;
   double flops_orth = 0.0;
   const global_int_t numSpMVs_MG = 1 + A.mgData->numberOfPresmootherSteps
@@ -156,29 +155,31 @@ int GMRES_IR(const SparseMatrix_type & A, const SparseMatrix_type2 & A_lo,
   niters = 0;
   bool converged = false;
   double t_begin = mytimer();  // Start timing right away
+ 
+  perf_counters& ctrs = test_data.ctrs_bench;
+ 
   while (niters <= max_iter && !converged)
   {
-    flops_and_traffic mgft;
-    for(int i = 0; i < flops_and_traffic::n_precs; i++) {
-        mgft.flops[i] = 0.0;
-        mgft.f_mem_traffic[i] = 0.0;
-    }
-    mgft.i_mem_traffic = 0.0;
-
     // > Compute residual vector (higher working precision)
     // p is of length ncols, copy x to p for sparse MV operation
     CopyVector(x_hi, p_hi);
+    ctrs.vecupd.add_memory_traffic<scalar_type>(2*A.totalNumberOfRows);
 
     p_hi.time1_ = 0; p_hi.time2_ = 0;
     TICK(); ComputeSPMV(A, p_hi, Ap_hi);            // Ap = A*p
     flops_spmv += (2*A.totalNumberOfNonzeros);
     TOCK(t3);
     t3_1 += p_hi.time1_; t3_2 += p_hi.time2_;
+    ctrs.spmv.add_memory_traffic<scalar_type>(A.totalNumberOfNonzeros + 2*A.totalNumberOfRows);
+    ctrs.spmv.add_memory_traffic<local_int_t>(A.totalNumberOfNonzeros);
 
     TICK(); ComputeWAXPBY_opt(nrow, one_hi, b_hi, -one_hi, Ap_hi, r_hi, A.isWaxpbyOptimized);
     flops += (itwo*Nrow);  TOCK(t11); // r = b - Ax (x stored in p)
+    ctrs.vecupd.add_memory_traffic<scalar_type>(3*A.totalNumberOfRows);
+
     TICK(); ComputeDotProduct(nrow, r_hi, r_hi, normr_hi, t4, A.isDotProductOptimized);
     flops += (itwo*Nrow); TOCK(t1_);
+    ctrs.ortho.add_memory_traffic<scalar_type>(A.totalNumberOfRows);
     normr_hi = sqrt(normr_hi);
     test_data.numOfSPCalls++;
     // Record initial residual for convergence testing
@@ -216,13 +217,14 @@ int GMRES_IR(const SparseMatrix_type & A, const SparseMatrix_type2 & A_lo,
 
     // > Scale to the residual vector in working precision
     TICK();
-    //ScaleVectorValue<Vector_type, scalar_type> (r_hi, one_hi/normr_hi);
     r_hi.scale(one_hi/normr_hi);
     flops += Nrow; TOCK(t11);
+    ctrs.vecupd.add_memory_traffic<scalar_type>(2*A.totalNumberOfRows);
 
     // > Copy r as the initial basis vector (lower precision)
     auto Qj = Q.get_vector(0);
     CopyVector(r_hi, Qj);
+    ctrs.vecupd.add_memory_traffic<scalar_type>(2*A.totalNumberOfRows);
 
     // do forward GS instead of symmetric GS
     const bool symmetric = false;
@@ -230,6 +232,7 @@ int GMRES_IR(const SparseMatrix_type & A, const SparseMatrix_type2 & A_lo,
     // Start restart cycle
     global_int_t k = 1;
     t.set_value(0, 0, normr);
+    ctrs.qr_host.add_memory_traffic<project_type>(1);
     while (k <= restart_length && normr/normr0 > tolerance && !IS_NAN(normr))
     {
       // Use ">" to exit when res=zero (continuing will cause NaN)
@@ -240,12 +243,12 @@ int GMRES_IR(const SparseMatrix_type & A, const SparseMatrix_type2 & A_lo,
       if (doPreconditioning) {
         z.time1_ = z.time2_ = z.time3_ = z.time4_ = 0.0;
         // Apply preconditioner
-        ComputeMG(A_lo, Qkm1, z, symmetric, mgft);
-        //flops_gmg += (2*numSpMVs_MG*A.totalNumberOfMGNonzeros);
+        ComputeMG(A_lo, Qkm1, z, symmetric, ctrs);
         test_data.numOfMGCalls++;
         t7 += z.time1_; t8 += z.time2_; t9 += z.time3_; t10 += z.time4_;
       } else {
         CopyVector(Qkm1, z);       // copy r to z (no preconditioning)
+        ctrs.vecupd.add_memory_traffic<scalar_type2>(2*A.totalNumberOfRows);
       }
       TOCK(t5); // Preconditioner apply time
 
@@ -256,6 +259,8 @@ int GMRES_IR(const SparseMatrix_type & A, const SparseMatrix_type2 & A_lo,
       TOCK(t3);
       t3_1 += z.time1_; t3_2 += z.time2_;
       test_data.numOfSPCalls++;
+      ctrs.spmv.add_memory_traffic<scalar_type2>(A.totalNumberOfNonzeros + 2*A.totalNumberOfRows);
+      ctrs.spmv.add_memory_traffic<local_int_t>(A.totalNumberOfNonzeros);
 
       // orthogonalize z against Q(:,0:k-1), using dots
       bool use_mgs = false;
@@ -271,15 +276,18 @@ int GMRES_IR(const SparseMatrix_type & A, const SparseMatrix_type2 & A_lo,
             // beta = Qk'*Qj
             START_T(); ComputeDotProduct<Vector_type2, project_type>
                          (nrow, Qk, Qj, beta, t4, A.isDotProductOptimized); STOP_T(t1);
+            ctrs.ortho.add_memory_traffic<scalar_type2>(2*A.totalNumberOfRows);
 
             // Qk = Qk - beta * Qj
             START_T(); ComputeWAXPBY_opt(nrow, one, Qk, -beta, Qj, Qk, A.isWaxpbyOptimized);
             STOP_T(t2);
+            ctrs.ortho.add_memory_traffic<scalar_type2>(3*A.totalNumberOfRows);
             alpha += beta;
           }
           H.set_value(j, k-1, alpha);
         }
         flops_orth += (ifour*k*Nrow);
+        ctrs.qr_host.add_memory_traffic<project_type>(2*k);
       } else {
         // CGS2
         // first orthogonalization
@@ -288,26 +296,39 @@ int GMRES_IR(const SparseMatrix_type & A, const SparseMatrix_type2 & A_lo,
         // Batched dot to compute components along previoud vectors h = Q(1:k)'*q(k+1)
         // mul and add in proj_type
         START_T(); ComputeGEMVT (nrow, k,  one, P, Qk, zero_pr, h, A.isGemvOptimized); STOP_T(t1);
+        ctrs.ortho.add_memory_traffic<scalar_type2>((k+1)*A.totalNumberOfRows);
+        ctrs.ortho.add_memory_traffic<project_type>(k);
         // Subtract components along previous vectors to orthogonalize: q(k+1) = q(k+1) - Q(1:k)*h
         START_T(); ComputeGEMV  (nrow, k, -one, P, h,  one,    Qk, A.isGemvOptimized); STOP_T(t2);
         t1_comp += h.time1; t1_comm += h.time2;
+        ctrs.ortho.add_memory_traffic<scalar_type2>((k+2)*A.totalNumberOfRows);
+        ctrs.ortho.add_memory_traffic<project_type>(k);
+
         for(int i = 0; i < k; i++) {
           H.set_value(i, k-1, h.values()[i]);
         }
         flops_orth += (ifour*k*Nrow);
+        ctrs.qr_host.add_memory_traffic<project_type>(2*k);
 
         START_T();
         // reorthogonalization
         // h = Q(1:k)'*q(k+1)
         ComputeGEMVT (nrow, k,  one, P, Qk, zero_pr, h, A.isGemvOptimized);
         STOP_T(t1);
+        ctrs.ortho.add_memory_traffic<scalar_type2>((k+1)*A.totalNumberOfRows);
+        ctrs.ortho.add_memory_traffic<project_type>(k);
+
         // q(k+1) = q(k+1) - Q(1:k)*h
         START_T(); ComputeGEMV (nrow, k, -one, P, h,  one, Qk, A.isGemvOptimized); STOP_T(t2);
         t1_comp += h.time1; t1_comm += h.time2;
+        ctrs.ortho.add_memory_traffic<scalar_type2>((k+2)*A.totalNumberOfRows);
+        ctrs.ortho.add_memory_traffic<project_type>(k);
+
         for(int i = 0; i < k; i++) {
           H.add_value(i, k-1, h.values()[i]);
         }
         flops_orth += (ifour*k*Nrow);
+        ctrs.qr_host.add_memory_traffic<project_type>(2*k);
       } // end or CGS2
 
       // beta = norm(Qk)
@@ -316,11 +337,13 @@ int GMRES_IR(const SparseMatrix_type & A, const SparseMatrix_type2 & A_lo,
                                                     A.isDotProductOptimized);
       STOP_T(t1_);
       flops_orth += (itwo*Nrow);
+      ctrs.ortho.add_memory_traffic<scalar_type2>(A.totalNumberOfRows);
       beta = sqrt(beta);
 
       // Qk = Qk / beta
       // NOTE: Qk is scalar_type2, so the scaling factor is cast to this type before scaling.
       START_T(); Qk.scale(static_cast<scalar_type2>(one_pr/beta)); STOP_T(t11);
+      ctrs.vecupd.add_memory_traffic<scalar_type2>(2*A.totalNumberOfRows);
       flops_orth += (Nrow);
 
       TOCK(t6); // Ortho time
@@ -336,6 +359,7 @@ int GMRES_IR(const SparseMatrix_type & A, const SparseMatrix_type2 & A_lo,
         H.set_value(j+1, k-1, -sj * h1 + cj * h2);
         H.set_value(j,   k-1,  cj * h1 + sj * h2);
       }
+      ctrs.qr_host.add_memory_traffic<project_type>((k-2)*6+1);
 
       const auto f = static_cast<project_type>(H.get_value(k-1, k-1));
       const auto g = static_cast<project_type>(H.get_value(k,   k-1));
@@ -357,6 +381,8 @@ int GMRES_IR(const SparseMatrix_type & A, const SparseMatrix_type2 & A_lo,
 
       ss.set_value(k-1, 0, sj);
       cs.set_value(k-1, 0, cj);
+      
+      ctrs.qr_host.add_memory_traffic<project_type>(6);
 
       normr = std::abs(v2);
       if (verbose && (k%print_freq == 0 || k+1 == restart_length)) {
@@ -371,11 +397,11 @@ int GMRES_IR(const SparseMatrix_type & A, const SparseMatrix_type2 & A_lo,
           if (doPreconditioning) {
             #ifdef HPGMRES_IR_UPDATE_X_IN_HIGH
             ComputeGEMV(nrow, k, one, Q, h, zero_hi, r_hi, A.isGemvOptimized);  // r = Q*t (using h for t)
-            ComputeMG(A_lo, r_hi, z_hi, symmetric, mgft);                       // z = M*r
+            ComputeMG(A_lo, r_hi, z_hi, symmetric, ctrs);                       // z = M*r
             ComputeWAXPBY_opt(nrow, one_hi, p_hi, one_hi, z_hi, p_hi, A.isWaxpbyOptimized); // x += z
             #else
             ComputeGEMV(nrow, k, one, Q, h, zero, r, A.isGemvOptimized);    // r = Q*t (using h for t)
-            ComputeMG(A_lo, r, z, symmetric, mgft);                         // z = M*r
+            ComputeMG(A_lo, r, z, symmetric, ctrs);                         // z = M*r
             ComputeWAXPBY_opt(nrow, one_hi, p_hi, one, z, p_hi, A.isWaxpbyOptimized);    // x += z
             #endif
           } else {
@@ -422,32 +448,38 @@ int GMRES_IR(const SparseMatrix_type & A, const SparseMatrix_type2 & A_lo,
       HPGMP_fout << "GMRES_IR restart: k = "<< k << " (" << niters << ")" << std::endl;
     // > update x
     ComputeTRSM(k-1, one_pr, H, t);
+    ctrs.qr_host.add_memory_traffic<project_type>(
+            restart_length*restart_length/2.0 + 3.0*restart_length/2);
     if (doPreconditioning) {
 #ifdef HPGMRES_IR_UPDATE_X_IN_HIGH
       ComputeGEMV (nrow, k-1, one, Q, t, zero_hi, r_hi, A.isGemvOptimized);
       flops += (itwo*Nrow*(k-ione)); // r = Q*t
+      ctrs.ortho.add_memory_traffic<scalar_type2>((A.totalNumberOfRows+1)*restart_length);
+      ctrs.ortho.add_memory_traffic<scalar_type>(A.totalNumberOfRows);
+      ctrs.ortho.add_memory_traffic<project_type>(restart_length);
 
       z_hi.time1_ = z_hi.time2_ = z_hi.time3_ = z_hi.time4_ = 0.0;
       TICK();
-      ComputeMG(A, r_hi, z_hi, symmetric, mgft);
-      //flops_gmg += (2*numSpMVs_MG*A.totalNumberOfMGNonzeros);    // z = M*r
+      ComputeMG(A, r_hi, z_hi, symmetric, ctrs);
       TOCK(t5); // Preconditioner apply time
       test_data.numOfMGCalls++;
       t7 += z_hi.time1_; t8 += z_hi.time2_; t9 += z_hi.time3_; t10 += z_hi.time4_;
 
-      // (mixed-precision) x += z
+      // x += z
       TICK(); ComputeWAXPBY_opt(nrow, one_hi, x_hi, one_hi, z_hi, x_hi, A.isWaxpbyOptimized);
+      ctrs.vecupd.add_memory_traffic<scalar_type>(3*A.totalNumberOfRows);
       flops += (itwo*Nrow); TOCK(t11);
 #else
       // r = Q*t
       ComputeGEMV (nrow, k-1, one, Q, t, zero, r, A.isGemvOptimized);
       flops += (itwo*Nrow*(k-ione));
+      ctrs.ortho.add_memory_traffic<scalar_type2>(A.totalNumberOfRows*(restart_length+1));
+      ctrs.ortho.add_memory_traffic<project_type>(restart_length);
 
       z.time1_ = z.time2_ = z.time3_ = z.time4_ = 0.0;
       TICK();
       // z = M*r
-      ComputeMG(A_lo, r, z, symmetric, mgft);
-      //flops_gmg += (2*numSpMVs_MG*A.totalNumberOfMGNonzeros);
+      ComputeMG(A_lo, r, z, symmetric, ctrs);
       TOCK(t5); // Preconditioner apply time
       test_data.numOfMGCalls++;
       t7 += z.time1_; t8 += z.time2_; t9 += z.time3_; t10 += z.time4_;
@@ -455,15 +487,21 @@ int GMRES_IR(const SparseMatrix_type & A, const SparseMatrix_type2 & A_lo,
       // mixed-precision
       TICK(); ComputeWAXPBY_opt(nrow, one_hi, x_hi, one, z, x_hi, A.isWaxpbyOptimized);
       flops += (itwo*Nrow); TOCK(t11); // x += z
+      ctrs.vecupd.add_memory_traffic<scalar_type>(2*A.totalNumberOfRows);
+      ctrs.vecupd.add_memory_traffic<scalar_type2>(A.totalNumberOfRows);
 #endif
     } else {
-      // mixed-precision
+      // mixed-precision x += Q*t
       ComputeGEMV (nrow, k-1, one_hi, Q, t, one_hi, x_hi, A.isGemvOptimized);
-      flops += (itwo*Nrow*(k-ione)); // x += Q*t
+      flops += (itwo*Nrow*(k-ione));
+      ctrs.ortho.add_memory_traffic<scalar_type2>(A.totalNumberOfRows*restart_length);
+      ctrs.ortho.add_memory_traffic<scalar_type>(2*A.totalNumberOfRows);
+      ctrs.ortho.add_memory_traffic<project_type>(restart_length);
     }
 
-    flops_gmg += mgft.flops[0];
   } // end of outer-loop
+    
+  //const double flops_gmg = ctrs.mg_gs.get_total_flops() + ctrs.mg_rp.get_total_flops();
 
 
   // Store times
@@ -475,8 +513,8 @@ int GMRES_IR(const SparseMatrix_type & A, const SparseMatrix_type2 & A_lo,
   test_data.times[4]  += t3;       // SPMV time
   test_data.times[5]  += t4;       // AllReduce time
   test_data.times[6]  += t5;       // preconditioner apply time
-  test_data.times[7]  += t7;       // > SpTRSV for GS
-  test_data.times[8]  += t8;       // > SpMV for GS
+  test_data.times[7]  += t7;       // > SpMV for GS (stays 0 for optimized code)
+  test_data.times[8]  += t8;       // > GS
   test_data.times[9]  += t9;       // > Restrict for MG
   test_data.times[10] += t10;      // > Prolong for MG
   test_data.times[11] += t11;      // Vector update time
@@ -485,14 +523,16 @@ int GMRES_IR(const SparseMatrix_type & A, const SparseMatrix_type2 & A_lo,
   test_data.times_comm[1] += t1_comm; // dot-product time
   test_data.times_comm[2] += t3_1;     // > SPMV local copy
   test_data.times_comm[3] += t3_2;     // > SPMV halo exchange
-  const double flops_tot = flops + flops_gmg + flops_spmv + flops_orth;
+  //const double flops_tot = flops + flops_gmg + flops_spmv + flops_orth;
+  // MG flops will be added later in BenchGMRES from test_data.ctrs_bench.
+  const double flops_tot = flops + flops_spmv + flops_orth;
   if (verbose && A.geom->rank==0) {
     HPGMP_fout << " > nnz(A)  : " << A.totalNumberOfNonzeros << std::endl;
     HPGMP_fout << " > nnz(MG) : " << A.totalNumberOfMGNonzeros << " (" << numSpMVs_MG << ")" << std::endl;
     HPGMP_fout << " > SpMV : " << (flops_spmv / 1000000000.0) << " / " << t3 << " = "
                                << (flops_spmv / 1000000000.0) / t3 << " Gflop/s" << std::endl;
-    HPGMP_fout << " > GMG  : " << (flops_gmg  / 1000000000.0) << " / " << t5 << " = "
-                               << (flops_gmg  / 1000000000.0) / t5 << " Gflop/s" << std::endl;
+    //HPGMP_fout << " > GMG  : " << (flops_gmg  / 1000000000.0) << " / " << t5 << " = "
+    //                           << (flops_gmg  / 1000000000.0) / t5 << " Gflop/s" << std::endl;
     HPGMP_fout << " > Orth : " << (flops_orth / 1000000000.0) << " / " << t6 << " = "
                                << (flops_orth / 1000000000.0) / t6 << " Gflop/s" << std::endl;
     HPGMP_fout << " > Total: " << (flops_tot  / 1000000000.0) << " / " << tt << " = "
@@ -500,11 +540,10 @@ int GMRES_IR(const SparseMatrix_type & A, const SparseMatrix_type2 & A_lo,
     HPGMP_fout << std::endl;
   }
   test_data.flops[0] += flops_tot;
-  test_data.flops[1] += flops_gmg;
+  //test_data.flops[1] += flops_gmg;
   test_data.flops[2] += flops_spmv;
   test_data.flops[3] += flops_orth;
 
-  //return ((converged && !IS_NAN(normr)) ? 0 : 1);
   if(!converged) {
       HPGMP_fout << "GMRES-IR did not converge!\n";
       return 1;

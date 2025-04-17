@@ -311,6 +311,33 @@ void ReportResults(const SparseMatrix_type & A, int numberOfMgLevels,
       doc.get("Floating Point Operations Summary")->add(" - Raw MG    (reference)",test_data.ref_flops[1]);
       doc.get("Floating Point Operations Summary")->add(" - Raw Total (reference)",test_data.refTotalFlops);
     }
+    
+    const std::string memtrstr = "Memory Traffic (GB)";
+    doc.add(memtrstr,"");
+    const perf_counters& c_opt = test_data.ctrs_bench;
+    const double optMGBytes = c_opt.mg_rp.get_total_memory_bytes()
+                            + c_opt.mg_gs.get_total_memory_bytes();
+    if (test_data.refTotalTime > 0.0) {
+      doc.get(memtrstr)->add(" - Raw Ortho  (mxp)",c_opt.ortho.get_total_memory_bytes()/1.0e9);
+      doc.get(memtrstr)->add(" - Raw SpMV   (mxp)",c_opt.spmv.get_total_memory_bytes()/1.0e9);
+      doc.get(memtrstr)->add(" - Raw MG     (mxp)",optMGBytes/1.0e9);
+      doc.get(memtrstr)->add(" -   GS       (mxp)",c_opt.mg_gs.get_total_memory_bytes()/1.0e9);
+      doc.get(memtrstr)->add(" -   RestrPro (mxp)",c_opt.mg_rp.get_total_memory_bytes()/1.0e9);
+      doc.get(memtrstr)->add(" - Raw vecupd (mxp)",c_opt.vecupd.get_total_memory_bytes()/1.0e9);
+      doc.get(memtrstr)->add(" - Raw QRhost (mxp)",c_opt.qr_host.get_total_memory_bytes()/1.0e9);
+    }
+    const perf_counters& c_ref = test_data.ctrs_ref;
+    const double refMGBytes = c_ref.mg_rp.get_total_memory_bytes()
+                            + c_ref.mg_gs.get_total_memory_bytes();
+    if (test_data.refTotalTime > 0.0) {
+      doc.get(memtrstr)->add(" - Raw Ortho  (reference)",c_ref.ortho.get_total_memory_bytes()/1.0e9);
+      doc.get(memtrstr)->add(" - Raw SpMV   (reference)",c_ref.spmv.get_total_memory_bytes()/1.0e9);
+      doc.get(memtrstr)->add(" - Raw MG     (reference)",refMGBytes/1.0e9);
+      doc.get(memtrstr)->add(" -   GS       (reference)",c_ref.mg_gs.get_total_memory_bytes()/1.0e9);
+      doc.get(memtrstr)->add(" -   RestrPro (reference)",c_ref.mg_rp.get_total_memory_bytes()/1.0e9);
+      doc.get(memtrstr)->add(" - Raw vecupd (reference)",c_ref.vecupd.get_total_memory_bytes()/1.0e9);
+      doc.get(memtrstr)->add(" - Raw QRhost (reference)",c_ref.qr_host.get_total_memory_bytes()/1.0e9);
+    }
 
 #if 0
     doc.add("GB/s Summary","");
@@ -319,6 +346,52 @@ void ReportResults(const SparseMatrix_type & A, int numberOfMgLevels,
     doc.get("GB/s Summary")->add("Raw Total B/W",(fnreads+fnwrites)/(times[0])/1.0E9);
     doc.get("GB/s Summary")->add("Total with convergence and optimization phase overhead",(frefnreads+frefnwrites)/(times[0]+(times[7]/10.0+times[9]/10.0))/1.0E9);
 #endif
+    
+    // This final GFLOP/s rating includes the overhead of problem setup
+    //   and optimizing the data structures vs ten sets of 50 iterations
+    const double iter_ratio = ((double)test_data.optNumIters) / ((double)test_data.refNumIters);
+    const double penalGflops = iter_ratio < 1.0 ? 1.0 : iter_ratio;
+
+    const std::string membwstr = "Memory Bandwidth (GB/s)";
+    doc.add(membwstr,"");
+    const double optTotalBytes = (c_opt.ortho.get_total_memory_bytes()
+                  + c_opt.spmv.get_total_memory_bytes() + c_opt.mg_gs.get_total_memory_bytes()
+                  + c_opt.mg_rp.get_total_memory_bytes() + c_opt.vecupd.get_total_memory_bytes()
+                  + c_opt.qr_host.get_total_memory_bytes());
+    doc.get(membwstr)->add(" - Raw Ortho  (mxp)", c_opt.ortho.get_total_memory_bytes()
+                                                           /test_data.opt_times[3]/1.0e9);
+    doc.get(membwstr)->add(" - Raw SpMV   (mxp)", c_opt.spmv.get_total_memory_bytes()
+                                                           /test_data.opt_times[4]/1.0e9);
+    doc.get(membwstr)->add(" - Raw MG     (mxp)", optMGBytes/test_data.opt_times[6]/1.0e9);
+    doc.get(membwstr)->add(" -   GS       (mxp)", c_opt.mg_gs.get_total_memory_bytes()
+                                                           /test_data.opt_times[8]/1.0e9);
+    doc.get(membwstr)->add(" -   RestrPro (mxp)", c_opt.mg_rp.get_total_memory_bytes() /
+                                  (test_data.opt_times[9]+test_data.opt_times[10]) / 1.0e9);
+    doc.get(membwstr)->add(" - Raw vecupd (mxp)", c_opt.vecupd.get_total_memory_bytes() /
+                                                       test_data.opt_times[11]/1.0e9);
+    //doc.get(membwstr)->add(" - Raw QRhost (mxp)", c_opt.qr_host.get_total_memory_bytes()/1.0e9);
+    doc.get(membwstr)->add(" - Raw Total  (mxp)", optTotalBytes / test_data.opt_times[0] / 1.0e9);
+
+    const double refTotalBytes = (c_ref.ortho.get_total_memory_bytes()
+                  + c_ref.spmv.get_total_memory_bytes() + c_ref.mg_gs.get_total_memory_bytes()
+                  + c_ref.mg_rp.get_total_memory_bytes() + c_ref.vecupd.get_total_memory_bytes()
+                  + c_ref.qr_host.get_total_memory_bytes());
+    if (test_data.refTotalTime > 0.0) {
+      doc.get(membwstr)->add(" - Raw Ortho  (reference)",c_ref.ortho.get_total_memory_bytes()
+                                                             /test_data.ref_times[3]/1.0e9);
+      doc.get(membwstr)->add(" - Raw SpMV   (reference)",c_ref.spmv.get_total_memory_bytes()
+                                                             /test_data.ref_times[4]/1.0e9);
+      doc.get(membwstr)->add(" - Raw MG     (reference)",refMGBytes/test_data.ref_times[6]/1.0e9);
+      doc.get(membwstr)->add(" -   GS       (reference)",c_ref.mg_gs.get_total_memory_bytes()
+                                                             /test_data.ref_times[8]/1.0e9);
+      doc.get(membwstr)->add(" -   RestrPro (reference)",c_ref.mg_rp.get_total_memory_bytes() /
+                                    (test_data.ref_times[9]+test_data.ref_times[10]) / 1.0e9);
+      doc.get(membwstr)->add(" - Raw vecupd (reference)",c_ref.vecupd.get_total_memory_bytes() /
+                                                         test_data.ref_times[11]/1.0e9);
+      //doc.get(membwstr)->add(" - Raw QRhost (reference)",c_ref.qr_host.get_total_memory_bytes()/1.0e9);
+      doc.get(membwstr)->add(" - Raw Total  (reference)",refTotalBytes / test_data.refTotalTime / 1.0e9);
+    }
+    doc.get(membwstr)->add("Total for benchmark", optTotalBytes / test_data.opt_times[0] / 1e9 / penalGflops);
 
     doc.add("GFLOP/s Summary","");
     doc.get("GFLOP/s Summary")->add("Raw Orho", test_data.opt_flops[3]/test_data.opt_times[3]/1.0E9);
@@ -331,11 +404,6 @@ void ReportResults(const SparseMatrix_type & A, int numberOfMgLevels,
       doc.get("GFLOP/s Summary")->add(" - Raw MG    (reference)",test_data.ref_flops[1]/test_data.ref_times[6]/1.0E9);
       doc.get("GFLOP/s Summary")->add(" - Raw Total (reference)",test_data.ref_flops[0]/test_data.ref_times[0]/1.0E9);
       doc.get("GFLOP/s Summary")->add(" - Total     (reference)",test_data.refTotalFlops/test_data.refTotalTime/1.0E9);
-    }
-    // This final GFLOP/s rating includes the overhead of problem setup and optimizing the data structures vs ten sets of 50 iterations of CG
-    double penalGflops = ((double)test_data.optNumIters) / ((double)test_data.refNumIters);
-    if (penalGflops < 1.0) {
-      penalGflops = 1.0;
     }
     double totalGflops = (test_data.opt_flops[0]/test_data.opt_times[0]/1.0E9) / penalGflops;
     doc.get("GFLOP/s Summary")->add("Total for benchmark",totalGflops);

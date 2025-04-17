@@ -26,6 +26,7 @@
 #include <array>
 #include "Vector.hpp"
 #include "SparseMatrix.hpp"
+#include "perf_counter.hpp"
 
 template <class SC, class PSC = SC>
 class GMRESData {
@@ -103,7 +104,11 @@ public:
   double refTotalTime;  //
   double optTotalFlops; //
   double optTotalTime;  //
-  //!< flop counts and time for total, dot, axpy, ortho, spmv, reduce, precond
+  
+  perf_counters ctrs_ref;   ///< Counting for flops and memory traffic
+  perf_counters ctrs_bench; ///< Counting for flops and memory traffic of different precisions
+
+  //! flop counts and time for total, dot, axpy, ortho, spmv, reduce, precond
   std::array<double,n_fl_ops> flops;        //!< accumulated in GMRES, temporary workspace
   std::array<double,n_timed_ops> times;        //!< accumulated in GMRES, temporary workspace
   std::array<double,n_timed_ops> times_comp;   //!< accumulated in GMRES, temporary workspace

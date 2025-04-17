@@ -109,19 +109,6 @@ int HPGMP_Init_Params(int * argc_p, char ** *argv_p, HPGMP_Params & params, comm
 int HPGMP_Init(int * argc_p, char ** *argv_p);
 int HPGMP_Finalize(void);
 
-/** Stores the number of floating point operations (flops) and
- * loads and stores from memory (mem_traffic) in any kernel.
- *
- * Stores flops and memory traffic separately for every precision used,
- * stored highest precision to lowest precision.
- */
-struct flops_and_traffic {
-    static constexpr int n_precs = 2;
-    std::array<double, n_precs> flops;
-    std::array<double, n_precs> f_mem_traffic;
-    double i_mem_traffic;
-};
-
 #define IS_NAN(a) (std::isinf(a) || std::isnan(a) || !(a == a))
 
 #ifdef HPGMP_VERBOSE
