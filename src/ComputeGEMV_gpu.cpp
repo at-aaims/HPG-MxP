@@ -119,6 +119,7 @@ int ComputeGEMV_ref(const local_int_t m, const local_int_t n,
   } else {
     HPGMP_vout << " Mixed-precision GEMV not supported" << std::endl;
     HPGMP_fout << " Mixed-precision GEMV not supported" << std::endl;
+    throw std::runtime_error("Mixed-precision GEMV is currently very inefficient!");
 
     y.update_host_mirror();
     A.update_host_mirror();

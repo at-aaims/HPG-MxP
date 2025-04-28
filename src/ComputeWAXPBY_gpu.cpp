@@ -197,13 +197,15 @@ int ComputeWAXPBY_ref(const local_int_t n,
     int rank = 0;
     MPI_Comm_rank(x.comm, &rank);
     if (rank == 0) {
-      HPGMP_fout << rank << " : WAXPBY(" << n << "): error = " << enorm << " (alpha=" << alpha << ", beta=" << beta
-	        << ", x=" << xnorm << ", y=" << ynorm << ", w=" << wnorm << ")" << std::endl;
+      HPGMP_fout << rank << " : WAXPBY(" << n << "): error = " << enorm << " (alpha=" << alpha
+                 << ", beta=" << beta << ", x=" << xnorm << ", y=" << ynorm << ", w=" << wnorm
+                 << ")" << std::endl;
     }
     free(tv);
 #endif
   } else {
     HPGMP_vout << " Mixed-precision WAXPBY on host, since not supported on device" << std::endl;
+    throw std::runtime_error(" Mixed-precision WAXPBY on host, since not supported on device");
 
     const scalarX_type * const xv = x.values();
     const scalarY_type * const yv = y.values();
