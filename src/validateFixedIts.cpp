@@ -52,8 +52,14 @@
 
 
 template<class TestGMRESSData_type, class scalar_type, class scalar_type2, class project_type>
-int ValidGMRES(const int argc, char **argv, comm_type comm, DeviceCtx *const dctx, const int numberOfMgLevels, const bool verbose, TestGMRESSData_type & test_data) {
-
+int ValidGMRESFixed(const int argc, char **argv, const validation_t validation_type, comm_type comm,
+                    DeviceCtx *const dctx,
+                    const int numberOfMgLevels, const bool verbose, TestGMRESSData_type& test_data)
+{
+  if (validation_type == validation_t::standard) {
+      std::printf("Incorrect validation type!\n"); fflush(stdout);
+      return -1;
+  }
   typedef Vector<scalar_type> Vector_type;
   typedef SparseMatrix<scalar_type> SparseMatrix_type;
   typedef GMRESData<scalar_type> GMRESData_type;
@@ -79,12 +85,15 @@ int ValidGMRES(const int argc, char **argv, comm_type comm, DeviceCtx *const dct
 
   //////////////////////////////////////////////////////////
   // Solver Parameters
-  const int MaxIters = 1000000;
+  const int max_iters = validation_type == validation_t::fullscale_residual ? 1000000 : 10000;
   const int restart_length = test_data.restart_length;
-  const scalar_type tolerance = test_data.tolerance;
+  // If we're converging the global solver to a specific tolerance,
+  //   increase it a bit for the sake of time.
+  const scalar_type tolerance = validation_type == validation_t::fullscale_residual ?
+      10 * test_data.tolerance : test_data.tolerance;
   if (A.geom->rank == 0) {
-      std::cout << " Validate GMRES( tol = " << tolerance << " and restart = " << restart_length << " ) <<" << std::endl;
-    HPGMP_fout << std::endl << " >> In Validate GMRES( tol = " << tolerance << " and restart = " << restart_length << " ) <<" << std::endl;
+      std::cout << " Validate GMRES at full scale ( tol = " << tolerance << " and restart = " << restart_length << " ) <<" << std::endl;
+    HPGMP_fout << std::endl << " >> In Validate GMRES full scale( tol = " << tolerance << " and restart = " << restart_length << " ) <<" << std::endl;
   }
 
 
@@ -99,40 +108,36 @@ int ValidGMRES(const int argc, char **argv, comm_type comm, DeviceCtx *const dct
     x.fill_zero();
 
     const double time_tic = mytimer();
-    const int ierr = GMRES(A, data, b, x, restart_length, MaxIters, tolerance,
+    const int ierr = GMRES(A, data, b, x, restart_length, max_iters, tolerance,
                            refNumIters, refResNorm, refResNorm0, true, verbose, test_data);
     refSolveTime = (mytimer() - time_tic);
     fail = ierr;
     if (ierr && A.geom->rank == 0) {
         std::cout << " ValidGMRES: Error in call to ref GMRES: " << ierr << ".\n" << std::endl;
-        if (A.geom->rank == 0)
-            throw std::runtime_error("Ref GMRES did not converge to specified tolerence!");
+        if (ierr == 2) {
+            throw std::runtime_error("Ref GMRES NaN'd out!");
+        }
     }
 
     test_data.refNumIters = refNumIters;
     test_data.refResNorm0 = refResNorm0;
     test_data.refResNorm  = refResNorm;
   }
+  const double ref_rel_res_norm = refResNorm / refResNorm0;
   if (A.geom->rank==0) {
     HPGMP_fout << "  Reference Iteration time  " << refSolveTime << " seconds." << std::endl;
     HPGMP_fout << "  Reference Iteration count " << refNumIters << std::endl;
     std::cout << " ValidGMRES: Reference initial norm = " << refResNorm0 << std::endl;
     std::cout << " ValidGMRES: Reference final norm = " << refResNorm << std::endl;
+    std::cout << " ValidGMRES: Reference relative res norm = " << ref_rel_res_norm << std::endl;
     std::cout << " ValidGMRES: Reference Iteration time  " << refSolveTime << " seconds." << std::endl;
     std::cout << " ValidGMRES: Reference Iteration count " << refNumIters << std::endl;
-  }
-  if (A.geom->rank == 0 && refResNorm/refResNorm0 > tolerance) {
-    HPGMP_fout << " ref GMRES did not converege: normr = "
-        << refResNorm << " / " << refResNorm0 << " = " << refResNorm/refResNorm0
-        << "(tol = " << tolerance << ")" << std::endl;
-    std::cout << " ValidGMRES: ref GMRES did not converege: normr = "
-        << refResNorm << " / " << refResNorm0 << " = " << refResNorm/refResNorm0
-        << "(tol = " << tolerance << ")" << std::endl;
   }
 
 
   //////////////////////////////////////////////////////////
   // Run "optimized" GMRES (aka GMRES-IR) to a fixed tolerance
+  const int test_max_iters = 10*max_iters;
   int optNumIters = 0;
   double optSolveTime = 0.0;
   scalar_type optResNorm = 0.0;
@@ -147,14 +152,17 @@ int ValidGMRES(const int argc, char **argv, comm_type comm, DeviceCtx *const dct
         std::cout << "ValidGMRES: Starting optimized GMRES-IR" << std::endl;
     }
 #endif
-    const int ierr = GMRES_IR(A, A_lo, data, data_lo, b, x, restart_length, MaxIters, tolerance,
+    const int ierr = GMRES_IR(A, A_lo, data, data_lo, b, x, restart_length, test_max_iters,
+                              ref_rel_res_norm,
                               optNumIters, optResNorm, optResNorm0, true, verbose, test_data);
     optSolveTime = (mytimer() - time_tic);
     fail = ierr;
     if (ierr) {
-        if(A.geom->rank == 0)
-            std::cout << " ValidGMRES: Error in call to opt GMRES-IR: " << ierr << ".\n" << std::endl;
-        throw std::runtime_error("Opt GMRES did not converge to specified tolerence!");
+        if(ierr == 2) {
+            if(A.geom->rank == 0)
+                std::cout << " ValidGMRES: Error in call to opt GMRES-IR: " << ierr << ".\n" << std::endl;
+            throw std::runtime_error("Opt GMRES NaN's out!");
+        }
     }
 
     test_data.optNumIters = optNumIters;
@@ -203,19 +211,14 @@ int ValidGMRES(const int argc, char **argv, comm_type comm, DeviceCtx *const dct
 }
 
 
-
-/* --------------- *
- * specializations *
- * --------------- */
-
 // uniform version
 template
-int ValidGMRES<TestGMRESData<double>,  double, double, double > (int, char**, comm_type, DeviceCtx*, int, bool, TestGMRESData<double>&);
+int ValidGMRESFixed<TestGMRESData<double>,  double, double, double > (int, char**, validation_t, comm_type, DeviceCtx*, int, bool, TestGMRESData<double>&);
 
 template
-int ValidGMRES< TestGMRESData<float>, float, float, float > (int, char**, comm_type, DeviceCtx*, int, bool, TestGMRESData<float>&);
+int ValidGMRESFixed<TestGMRESData<float>, float, float, float > (int, char**, validation_t, comm_type, DeviceCtx*, int, bool, TestGMRESData<float>&);
 
 // mixed version
 template
-int ValidGMRES< TestGMRESData<double>, double, float, float > (int, char**, comm_type, DeviceCtx*, int, bool, TestGMRESData<double>&);
+int ValidGMRESFixed<TestGMRESData<double>, double, float, float > (int, char**, validation_t, comm_type, DeviceCtx*, int, bool, TestGMRESData<double>&);
 

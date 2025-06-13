@@ -87,10 +87,21 @@ enum class prec_format_t {
     fp64, fp32, fp16
 };
 
+/// Type of solver validation
+enum class validation_t {
+    standard,
+    fullscale_its,
+    fullscale_residual
+};
+
 /// Algorithm and data structure options
 struct hpgmp_options {
     sp_matrix_format_t sp_mat_format;
     ordering_t gs_ordering;
+};
+
+struct HPGMP_gen_opts {
+    validation_t validation_type;
 };
 
 /*!
@@ -106,7 +117,7 @@ typedef HPGMP_Params_STRUCT HPGMP_Params;
 
 int HPGMP_Init_Params(const char *title, int * argc_p, char ** *argv_p, HPGMP_Params & params, comm_type comm);
 int HPGMP_Init_Params(int * argc_p, char ** *argv_p, HPGMP_Params & params, comm_type comm);
-int HPGMP_Init(int * argc_p, char ** *argv_p);
+HPGMP_gen_opts HPGMP_Init(int * argc_p, char ** *argv_p);
 int HPGMP_Finalize(void);
 
 #define IS_NAN(a) (std::isinf(a) || std::isnan(a) || !(a == a))

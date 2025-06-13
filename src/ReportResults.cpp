@@ -257,6 +257,9 @@ void ReportResults(const SparseMatrix_type & A, int numberOfMgLevels,
     doc.get("Iteration Count Information")->add("Number of optimized iterations (validation)", test_data.optNumIters);
     doc.get("Iteration Count Information")->add("Initial residual norm of optimized iterations (validation)", test_data.optResNorm0);
     doc.get("Iteration Count Information")->add("Final residual norm of optimized iterations (validation)", test_data.optResNorm);
+    const double iter_ratio = ((double)test_data.optNumIters) / ((double)test_data.refNumIters);
+    const double penalGflops = iter_ratio < 1.0 ? 1.0 : iter_ratio;
+    doc.get("Iteration Count Information")->add("Penalty factor (validation)", penalGflops);
 
     doc.add("########## Performance Summary (times in sec) ##########","");
 
@@ -349,8 +352,6 @@ void ReportResults(const SparseMatrix_type & A, int numberOfMgLevels,
     
     // This final GFLOP/s rating includes the overhead of problem setup
     //   and optimizing the data structures vs ten sets of 50 iterations
-    const double iter_ratio = ((double)test_data.optNumIters) / ((double)test_data.refNumIters);
-    const double penalGflops = iter_ratio < 1.0 ? 1.0 : iter_ratio;
 
     const std::string membwstr = "Memory Bandwidth (GB/s)";
     doc.add(membwstr,"");

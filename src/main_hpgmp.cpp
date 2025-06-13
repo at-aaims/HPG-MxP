@@ -59,6 +59,15 @@ typedef Vector<scalar_type2> Vector_type2;
 typedef SparseMatrix<scalar_type2> SparseMatrix_type2;
 typedef GMRESData<scalar_type2, project_type> GMRESData_type2;
 
+int get_valid_comm_size(const HPGMP_gen_opts& gopts, const int global_size)
+{
+    if(gopts.validation_type == validation_t::standard && global_size >= 8) {
+        return 8;
+    } else {
+        return global_size;
+    }
+}
+
 /*!
   Main driver program: Construct synthetic problem, run V&V tests, compute benchmark parameters, run benchmark, report results.
 
@@ -77,7 +86,7 @@ int main(int argc, char * argv[]) {
       printf("!!Unsuppored threading mode!!\n"); fflush(stdout);
   }
 #endif
-  HPGMP_Init(&argc, &argv);
+  const HPGMP_gen_opts gopts = HPGMP_Init(&argc, &argv);
 
   double t0{};
   TICK();
@@ -94,18 +103,29 @@ int main(int argc, char * argv[]) {
   //////////////////////////
   // Create Communicators //
   //////////////////////////
-  int sizeValidComm = 8;
 #ifndef HPGMP_NO_MPI
-  int color = 0;
-  if (sizeValidComm > numRanks) {
-    sizeValidComm = numRanks;
+  comm_type benchmark_comm = MPI_COMM_WORLD;
+  comm_type validation_comm = MPI_COMM_WORLD;
+  const int sizeValidComm = get_valid_comm_size(gopts, numRanks);
+  if(gopts.validation_type == validation_t::standard) {
+      int color = 0;
+      if (myRank < sizeValidComm) {
+          color = 1;
+      }
+      MPI_Comm_split(MPI_COMM_WORLD, color, myRank, &validation_comm);
+      if(myRank == 0) {
+          std::cout << "main: Using standard validation.\n";
+      }
+  } else {
+      if(myRank == 0) {
+          std::cout << "main: Using global-scale validation ";
+          if(gopts.validation_type == validation_t::fullscale_its) {
+              std::cout << "with fixed iteration count.\n";
+          } else {
+              std::cout << "with fixed residual tolerance.\n";
+          }
+      }
   }
-  if (myRank < sizeValidComm) {
-    color = 1;
-  }
-  MPI_Comm validation_comm = MPI_COMM_WORLD;
-  MPI_Comm benchmark_comm = MPI_COMM_WORLD;
-  MPI_Comm_split(MPI_COMM_WORLD, color, myRank, &validation_comm);
 
   int ierr = MPI_Comm_set_errhandler(validation_comm, MPI_ERRORS_RETURN);
   if(ierr != MPI_SUCCESS) {
@@ -171,14 +191,20 @@ int main(int argc, char * argv[]) {
   int global_failure = 0;
   const int restart_length = 30;
   const scalar_type tolerance = 1e-9;
-
-  test_data.tolerance = tolerance;
   test_data.restart_length = restart_length;
+  test_data.tolerance = tolerance;
+
   if (myRank < sizeValidComm) {
     TICK();
-    global_failure = ValidGMRES<TestGMRESData_type, scalar_type, scalar_type2, project_type>(
-                         argc, argv, validation_comm, ctx.get(), numberOfMgLevels, verbose,
-                         test_data);
+    if(gopts.validation_type == validation_t::standard) {
+      global_failure = ValidGMRES<TestGMRESData_type, scalar_type, scalar_type2, project_type>(
+                           argc, argv, validation_comm, ctx.get(), numberOfMgLevels, verbose,
+                           test_data);
+    } else {
+      global_failure = ValidGMRESFixed<TestGMRESData_type, scalar_type, scalar_type2, project_type>(
+                           argc, argv, gopts.validation_type, validation_comm, ctx.get(), numberOfMgLevels, verbose,
+                           test_data);
+    }
     double t_valid{};
     TOCK(t_valid);
     if(myRank == 0) {
@@ -191,7 +217,7 @@ int main(int argc, char * argv[]) {
   // Benchmark phase //
   /////////////////////
   {
-    bool runReference = true;
+    const bool runReference = true;
     TICK();
     BenchGMRES<TestGMRESData_type, scalar_type, scalar_type2, project_type>(argc, argv,
             benchmark_comm, ctx.get(), numberOfMgLevels, verbose, runReference, global_failure,

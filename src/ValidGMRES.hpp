@@ -32,5 +32,12 @@
 template<class TestGMRESData_type, class scalar_type, class scalar_type2, class project_type = scalar_type2>
 int ValidGMRES(int argc, char **argv, comm_type comm, DeviceCtx *dctx, int numberOfMgLevels, bool verbose, TestGMRESData_type & testcg_data);
 
+/** Runs GMRES for a fixed number of iterations, then runs GMRES-IR down to the same relative residual
+ * and records the number of iterations needed.
+ */
+template<class TestGMRESData_type, class scalar_type, class scalar_type2, class project_type = scalar_type2>
+int ValidGMRESFixed(int argc, char **argv, validation_t v_type, comm_type comm, DeviceCtx *dctx, int numberOfMgLevels,
+                    bool verbose, TestGMRESData_type& testcg_data);
+
 #endif  // BENCHGMRES_HPP
 
