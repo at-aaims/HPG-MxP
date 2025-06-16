@@ -90,7 +90,7 @@ int ValidGMRESFixed(const int argc, char **argv, const validation_t validation_t
   // If we're converging the global solver to a specific tolerance,
   //   increase it a bit for the sake of time.
   const scalar_type tolerance = validation_type == validation_t::fullscale_residual ?
-      10 * test_data.tolerance : test_data.tolerance;
+      10 * test_data.tolerance : 1e-15;
   if (A.geom->rank == 0) {
       std::cout << " Validate GMRES at full scale ( tol = " << tolerance << " and restart = " << restart_length << " ) <<" << std::endl;
     HPGMP_fout << std::endl << " >> In Validate GMRES full scale( tol = " << tolerance << " and restart = " << restart_length << " ) <<" << std::endl;
@@ -189,6 +189,8 @@ int ValidGMRESFixed(const int argc, char **argv, const validation_t validation_t
           << optResNorm << " / " << optResNorm0 << " = " << optResNorm/optResNorm0
           << "(tol = " << tolerance << ")" << std::endl;
     }
+    // If GMRES-IR does not converge in validation, abort
+    MPI_Abort(comm, fail);
   }
 
 

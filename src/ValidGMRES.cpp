@@ -79,7 +79,7 @@ int ValidGMRES(const int argc, char **argv, comm_type comm, DeviceCtx *const dct
 
   //////////////////////////////////////////////////////////
   // Solver Parameters
-  const int MaxIters = 1000000;
+  const int MaxIters = 10000;
   const int restart_length = test_data.restart_length;
   const scalar_type tolerance = test_data.tolerance;
   if (A.geom->rank == 0) {
