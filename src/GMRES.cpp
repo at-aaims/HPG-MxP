@@ -66,6 +66,7 @@ int GMRES(const SparseMatrix_type& A, GMRESData_type& data, const Vector_type& b
           typename SparseMatrix_type::scalar_type & normr0,
           const bool doPreconditioning, const bool verbose, TestGMRESData_type& test_data)
 {
+  HPGMP_RANGE_PUSH(__FUNCTION__);
   typedef typename SparseMatrix_type::scalar_type scalar_type;
   typedef MultiVector<scalar_type> MultiVector_type;
   typedef SerialDenseMatrix<scalar_type> SerialDenseMatrix_type;
@@ -384,6 +385,8 @@ int GMRES(const SparseMatrix_type& A, GMRESData_type& data, const Vector_type& b
   //test_data.flops[1] += flops_gmg;
   test_data.flops[2] += flops_spmv;
   test_data.flops[3] += flops_orth;
+
+  HPGMP_RANGE_POP(__FUNCTION__);
 
   if(IS_NAN(normr)) {
       return 2;

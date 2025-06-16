@@ -92,8 +92,8 @@ int main(int argc, char * argv[]) {
   TICK();
 
   int myRank = 0;
-#ifndef HPGMP_NO_MPI
   int numRanks = 1;
+#ifndef HPGMP_NO_MPI
   MPI_Comm_rank(MPI_COMM_WORLD, &myRank);
   MPI_Comm_size(MPI_COMM_WORLD, &numRanks);
 #endif
@@ -138,7 +138,8 @@ int main(int argc, char * argv[]) {
 #else
   comm_type validation_comm = 0;
   comm_type benchmark_comm = 0;
-#endif
+  const int sizeValidComm = 1;
+#endif // HPGMP_NO_MPI
 
   // Check if QuickPath option is enabled.
   // If the running time is set to zero, we minimize all paths through the program

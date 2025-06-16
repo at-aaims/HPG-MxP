@@ -26,9 +26,9 @@
 #endif
 #include <cassert>
 
+#include "mytimer.hpp"
 #ifndef HPGMP_NO_MPI
  #include <mpi.h>
- #include "mytimer.hpp"
  #include "Utils_MPI.hpp"
 #endif
 
@@ -55,6 +55,9 @@
 template<class Vector_type, class output_scalar_type>
 int ComputeDotProduct_ref(const local_int_t n, const Vector_type & x, const Vector_type & y,
                           output_scalar_type & result, double & time_allreduce) {
+
+  HPGMP_RANGE_PUSH(__FUNCTION__);
+
   assert(x.local_length()>=n); // Test vector lengths
   assert(y.local_length()>=n);
 
@@ -142,6 +145,8 @@ int ComputeDotProduct_ref(const local_int_t n, const Vector_type & x, const Vect
   time_allreduce += 0.0;
   result = local_result;
 #endif
+
+  HPGMP_RANGE_POP(__FUNCTION__);
 
   return 0;
 }

@@ -49,6 +49,9 @@
 */
 template<class SparseMatrix_type, class Vector_type>
 int ComputeSPMV_ref(const SparseMatrix_type & A, Vector_type & x, Vector_type & y) {
+
+  HPGMP_RANGE_PUSH(__FUNCTION__);
+
   assert(x.localLength>=A.localNumberOfColumns); // Test vector lengths
   assert(y.localLength>=A.localNumberOfRows);
   typedef typename SparseMatrix_type::scalar_type scalar_type;
@@ -76,6 +79,8 @@ int ComputeSPMV_ref(const SparseMatrix_type & A, Vector_type & x, Vector_type & 
       sum += cur_vals[j]*xv[cur_inds[j]];
     yv[i] = sum;
   }
+
+  HPGMP_RANGE_POP(__FUNCTION__);
 
   return 0;
 }

@@ -36,6 +36,8 @@ int ComputeGEMVT_ref(const local_int_t m, const local_int_t n,
                      const typename MultiVector_type::scalar_type alpha, const MultiVector_type & A, const Vector_type & x,
                      const typename SerialDenseMatrix_type::scalar_type beta, SerialDenseMatrix_type & y) {
 
+  HPGMP_RANGE_PUSH(__FUNCTION__);
+
   typedef typename       MultiVector_type::scalar_type scalarA_type;
   typedef typename SerialDenseMatrix_type::scalar_type scalarX_type;
   typedef typename            Vector_type::scalar_type scalarY_type;
@@ -77,6 +79,8 @@ int ComputeGEMVT_ref(const local_int_t m, const local_int_t n,
 #else
   y.time2 = 0.0;
 #endif
+
+  HPGMP_RANGE_POP(__FUNCTION__);
 
   return 0;
 }

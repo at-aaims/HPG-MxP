@@ -278,6 +278,9 @@ __global__ void haloGather(const int totalToBeSent, const scalar *const d_x,
 template <typename scalar>
 void Vector<scalar>::update_halos_pack_send_buffer(const DistMatrixBase *const mat) const
 {
+
+    HPGMP_RANGE_PUSH(__FUNCTION__);
+
 #ifndef HPGMP_NO_MPI
     const MPI_Datatype MPI_SCALAR_TYPE = MpiTypeTraits<scalar>::getType ();
     const local_int_t localNumberOfRows = mat->get_local_num_rows();
@@ -299,8 +302,10 @@ void Vector<scalar>::update_halos_pack_send_buffer(const DistMatrixBase *const m
     auto comm = mat->get_comm();
     MPI_Comm_size(comm, &size);
     MPI_Comm_rank(comm, &rank);
-    if (size == 1)
+    if (size == 1) {
+        HPGMP_RANGE_POP(__FUNCTION__);
         return;
+    }
 
     const int MPI_MY_TAG = 99;
 
@@ -319,6 +324,7 @@ void Vector<scalar>::update_halos_pack_send_buffer(const DistMatrixBase *const m
 
     // Post receives first
     // Thread this loop
+    HPGMP_RANGE_PUSH("Post MPI_Irecv");
     double t0 = 0.0;
     TICK();
     for (int i = 0; i < num_neighbors; i++) {
@@ -328,9 +334,11 @@ void Vector<scalar>::update_halos_pack_send_buffer(const DistMatrixBase *const m
     }
     double time2 = 0.0;
     TOCK(time2);
+    HPGMP_RANGE_POP("Post MPI_Irecv");
 
 
     // Fill up send buffer
+    HPGMP_RANGE_PUSH("Fill send buffer");
     TICK();
     auto d_sendBuffer = static_cast<scalar_type*>(mat->get_device_send_buffer());
     const auto perm = mat->get_reordering_permutation();
@@ -361,8 +369,10 @@ void Vector<scalar>::update_halos_pack_send_buffer(const DistMatrixBase *const m
 
     double time1 = 0.0;
     TOCK(time1);
+    HPGMP_RANGE_POP("Fill send buffer");
 
     // Send to each neighbor
+    HPGMP_RANGE_PUSH("MPI_Send");
     TICK();
     for (int i = 0; i < num_neighbors; i++) {
         local_int_t n_send = sendLength[i];
@@ -376,6 +386,7 @@ void Vector<scalar>::update_halos_pack_send_buffer(const DistMatrixBase *const m
         MPI_Abort(comm, -2025);
     }
     TOCK(time2);
+    HPGMP_RANGE_POP("MPI_Send");
 
 #if !defined(HPGMP_USE_GPU_AWARE_MPI)
     // copy received data to GPU
@@ -387,6 +398,8 @@ void Vector<scalar>::update_halos_pack_send_buffer(const DistMatrixBase *const m
 #endif
     recv_reqs_.clear();
 #endif // HPGMP_NO_MPI
+
+    HPGMP_RANGE_POP(__FUNCTION__);
 }
 
 template <typename scalar>
@@ -400,6 +413,9 @@ void Vector<scalar>::update_halos_finalize(const DistMatrixBase *const mat) cons
 template <typename scalar>
 void Vector<scalar>::update_halos_pack_send_buffer(const DistMatrixBase *const mat) const
 {
+
+    HPGMP_RANGE_PUSH(__FUNCTION__);
+
 #ifndef HPGMP_NO_MPI
     const local_int_t totalToBeSent = mat->get_total_to_be_sent();
     scalar_type * const d_xv = d_values_;
@@ -436,11 +452,16 @@ void Vector<scalar>::update_halos_pack_send_buffer(const DistMatrixBase *const m
     //   waits to execute till the send buffer is gathered
     dctx_->stream_wait_on_event(interior_stream, send_gather_);
 #endif // HPGMP_NO_MPI
+
+    HPGMP_RANGE_POP(__FUNCTION__);
 }
 
 template <typename scalar>
 void Vector<scalar>::update_halos_send_receive(const DistMatrixBase *const mat) const
 {
+
+    HPGMP_RANGE_PUSH(__FUNCTION__);
+
 #ifndef HPGMP_NO_MPI
     const MPI_Datatype MPI_SCALAR_TYPE = MpiTypeTraits<scalar>::getType ();
     const local_int_t localNumberOfRows = mat->get_local_num_rows();
@@ -463,8 +484,10 @@ void Vector<scalar>::update_halos_send_receive(const DistMatrixBase *const mat) 
     int size, rank; // Number of MPI processes, My process ID
     MPI_Comm_size(comm, &size);
     MPI_Comm_rank(comm, &rank);
-    if (size == 1)
+    if (size == 1) {
+        HPGMP_RANGE_POP(__FUNCTION__);
         return;
+    }
     
     const int MPI_MY_TAG = 99;
 
@@ -500,9 +523,12 @@ void Vector<scalar>::update_halos_send_receive(const DistMatrixBase *const mat) 
         MPI_Isend(send_buffer, n_send, MPI_SCALAR_TYPE, neighbors[i], MPI_MY_TAG, comm, &send_reqs_[i]);
         send_buffer += n_send;
     }
-#endif
+#endif // HPGMP_NO_MPI
+
+    HPGMP_RANGE_POP(__FUNCTION__);
 }
 
+#ifndef HPGMP_NO_MPI
 namespace internal {
 
 void check_waitall_error(const int ierr, const std::string& type)
@@ -538,10 +564,14 @@ void check_waitall_statuses(const std::string&& type, const int ierr,
 }
 
 }
+#endif // HPGMP_NO_MPI
 
 template <typename scalar>
 void Vector<scalar>::update_halos_finalize(const DistMatrixBase *const mat) const
 {
+
+    HPGMP_RANGE_PUSH(__FUNCTION__);
+
 #ifndef HPGMP_NO_MPI
     // Complete the sends and receives.
     const local_int_t localNumberOfRows = mat->get_local_num_rows();
@@ -577,10 +607,13 @@ void Vector<scalar>::update_halos_finalize(const DistMatrixBase *const mat) cons
     halos_buffer_packed_ = false;
     recv_reqs_.clear();
     send_reqs_.clear();
-#endif
+#endif // HPGMP_NO_MPI
+
+    HPGMP_RANGE_POP(__FUNCTION__);
+
 }
 
-#endif
+#endif // HPGMP_ONLY_BLOCKING_COMMS
 
 
 template <unsigned int BLOCKSIZE, typename scalar>

@@ -18,6 +18,7 @@
 #define MYTIMER_HPP
 
 #include "device_ctx.hpp"
+#include "Profiling.hpp"
 
 double mytimer(void);
 

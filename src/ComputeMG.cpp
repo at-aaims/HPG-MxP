@@ -51,6 +51,9 @@ template<class SparseMatrix_type, class Vector_type>
 int ComputeMG(const SparseMatrix_type & A, const Vector_type & r, Vector_type & x,
               const bool symmetric, perf_counters& ft)
 {
+
+  HPGMP_RANGE_PUSH(__FUNCTION__);
+
   using scalar_type = typename SparseMatrix_type::scalar_type;
   const int mpisize = A.geom->size;
 
@@ -71,6 +74,9 @@ int ComputeMG(const SparseMatrix_type & A, const Vector_type & r, Vector_type & 
     // Intentional abuse of Vector class timing variables
     auto time_gs_sofar = x.time2_;
     x.time2_ = 0.0;
+
+    HPGMP_RANGE_PUSH("ell_multicolor_gs");
+
     TICK();
 
     for(int i=0; i < numberOfPresmootherSteps; ++i) {
@@ -96,10 +102,14 @@ int ComputeMG(const SparseMatrix_type & A, const Vector_type & r, Vector_type & 
     x.time2_ = time_gs_sofar;
     TOCK(x.time2_);
 
-    if (ierr!=0)
+    HPGMP_RANGE_POP("ell_multicolor_gs");
+    if (ierr!=0) {
+        HPGMP_RANGE_POP(__FUNCTION__);
         return ierr;
+    }
 
     // Restriction operation
+    HPGMP_RANGE_PUSH("fused_spmv_restriction");
     TICK();
     //ierr = restriction(A, r);
     ierr = fused_spmv_restriction(A, r, x);
@@ -110,19 +120,25 @@ int ComputeMG(const SparseMatrix_type & A, const Vector_type & r, Vector_type & 
     ft.mg_rp.add_memory_traffic<local_int_t>(3*coarse_len + A.Ac->totalNumberOfNonzeros);
     ft.mg_rp.add_memory_traffic<scalar_type>(coarse_len + A.Ac->totalNumberOfNonzeros
                                              + A.totalNumberOfRows);
-    if (ierr!=0)
+    HPGMP_RANGE_POP("fused_spmv_restriction");
+    if (ierr!=0) {
+      HPGMP_RANGE_POP(__FUNCTION__);
       return ierr;
+    }
 
     // MG on coarser-grid
     A.mgData->xc->time1_ = A.mgData->xc->time2_ = 0.0;
     A.mgData->xc->time3_ = A.mgData->xc->time4_ = 0.0;
     ierr = ComputeMG(*A.Ac,*A.mgData->rc, *A.mgData->xc, symmetric, ft);
-    if (ierr!=0)
+    if (ierr!=0) {
+      HPGMP_RANGE_POP(__FUNCTION__);
       return ierr;
+    }
     x.time1_ += A.mgData->xc->time1_; x.time2_ += A.mgData->xc->time2_;
     x.time3_ += A.mgData->xc->time3_; x.time4_ += A.mgData->xc->time4_;
 
     // Prolongation operation
+    HPGMP_RANGE_PUSH("prolongation");
     TICK();
     ierr = prolongation(A, x);
     TOCK(x.time4_);
@@ -130,12 +146,16 @@ int ComputeMG(const SparseMatrix_type & A, const Vector_type & r, Vector_type & 
     ft.mg_rp.add_flops<scalar_type>(coarse_len);
     ft.mg_rp.add_memory_traffic<local_int_t>(coarse_len*3);
     ft.mg_rp.add_memory_traffic<scalar_type>(coarse_len*2);
-    if (ierr!=0)
+    HPGMP_RANGE_POP("prolongation");
+    if (ierr!=0) {
+      HPGMP_RANGE_POP(__FUNCTION__);
       return ierr;
+    }
 
     // Post-smoothing
     time_gs_sofar = x.time2_;
     x.time2_ = 0.0;
+    HPGMP_RANGE_PUSH("post-smoothing");
     TICK();
 
     const int numberOfPostsmootherSteps = A.mgData->numberOfPostsmootherSteps;
@@ -150,13 +170,17 @@ int ComputeMG(const SparseMatrix_type & A, const Vector_type & r, Vector_type & 
     // restore GS time so far
     x.time2_ = time_gs_sofar;
     TOCK(x.time2_);
-    if (ierr!=0)
+    HPGMP_RANGE_POP("post-smoothing");
+    if (ierr!=0) {
+      HPGMP_RANGE_POP(__FUNCTION__);
       return ierr;
+    }
   }
   else {
     // coarsest grid
     auto time_gs_sofar = x.time2_;
     x.time2_ = 0.0;
+    HPGMP_RANGE_PUSH("ell_multicolor_gs");
     TICK();
 
     ierr += ell_multicolor_gs(symmetric, mat.get(), &r, &x);
@@ -165,13 +189,19 @@ int ComputeMG(const SparseMatrix_type & A, const Vector_type & r, Vector_type & 
     // restore GS time so far
     x.time2_ = time_gs_sofar;
     TOCK(x.time2_);
+    HPGMP_RANGE_POP("ell_multicolor_gs");
     //ft.mg_gs.flops[0] += 2*A.totalNumberOfNonzeros;
     ft.mg_gs.add_flops<scalar_type>(2*A.totalNumberOfNonzeros);
     ft.mg_gs.add_memory_traffic<scalar_type>(A.totalNumberOfNonzeros + 2*A.totalNumberOfRows);
     ft.mg_gs.add_memory_traffic<local_int_t>(A.totalNumberOfNonzeros);
-    if (ierr!=0)
+    if (ierr!=0) {
+      HPGMP_RANGE_POP(__FUNCTION__);
       return ierr;
+    }
   }
+
+  HPGMP_RANGE_POP(__FUNCTION__);
+
   return 0;
 }
 
