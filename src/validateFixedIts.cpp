@@ -85,20 +85,27 @@ int ValidGMRESFixed(const int argc, char **argv, const validation_t validation_t
 
   //////////////////////////////////////////////////////////
   // Solver Parameters
-  const int max_iters = validation_type == validation_t::fullscale_residual ? 1000000 : 10000;
   const int restart_length = test_data.restart_length;
-  // If we're converging the global solver to a specific tolerance,
-  //   increase it a bit for the sake of time.
+  /* If we're converging the global solver to a specific tolerance,
+   * increase it a bit for the sake of time, and set the max_iters really high.
+   * Otherwise, for fullscale_its, set the tolerance really tight so that
+   * the full number of iterations (10,000) are taken.
+   */
+  const int max_iters = validation_type == validation_t::fullscale_residual ? 1000000 : 10000;
   const scalar_type tolerance = validation_type == validation_t::fullscale_residual ?
       10 * test_data.tolerance : 1e-15;
   if (A.geom->rank == 0) {
-      std::cout << " Validate GMRES at full scale ( tol = " << tolerance << " and restart = " << restart_length << " ) <<" << std::endl;
-    HPGMP_fout << std::endl << " >> In Validate GMRES full scale( tol = " << tolerance << " and restart = " << restart_length << " ) <<" << std::endl;
+      std::cout << " Validate GMRES at full scale ( tol = " << tolerance << ", max iters = "
+          << max_iters << " and restart = " << restart_length << " ) <<" << std::endl;
+      HPGMP_fout << std::endl << " >> In Validate GMRES full scale( tol = " << tolerance
+          << ", max iters = " << max_iters << " and restart = " << restart_length << " ) <<"
+          << std::endl;
   }
 
 
   //////////////////////////////////////////////////////////
-  // Run reference GMRES to a fixed tolerance
+  // Run reference GMRES to a fixed tolerance or fixed number of iterations
+  //  depending on validation mode.
   int fail = 0;
   int refNumIters = 0;
   double refSolveTime = 0.0;
@@ -113,7 +120,9 @@ int ValidGMRESFixed(const int argc, char **argv, const validation_t validation_t
     refSolveTime = (mytimer() - time_tic);
     fail = ierr;
     if (ierr && A.geom->rank == 0) {
-        std::cout << " ValidGMRES: Error in call to ref GMRES: " << ierr << ".\n" << std::endl;
+        if(ierr == 1) {
+            std::cout << " ValidGMRES: GMRES hit max iterations." << std::endl;
+        }
         if (ierr == 2) {
             throw std::runtime_error("Ref GMRES NaN'd out!");
         }
@@ -136,8 +145,18 @@ int ValidGMRESFixed(const int argc, char **argv, const validation_t validation_t
 
 
   //////////////////////////////////////////////////////////
-  // Run "optimized" GMRES (aka GMRES-IR) to a fixed tolerance
+  // Run "optimized" GMRES (aka GMRES-IR) to a fixed tolerance, given by the above reference run.
+  /* Since the mxp GMRES-IR might take more iterations to converge to the same tolerance
+   * as the reference run, we increase the max iterations allowed.
+   */
   const int test_max_iters = 10*max_iters;
+  /* For validation mode fullscale_residual, the same tolerance is used
+   * as what we set for the reference run.
+   * For fullscale_its, the residual reduction that the reference run actually achieved
+   * is used as the tolerance for MxP GMRES-IR that follows.
+   */
+  const double test_tolerance = validation_type == validation_t::fullscale_residual
+      ? tolerance : ref_rel_res_norm;
   int optNumIters = 0;
   double optSolveTime = 0.0;
   scalar_type optResNorm = 0.0;
@@ -153,7 +172,7 @@ int ValidGMRESFixed(const int argc, char **argv, const validation_t validation_t
     }
 #endif
     const int ierr = GMRES_IR(A, A_lo, data, data_lo, b, x, restart_length, test_max_iters,
-                              ref_rel_res_norm,
+                              test_tolerance,
                               optNumIters, optResNorm, optResNorm0, true, verbose, test_data);
     optSolveTime = (mytimer() - time_tic);
     fail = ierr;
@@ -179,15 +198,15 @@ int ValidGMRESFixed(const int argc, char **argv, const validation_t validation_t
       HPGMP_fout << "  Optimized Iteration time  " << optSolveTime << " seconds." << std::endl;
       HPGMP_fout << "  Optimized Iteration count " << optNumIters << std::endl;
   }
-  if (optResNorm/optResNorm0 > tolerance) {
+  if (optResNorm/optResNorm0 > test_tolerance) {
     fail = 3;
     if (A.geom->rank == 0) {
       HPGMP_fout << " opt GMRES did not converege: normr = "
           << optResNorm << " / " << optResNorm0 << " = " << optResNorm/optResNorm0
-          << "(tol = " << tolerance << ")" << std::endl;
+          << "(tol = " << test_tolerance << ")" << std::endl;
       std::cout << " ValidGMRES: opt GMRES did not converege: normr = "
           << optResNorm << " / " << optResNorm0 << " = " << optResNorm/optResNorm0
-          << "(tol = " << tolerance << ")" << std::endl;
+          << "(tol = " << test_tolerance << ")" << std::endl;
     }
     // If GMRES-IR does not converge in validation, abort
     MPI_Abort(comm, fail);
