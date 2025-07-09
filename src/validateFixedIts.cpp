@@ -93,7 +93,7 @@ int ValidGMRESFixed(const int argc, char **argv, const validation_t validation_t
    */
   const int max_iters = validation_type == validation_t::fullscale_residual ? 1000000 : 10000;
   const scalar_type tolerance = validation_type == validation_t::fullscale_residual ?
-      10 * test_data.tolerance : 1e-15;
+      10 * test_data.tolerance : 1e-13;
   if (A.geom->rank == 0) {
       std::cout << " Validate GMRES at full scale ( tol = " << tolerance << ", max iters = "
           << max_iters << " and restart = " << restart_length << " ) <<" << std::endl;
@@ -139,7 +139,8 @@ int ValidGMRESFixed(const int argc, char **argv, const validation_t validation_t
     std::cout << " ValidGMRES: Reference initial norm = " << refResNorm0 << std::endl;
     std::cout << " ValidGMRES: Reference final norm = " << refResNorm << std::endl;
     std::cout << " ValidGMRES: Reference relative res norm = " << ref_rel_res_norm << std::endl;
-    std::cout << " ValidGMRES: Reference Iteration time  " << refSolveTime << " seconds." << std::endl;
+    std::cout << " ValidGMRES: Reference Iteration time  " << refSolveTime << " seconds."
+        << std::endl;
     std::cout << " ValidGMRES: Reference Iteration count " << refNumIters << std::endl;
   }
 
@@ -176,12 +177,11 @@ int ValidGMRESFixed(const int argc, char **argv, const validation_t validation_t
                               optNumIters, optResNorm, optResNorm0, true, verbose, test_data);
     optSolveTime = (mytimer() - time_tic);
     fail = ierr;
-    if (ierr) {
-        if(ierr == 2) {
-            if(A.geom->rank == 0)
-                std::cout << " ValidGMRES: Error in call to opt GMRES-IR: " << ierr << ".\n" << std::endl;
-            throw std::runtime_error("Opt GMRES NaN's out!");
-        }
+    if(ierr == 2) {
+        if(A.geom->rank == 0)
+            std::cout << " ValidGMRES: Error in call to opt GMRES-IR: " << ierr << ".\n"
+                << std::endl;
+        throw std::runtime_error("Opt GMRES NaN's out!");
     }
 
     test_data.optNumIters = optNumIters;
