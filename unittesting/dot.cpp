@@ -158,7 +158,7 @@ int main(int argc, char * argv[]) {
   test_data.restart_length = restart_length;
   if (myRank < sizeValidComm) {
     global_failure = ValidGMRES<TestGMRESData_type, scalar_type, scalar_type2, project_type>(
-                         argc, argv, validation_comm, ctx.get(), numberOfMgLevels, verbose,
+                         argc, argv, validation_t::standard, validation_comm, ctx.get(), numberOfMgLevels, verbose,
                          test_data);
   }
 

@@ -191,15 +191,9 @@ int main(int argc, char * argv[]) {
 
   if (myRank < sizeValidComm) {
     TICK();
-    if(gopts.validation_type == validation_t::standard) {
-      global_failure = ValidGMRES<TestGMRESData_type, scalar_type, scalar_type2, project_type>(
-                           argc, argv, validation_comm, ctx.get(), numberOfMgLevels, verbose,
-                           test_data);
-    } else {
-      global_failure = ValidGMRESFixed<TestGMRESData_type, scalar_type, scalar_type2, project_type>(
+    global_failure = ValidGMRES<TestGMRESData_type, scalar_type, scalar_type2, project_type>(
                            argc, argv, gopts.validation_type, validation_comm, ctx.get(), numberOfMgLevels, verbose,
                            test_data);
-    }
     double t_valid{};
     TOCK(t_valid);
     if(myRank == 0) {

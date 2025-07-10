@@ -115,7 +115,7 @@ set(host_sources
     src/OptimizeProblem.cpp src/ReadHpgmpDat.cpp src/ReportResults.cpp
     src/SetupHalo.cpp src/SetupHalo_ref.cpp
     src/SetupMatrix.cpp src/SetupProblem.cpp
-    src/ValidGMRES.cpp src/validateFixedIts.cpp src/BenchGMRES.cpp
+    src/ValidGMRES.cpp src/BenchGMRES.cpp
     src/WriteProblem.cpp
     src/YAML_Doc.cpp src/YAML_Element.cpp
     src/ComputeSPMV.cpp 
