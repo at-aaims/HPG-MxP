@@ -90,8 +90,7 @@ enum class prec_format_t {
 /// Type of solver validation
 enum class validation_t {
     standard,
-    fullscale_its,
-    fullscale_residual
+    fullscale
 };
 
 /// Algorithm and data structure options

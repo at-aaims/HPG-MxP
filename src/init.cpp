@@ -86,10 +86,8 @@ HPGMP_Init(int * argc_p, char ** *argv_p) {
     }
     if(values[0] == "standard") {
         opts.validation_type = validation_t::standard;
-    } else if(values[0] == "fullscale_its") {
-        opts.validation_type = validation_t::fullscale_its;
-    } else if(values[0] == "fullscale_residual") {
-        opts.validation_type = validation_t::fullscale_residual;
+    } else if(values[0] == "fullscale") {
+        opts.validation_type = validation_t::fullscale;
     } else {
         throw std::runtime_error("Invalid value for validation_type!");
     }

@@ -118,12 +118,7 @@ int main(int argc, char * argv[]) {
       }
   } else {
       if(myRank == 0) {
-          std::cout << "main: Using global-scale validation ";
-          if(gopts.validation_type == validation_t::fullscale_its) {
-              std::cout << "with fixed iteration count.\n";
-          } else {
-              std::cout << "with fixed residual tolerance.\n";
-          }
+          std::cout << "main: Using global-scale validation.\n";
       }
   }
 

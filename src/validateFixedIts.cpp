@@ -81,19 +81,14 @@ int ValidGMRESFixed(const int argc, char **argv, const validation_t validation_t
   GMRESData_type2 data_lo;
 
   Vector_type b, x;
-  SetupProblem("valid_", argc, argv, comm, dctx, numberOfMgLevels, verbose, geom, A, data, A_lo, data_lo, b, x, test_data);
+  SetupProblem("valid_", argc, argv, comm, dctx, numberOfMgLevels, verbose, geom, A, data,
+               A_lo, data_lo, b, x, test_data);
 
   //////////////////////////////////////////////////////////
   // Solver Parameters
   const int restart_length = test_data.restart_length;
-  /* If we're converging the global solver to a specific tolerance,
-   * increase it a bit for the sake of time, and set the max_iters really high.
-   * Otherwise, for fullscale_its, set the tolerance really tight so that
-   * the full number of iterations (10,000) are taken.
-   */
-  const int max_iters = validation_type == validation_t::fullscale_residual ? 1000000 : 10000;
-  const scalar_type tolerance = validation_type == validation_t::fullscale_residual ?
-      10 * test_data.tolerance : 1e-13;
+  const int max_iters = 10000;
+  const scalar_type tolerance = test_data.tolerance;
   if (A.geom->rank == 0) {
       std::cout << " Validate GMRES at full scale ( tol = " << tolerance << ", max iters = "
           << max_iters << " and restart = " << restart_length << " ) <<" << std::endl;
@@ -151,13 +146,10 @@ int ValidGMRESFixed(const int argc, char **argv, const validation_t validation_t
    * as the reference run, we increase the max iterations allowed.
    */
   const int test_max_iters = 10*max_iters;
-  /* For validation mode fullscale_residual, the same tolerance is used
-   * as what we set for the reference run.
-   * For fullscale_its, the residual reduction that the reference run actually achieved
+  /* The residual reduction that the reference run actually achieved
    * is used as the tolerance for MxP GMRES-IR that follows.
    */
-  const double test_tolerance = validation_type == validation_t::fullscale_residual
-      ? tolerance : ref_rel_res_norm;
+  const double test_tolerance = ref_rel_res_norm;
   int optNumIters = 0;
   double optSolveTime = 0.0;
   scalar_type optResNorm = 0.0;
