@@ -645,7 +645,7 @@ void CopyVector(const Vector<scalar_src>& v, Vector<scalar_dst>& w)
   const local_int_t localLength = v.local_length();
   assert(w.local_length() >= localLength);
 #if (!defined(HPGMP_WITH_CUDA) & !defined(HPGMP_WITH_HIP)) | defined(HPGMP_DEBUG)
-  scalar_src * vv = v.values();
+  const scalar_src * vv = v.values();
   scalar_dst * wv = w.values();
   #if defined(HPGMP_WITH_BLAS)
   if (std::is_same<scalar_src, scalar_dst>::value) {
@@ -657,7 +657,8 @@ void CopyVector(const Vector<scalar_src>& v, Vector<scalar_dst>& w)
   } else
   #endif
   {
-    for (int i=0; i<localLength; ++i) wv[i] = vv[i];
+    for (int i=0; i<localLength; ++i)
+        wv[i] = vv[i];
   }
 #endif
 

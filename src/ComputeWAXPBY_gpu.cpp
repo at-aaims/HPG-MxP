@@ -78,12 +78,14 @@ int ComputeWAXPBY_ref(const local_int_t n,
     #ifndef HPGMP_NO_OPENMP
     #pragma omp parallel for
     #endif
-    for (local_int_t i=0; i<n; i++) wv[i] = xv[i] + beta * yv[i];
+    for (local_int_t i=0; i<n; i++)
+        wv[i] = xv[i] + beta * yv[i];
   } else if (beta==1.0) {
     #ifndef HPGMP_NO_OPENMP
     #pragma omp parallel for
     #endif
-    for (local_int_t i=0; i<n; i++) wv[i] = alpha * xv[i] + yv[i];
+    for (local_int_t i=0; i<n; i++)
+        wv[i] = alpha * xv[i] + yv[i];
   } else  {
     #ifndef HPGMP_NO_OPENMP
     #pragma omp parallel for
@@ -180,10 +182,10 @@ int ComputeWAXPBY_ref(const local_int_t n,
     scalarY_type ynorm = 0.0;
     #ifndef HPGMP_NO_MPI
     MPI_Datatype MPI_SCALAR_TYPE = MpiTypeTraits<scalarW_type>::getType ();
-    MPI_Allreduce(&l_enorm, &enorm, 1, MPI_SCALAR_TYPE, MPI_SUM, x.comm);
-    MPI_Allreduce(&l_wnorm, &wnorm, 1, MPI_SCALAR_TYPE, MPI_SUM, x.comm);
-    MPI_Allreduce(&l_xnorm, &xnorm, 1, MPI_SCALAR_TYPE, MPI_SUM, x.comm);
-    MPI_Allreduce(&l_ynorm, &ynorm, 1, MPI_SCALAR_TYPE, MPI_SUM, x.comm);
+    MPI_Allreduce(&l_enorm, &enorm, 1, MPI_SCALAR_TYPE, MPI_SUM, x.get_comm());
+    MPI_Allreduce(&l_wnorm, &wnorm, 1, MPI_SCALAR_TYPE, MPI_SUM, x.get_comm());
+    MPI_Allreduce(&l_xnorm, &xnorm, 1, MPI_SCALAR_TYPE, MPI_SUM, x.get_comm());
+    MPI_Allreduce(&l_ynorm, &ynorm, 1, MPI_SCALAR_TYPE, MPI_SUM, x.get_comm());
     #else
     enorm = l_enorm;
     wnorm = l_wnorm;
@@ -195,7 +197,7 @@ int ComputeWAXPBY_ref(const local_int_t n,
     xnorm = sqrt(xnorm);
     ynorm = sqrt(ynorm);
     int rank = 0;
-    MPI_Comm_rank(x.comm, &rank);
+    MPI_Comm_rank(x.get_comm(), &rank);
     if (rank == 0) {
       HPGMP_fout << rank << " : WAXPBY(" << n << "): error = " << enorm << " (alpha=" << alpha
                  << ", beta=" << beta << ", x=" << xnorm << ", y=" << ynorm << ", w=" << wnorm

@@ -56,10 +56,6 @@ int ValidGMRES(const int argc, char **argv, const validation_t validation_type, 
                     DeviceCtx *const dctx,
                     const int numberOfMgLevels, const bool verbose, TestGMRESSData_type& test_data)
 {
-  if (validation_type == validation_t::standard) {
-      std::printf("Incorrect validation type!\n"); fflush(stdout);
-      return -1;
-  }
   typedef Vector<scalar_type> Vector_type;
   typedef SparseMatrix<scalar_type> SparseMatrix_type;
   typedef GMRESData<scalar_type> GMRESData_type;
@@ -90,9 +86,15 @@ int ValidGMRES(const int argc, char **argv, const validation_t validation_type, 
   const int max_iters = 10000;
   const scalar_type tolerance = test_data.tolerance;
   if (A.geom->rank == 0) {
-      std::cout << " Validate GMRES at full scale ( tol = " << tolerance << ", max iters = "
+      std::cout << " Validate GMRES ";
+      if(validation_type == validation_t::fullscale) {
+          std::cout << "at full scale";
+      } else {
+          std::cout << "at 1-node scale ";
+      }
+      std::cout << "( tol = " << tolerance << ", max iters = "
           << max_iters << " and restart = " << restart_length << " ) <<" << std::endl;
-      HPGMP_fout << std::endl << " >> In Validate GMRES full scale( tol = " << tolerance
+      HPGMP_fout << std::endl << " >> In Validate GMRES ( tol = " << tolerance
           << ", max iters = " << max_iters << " and restart = " << restart_length << " ) <<"
           << std::endl;
   }

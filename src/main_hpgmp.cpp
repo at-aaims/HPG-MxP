@@ -192,8 +192,8 @@ int main(int argc, char * argv[]) {
   if (myRank < sizeValidComm) {
     TICK();
     global_failure = ValidGMRES<TestGMRESData_type, scalar_type, scalar_type2, project_type>(
-                           argc, argv, gopts.validation_type, validation_comm, ctx.get(), numberOfMgLevels, verbose,
-                           test_data);
+                           argc, argv, gopts.validation_type, validation_comm, ctx.get(),
+                           numberOfMgLevels, verbose, test_data);
     double t_valid{};
     TOCK(t_valid);
     if(myRank == 0) {

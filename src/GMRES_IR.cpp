@@ -190,7 +190,7 @@ int GMRES_IR(const SparseMatrix_type & A, const SparseMatrix_type2 & A_lo,
     normr = normr_hi;
 
     // Convergence check
-    #define HPGMP_NUMERIC_CHECK
+    //#define HPGMP_NUMERIC_CHECK
     #ifdef HPGMP_NUMERIC_CHECK
     project_type ortho_err (0.0);
     #endif
