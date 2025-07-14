@@ -167,7 +167,7 @@ int main(int argc, char * argv[]) {
   }
 
 
-#ifdef HPGMP_DEBUG
+#ifdef HPGMP_VERBOSE
   const bool verbose = true;
 #else
   const bool verbose = false;
