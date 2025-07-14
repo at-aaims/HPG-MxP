@@ -81,7 +81,7 @@ int GMRES(const SparseMatrix_type& A, GMRESData_type& data, const Vector_type& b
 
   local_int_t  nrow = A.localNumberOfRows;
   global_int_t Nrow = A.totalNumberOfRows;
-  int print_freq = 1;
+  const int print_freq = 10;
   if (verbose && A.geom->rank==0) {
     HPGMP_fout << std::endl << " Running GMRES(" << restart_length
                            << ") with max-iters = " << max_iter
@@ -164,7 +164,8 @@ int GMRES(const SparseMatrix_type& A, GMRESData_type& data, const Vector_type& b
     }
     if (normr/normr0 <= tolerance) { // Use "<=" to exit when res=zero (continuing will cause NaN)
       converged = true;
-      if (verbose && A.geom->rank==0) HPGMP_fout << " > GMRES converged " << std::endl;
+      if (verbose && A.geom->rank==0)
+          HPGMP_fout << " > GMRES converged " << std::endl;
     }
 
     // do forward GS instead of symmetric GS

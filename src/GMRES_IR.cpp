@@ -36,6 +36,9 @@
 #include "ComputeGEMVT.hpp"
 #include "ComputeGEMMT.hpp"
 
+#ifdef HPGMP_DETAILED_DEBUG
+    #define HPGMP_NUMERIC_CHECK
+#endif
 
 /*!
   Routine to compute an approximate solution to Ax = b
@@ -128,9 +131,9 @@ int GMRES_IR(const SparseMatrix_type & A, const SparseMatrix_type2 & A_lo,
   if (!doPreconditioning && A.geom->rank==0)
       HPGMP_fout << "WARNING: PERFORMING UNPRECONDITIONED ITERATIONS" << std::endl;
 
-  int print_freq = 1;
-  if (print_freq>50) print_freq=50;
-  if (print_freq<1)  print_freq=1;
+  const int print_freq = 10;
+  //if (print_freq>50) print_freq=50;
+  //if (print_freq<1)  print_freq=1;
   if (verbose && A.geom->rank==0) {
     HPGMP_fout << std::endl << " Running GMRES_IR(" << restart_length
                            << ") with max-iters = " << max_iter
@@ -190,7 +193,6 @@ int GMRES_IR(const SparseMatrix_type & A, const SparseMatrix_type2 & A_lo,
     normr = normr_hi;
 
     // Convergence check
-    #define HPGMP_NUMERIC_CHECK
     #ifdef HPGMP_NUMERIC_CHECK
     project_type ortho_err (0.0);
     #endif

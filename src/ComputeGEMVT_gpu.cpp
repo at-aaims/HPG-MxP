@@ -51,14 +51,16 @@ int ComputeGEMVT_ref(const local_int_t m, const local_int_t n,
   const scalarA_type zero (0.0);
 
   // Input serial dense vector 
-  scalarA_type * const Av = A.values();
-  scalarX_type * const xv = x.values();
+  const scalarA_type * const Av = A.values();
+  const scalarX_type * const xv = x.values();
 
   // GEMV on HOST CPU
   if (beta == zero) {
-    for (local_int_t i = 0; i < n; i++) yv[i] = zero;
+    for (local_int_t i = 0; i < n; i++)
+        yv[i] = zero;
   } else if (beta != one) {
-    for (local_int_t i = 0; i < n; i++) yv[i] *= beta;
+    for (local_int_t i = 0; i < n; i++)
+        yv[i] *= beta;
   }
 
   if (alpha == one) {

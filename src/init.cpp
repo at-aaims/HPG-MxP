@@ -35,6 +35,8 @@ const char* NULLDEVICE="/dev/null";
 
 #include <fstream>
 #include <iostream>
+#include <sstream>
+#include <string>
 
 #include "hpgmp.hpp"
 #include "DataTypes.hpp"
@@ -54,11 +56,43 @@ startswith(const char * s, const char * prefix) {
   return 1;
 }
 
-int
+HPGMP_gen_opts
 HPGMP_Init(int * argc_p, char ** *argv_p) {
-  return 0;
-}
+    HPGMP_gen_opts opts;
+    const int argc = *argc_p;
+    char **argv = *argv_p;
+    // Options to be read
+    constexpr int nparams = 1;
+    const std::array<std::string,nparams> cparams = {"--validation_type"};
+    std::array<std::string,nparams> values;
+    // Default values
+    values[0] = "standard";
 
+    // Read cmd line args
+    for (int i = 1; i <= argc && argv[i]; ++i) {
+        std::stringstream ss(argv[i]);
+        std::string prefix;
+        if(std::getline(ss, prefix, '=')) {
+            for (int j = 0; j < nparams; ++j) {
+                if (prefix == cparams[j]) {
+                    if (!std::getline(ss, values[j])) {
+                        throw std::runtime_error("Could not read cmd line value!");
+                    }
+                }
+            }
+        } else {
+            throw std::runtime_error("Could not read cmd line option prefix!");
+        }
+    }
+    if(values[0] == "standard") {
+        opts.validation_type = validation_t::standard;
+    } else if(values[0] == "fullscale") {
+        opts.validation_type = validation_t::fullscale;
+    } else {
+        throw std::runtime_error("Invalid value for validation_type!");
+    }
+    return opts;
+}
 
 
 /*!
@@ -79,7 +113,7 @@ HPGMP_Init(int * argc_p, char ** *argv_p) {
 */
 int
 HPGMP_Init_Params(const char *title, int * argc_p, char ** *argv_p, HPGMP_Params & params, comm_type comm) {
-  int argc = *argc_p;
+  const int argc = *argc_p;
   char ** argv = *argv_p;
   char fname[80];
   int i, j, *iparams;
