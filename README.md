@@ -1,15 +1,9 @@
-######################################################################################
 # High Performance Generalized minimal residual - Mixed-Precision (HPG-MxP) Benchmark
-######################################################################################
 
 Ichitaro Yamazaki, Jennifer Loe, Christian Glusa, Sivasankaran Rajamanickam,
 Piotr Luszczek, and Jack Dongarra
 
-Revision: 0.1
-
-Date: May 5, 2023
-
-This version is developed and maintained by Aditya Kashi at Oak Ridge National Laboratory.
+This version is maintained by the National Center for Computational Sciences, Oak Ridge National Laboratory.
 
 ## Introduction ##
 
@@ -41,7 +35,7 @@ compliant with MPI version 1.1 is sufficient.
 
 ## Installation ##
 
-See the file `INSTALL` in this directory.
+See the file `INSTALL` in this directory. Please note that only CMake builds are currently supported.
 
 ## Valid Runs ##
 
@@ -63,15 +57,6 @@ Future memory system architectures may require restatement of the specific memor
 size requirements.  But the guiding principle will always be that the problem
 size should reflect what would be reasonable for a real sparse iterative solver.
 
-## Documentation ##
-
-The source code documentation can be generated with a Doxygen (version 1.8 or
-newer). In this directory type:
-
-    doxygen tools/hpcg.dox
-
-Doxygen will then generate various output formats in the `out` directory.
-
 ## Tuning ##
 
 See the file `TUNING` in this directory.
@@ -80,8 +65,3 @@ See the file `TUNING` in this directory.
 
 Known problems and bugs with this release are documented in the file
 `BUGS`.
-
-## Further information ##
-
-Check out  the website  http://www.hpcg-benchmark.org/ for the latest
-information and performance results.
