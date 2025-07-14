@@ -1,0 +1,4 @@
+Contributors to the AAIMS implementation of the HPG-MxP benchmark:
+
+Kashi, Aditya <kashia@ornl.gov> Oak Ridge National Laboratory
+Koukpaizan, Nicholson <koukpaizannk@ornl.gov> Oak Ridge National Laboratory

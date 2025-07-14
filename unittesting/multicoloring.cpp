@@ -115,7 +115,7 @@ int run_all_tests(comm_type comm, const HPGMP_Params& params)
         }
     }
 
-    printf("%u violations, %u bad rows\n  row, col\n", violations.size(), bad_rows.size());
+    printf("%lu violations, %lu bad rows\n  row, col\n", violations.size(), bad_rows.size());
     if(violations.size() > 0) {
         auto vit = violations.begin();
         for(int i = 0; i < 3; ++vit, ++i) {
