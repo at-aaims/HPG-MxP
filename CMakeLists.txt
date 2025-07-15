@@ -232,13 +232,6 @@ if (HPGMP_ENABLE_CUDA)
     target_link_libraries(hpgmp_device PUBLIC CUDA::cublas CUDA::cusparse CUDA::curand)
     target_link_libraries(hpgmp PUBLIC
                           CUDA::cublas CUDA::cusparse CUDA::curand)
-
-    if(HPGMP_ENABLE_PROFILING)
-      target_compile_definitions(hpgmp PUBLIC HPGMP_WITH_PROFILING)
-      target_link_libraries(hpgmp PUBLIC
-        CUDA::nvToolsExt
-      )
-    endif()
 else ()
     target_compile_definitions(hpgmp PUBLIC HPGMP_NO_CUDA)
 endif ()
@@ -251,25 +244,27 @@ if (HPGMP_ENABLE_HIP)
     target_link_libraries(hpgmp_device PRIVATE roc::rocprim)
     target_link_libraries(hpgmp PUBLIC hip::host roc::rocrand)
     target_link_libraries(hpgmp PUBLIC roc::rocblas roc::rocsparse)
-
-    if(HPGMP_ENABLE_PROFILING)
-      target_compile_definitions(hpgmp PUBLIC HPGMP_WITH_PROFILING)
-      target_include_directories(hpgmp PUBLIC 
-        ${ROCM_PATH}/include)
-      target_link_libraries(hpgmp PUBLIC
-        "-L${ROCM_PATH}/lib -lroctx64 -lroctracer64" 
-      )
-      target_compile_definitions(hpgmp_device PUBLIC HPGMP_WITH_PROFILING)
-      target_include_directories(hpgmp_device PUBLIC 
-        ${ROCM_PATH}/include)
-      target_link_libraries(hpgmp_device PUBLIC
-        "-L${ROCM_PATH}/lib -lroctx64 -lroctracer64" 
-      )
-    endif()
 else ()
     target_compile_definitions(hpgmp PUBLIC HPGMP_NO_HIP)
 endif ()
 
+if(HPGMP_ENABLE_PROFILING)
+    target_compile_definitions(hpgmp PUBLIC HPGMP_WITH_PROFILING)
+
+    if (HPGMP_ENABLE_CUDA)
+        target_compile_definitions(hpgmp_device PUBLIC HPGMP_WITH_PROFILING)
+        target_link_libraries(hpgmp_device PUBLIC
+          CUDA::nvToolsExt
+        )
+    endif()
+
+    if (HPGMP_ENABLE_HIP)
+        target_compile_definitions(hpgmp_device PUBLIC HPGMP_WITH_PROFILING)
+        target_link_libraries(hpgmp_device PUBLIC
+          "-L${ROCM_PATH}/lib -lroctx64 -lroctracer64" 
+        )
+    endif()
+endif()
 
 if (HPGMP_ENABLE_BLAS)
     target_compile_definitions(hpgmp PUBLIC HPGMP_WITH_BLAS)

@@ -24,7 +24,7 @@
 #include "cblas.h"
 #include "ComputeGEMV_ref.hpp"
 #include "hpgmp.hpp"
-#include "Profiling"
+#include "Profiling.hpp"
 
 template<class MultiVector_type, class Vector_type, class SerialDenseMatrix_type>
 int ComputeGEMV_ref(const local_int_t m, const local_int_t n,

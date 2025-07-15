@@ -1,4 +1,5 @@
-#pragma once
+#ifndef HPGMP_PROFILING_HPP
+#define HPGMP_PROFILING_HPP
 
 #ifdef HPGMP_WITH_PROFILING
 
@@ -33,3 +34,5 @@
 #define HPGMP_RANGE_POP(x)
 
 #endif // HPGMP_WITH_PROFILING
+
+#endif // HPGMP_PROFILING_HPP
