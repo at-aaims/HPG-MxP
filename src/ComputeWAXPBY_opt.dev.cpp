@@ -36,6 +36,8 @@
 #include "hpgmp.hpp"
 #include "DataTypes.hpp"
 
+#include "Profiling.hpp"
+
 template <typename x_type, typename y_type, typename w_type>
 __global__
 void waxpby(const local_int_t n, const x_type alpha, const x_type *const __restrict__ xv,
@@ -73,12 +75,18 @@ int ComputeWAXPBY_opt(const local_int_t n,
                             VectorW_type & w,
                       bool& isoptimized)
 {
+
+  HPGMP_RANGE_PUSH(__FUNCTION__);
+
   isoptimized = true;
   assert(x.local_length()>=n); // Test vector lengths
   assert(y.local_length()>=n);
 
   // quick return
-  if (n <= 0) return 0;
+  if (n <= 0) {
+    HPGMP_RANGE_POP(__FUNCTION__);
+    return 0;
+  }
 
   typedef typename VectorX_type::scalar_type scalarX_type;
   typedef typename VectorY_type::scalar_type scalarY_type;
@@ -150,6 +158,9 @@ int ComputeWAXPBY_opt(const local_int_t n,
       const int nblocks = (n - 1) / threads_per_block + 1;
       waxpby<<<nblocks, threads_per_block, 0, 0>>>(n, alpha, d_xv, beta, d_yv, d_wv);
   }
+
+  HPGMP_RANGE_POP(__FUNCTION__);
+
   return 0;
 }
 

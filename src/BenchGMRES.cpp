@@ -68,6 +68,7 @@ int BenchGMRES(int argc, char **argv, comm_type comm, DeviceCtx *const dctx, int
                bool verbose, bool runReference, const bool validation_failure,
                TestGMRESDataType & test_data)
 {
+  HPGMP_RANGE_PUSH(__FUNCTION__);
   typedef Vector<scalar_type> Vector_type;
   typedef SparseMatrix<scalar_type> SparseMatrix_type;
   typedef GMRESData<scalar_type> GMRESData_type;
@@ -106,7 +107,11 @@ int BenchGMRES(int argc, char **argv, comm_type comm, DeviceCtx *const dctx, int
   }
   // =====================================================================
   // Benchmark parameters
+#ifdef HPGMP_WITH_PROFILING
+  const int maxIters = 1; // Will perform at least restart_length
+#else
   const int maxIters = 300;
+#endif
   // Any official benchmark result must run at least this many seconds
   //double minOfficialTime = 1800;
   const double minOfficialTime = 120; // for testing..
@@ -141,6 +146,9 @@ int BenchGMRES(int argc, char **argv, comm_type comm, DeviceCtx *const dctx, int
       HPGMP_fout << "Warm-up runs" << endl;
     }
 
+#ifdef HPGMP_WITH_PROFILING
+    const int numberOfGmresCalls = 1;
+#else // HPGMP_WITH_PROFILING
     const int timing_calls = 10;
     double gmresir_run_time = 0;
     
@@ -176,6 +184,7 @@ int BenchGMRES(int argc, char **argv, comm_type comm, DeviceCtx *const dctx, int
     const int numberOfGmresCalls = test_data.runningTime >= 0.0 ?
         ceil(test_data.runningTime / avg_run_time) :
         ceil(test_data.minOfficialTime / avg_run_time);
+#endif // HPGMP_WITH_PROFILING
     if (A.geom->rank==0) {
         std::cout << "Number of benchmarking GMRES runs will be " << numberOfGmresCalls
                   << std::endl;
@@ -271,7 +280,11 @@ int BenchGMRES(int argc, char **argv, comm_type comm, DeviceCtx *const dctx, int
   // Run reference GMRES implementation for a fixed number of iterations
   // and record the obtained Gflop/s
   if (runReference) {
+#ifdef HPGMP_WITH_PROFILING
+    const int n_ref_calls = 1;
+#else
     const int n_ref_calls = 10;
+#endif
     x.fill_zero();
     //warmup
     GMRES(A, data, b, x, restart_length, maxIters, tolerance, niters, normr, normr0, precond,
@@ -377,6 +390,7 @@ int BenchGMRES(int argc, char **argv, comm_type comm, DeviceCtx *const dctx, int
   }
 
   delete geom;
+  HPGMP_RANGE_POP(__FUNCTION__);
   return 0;
 }
 

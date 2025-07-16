@@ -37,6 +37,9 @@
  */
 template<class SparseMatrix_type, class Vector_type>
 void ExchangeHalo_ref(const SparseMatrix_type & A, Vector_type & x) {
+
+  HPGMP_RANGE_PUSH(__FUNCTION__);
+
   typedef typename SparseMatrix_type::scalar_type scalar_type;
   MPI_Datatype MPI_SCALAR_TYPE = MpiTypeTraits<scalar_type>::getType ();
 
@@ -55,7 +58,10 @@ void ExchangeHalo_ref(const SparseMatrix_type & A, Vector_type & x) {
   int size, rank; // Number of MPI processes, My process ID
   MPI_Comm_size(A.comm, &size);
   MPI_Comm_rank(A.comm, &rank);
-  if (size == 1) return;
+  if (size == 1) {
+    HPGMP_RANGE_POP(__FUNCTION__);
+    return;
+  }
 
   //
   //  first post receives, these are immediate receives
@@ -122,6 +128,8 @@ void ExchangeHalo_ref(const SparseMatrix_type & A, Vector_type & x) {
 
   x.time1 = time1; x.time2 = time2;
   delete [] request;
+
+  HPGMP_RANGE_POP(__FUNCTION__);
 
   return;
 }

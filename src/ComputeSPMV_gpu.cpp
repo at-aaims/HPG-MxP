@@ -57,6 +57,9 @@
 template<class SparseMatrix_type, class Vector_type>
 int ComputeSPMV_ref(const SparseMatrix_type & A, Vector_type & x, Vector_type & y)
 {
+
+  HPGMP_RANGE_PUSH(__FUNCTION__);
+
   assert(x.local_length()>=A.localNumberOfColumns); // Test vector lengths
   assert(y.local_length()>=A.localNumberOfRows);
   typedef typename SparseMatrix_type::scalar_type scalar_type;
@@ -109,6 +112,7 @@ int ComputeSPMV_ref(const SparseMatrix_type & A, Vector_type & x, Vector_type & 
     computeType = CUDA_R_32F;
   } else {
     printf( " ComputeSPMV only supported double or float\n" );
+    HPGMP_RANGE_POP(__FUNCTION__);
     return 0;
   }
   // create matrix
@@ -222,6 +226,8 @@ int ComputeSPMV_ref(const SparseMatrix_type & A, Vector_type & x, Vector_type & 
   }
   free(tv);
 #endif
+
+  HPGMP_RANGE_POP(__FUNCTION__);
 
   return 0;
 }

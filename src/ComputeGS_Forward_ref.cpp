@@ -54,6 +54,8 @@
 template<class SparseMatrix_type, class Vector_type>
 int ComputeGS_Forward_ref(const SparseMatrix_type & A, const Vector_type & r, Vector_type & x) {
 
+  HPGMP_RANGE_PUSH(__FUNCTION__);
+
   assert(x.localLength==A.localNumberOfColumns); // Make sure x contain space for halo values
 
   typedef typename SparseMatrix_type::scalar_type scalar_type;
@@ -87,6 +89,8 @@ int ComputeGS_Forward_ref(const SparseMatrix_type & A, const Vector_type & r, Ve
     xv[i] = sum/currentDiagonal;
   }
   TOCK(x.time2);
+
+  HPGMP_RANGE_POP(__FUNCTION__);
 
   return 0;
 }

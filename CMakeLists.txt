@@ -29,6 +29,7 @@ option(HPGMP_ENABLE_HIP "Enable HIP support" OFF)
 option(HPGMP_ENABLE_TESTS "Enable unit tests" ON)
 option(HPGMP_BUILD_REFERENCE "Build reference implementation without optimizations" OFF)
 option(HPGMP_ENABLE_ASAN "Build address sanitizer" OFF)
+option(HPGMP_ENABLE_PROFILING "Enable profiling" OFF)
 option(CMAKE_DEBUG "Enable CMake script debugging" OFF)
 
 #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-unused-result")
@@ -247,6 +248,23 @@ else ()
     target_compile_definitions(hpgmp PUBLIC HPGMP_NO_HIP)
 endif ()
 
+if(HPGMP_ENABLE_PROFILING)
+    target_compile_definitions(hpgmp PUBLIC HPGMP_WITH_PROFILING)
+
+    if (HPGMP_ENABLE_CUDA)
+        target_compile_definitions(hpgmp_device PUBLIC HPGMP_WITH_PROFILING)
+        target_link_libraries(hpgmp_device PUBLIC
+          CUDA::nvToolsExt
+        )
+    endif()
+
+    if (HPGMP_ENABLE_HIP)
+        target_compile_definitions(hpgmp_device PUBLIC HPGMP_WITH_PROFILING)
+        target_link_libraries(hpgmp_device PUBLIC
+          "-L${ROCM_PATH}/lib -lroctx64 -lroctracer64" 
+        )
+    endif()
+endif()
 
 if (HPGMP_ENABLE_BLAS)
     target_compile_definitions(hpgmp PUBLIC HPGMP_WITH_BLAS)

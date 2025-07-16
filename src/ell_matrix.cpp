@@ -49,6 +49,8 @@
 
 #include "kernel_helpers.hpp.inc"
     
+#include "Profiling.hpp"
+    
 template <typename hiscalar, typename loscalar>
 ELLMatrix<hiscalar,loscalar>::ELLMatrix(const SparseMatrix<hiscalar>& A)
     : DistMatrixBase(A), ldv_{((local_nrows_ - 1) / pad_mult_v + 1) * pad_mult_v},
@@ -526,9 +528,15 @@ void ell_spmv(const ELLMatrix<hiscalar>* mat, const Vector<vscalar> *x, Vector<v
 template<class SparseMatrix_type, class Vector_type>
 int ComputeSPMV_ell(const SparseMatrix_type & A, Vector_type & x, Vector_type & y)
 {
+
+    HPGMP_RANGE_PUSH(__FUNCTION__);
+
     using scalar_type = typename SparseMatrix_type::scalar_type;
     auto elldata = static_cast<const EllOptData<scalar_type,scalar_type>*>(A.optimizationData);
     ell_spmv(elldata->mat.get(), &x, &y);
+
+    HPGMP_RANGE_POP(__FUNCTION__);
+
     return 0;
 }
 

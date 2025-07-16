@@ -29,6 +29,8 @@
  #include <omp.h>
 #endif
 
+#include "Profiling.hpp"
+
 /*!
   Routine to compute the update of a vector with the sum of two
   scaled vectors where: w = alpha*x + beta*y
@@ -52,11 +54,17 @@ int ComputeWAXPBY_ref(const local_int_t n,
                       const typename VectorY_type::scalar_type beta,
                       const VectorY_type & y,
                             VectorW_type & w) {
+
+  HPGMP_RANGE_PUSH(__FUNCTION__);
+
   assert(x.localLength>=n); // Test vector lengths
   assert(y.localLength>=n);
 
   // quick return
-  if (n <= 0) return 0;
+  if (n <= 0) {
+    HPGMP_RANGE_POP(__FUNCTION__);
+    return 0;
+  }
 
   typedef typename VectorX_type::scalar_type scalarX_type;
   typedef typename VectorY_type::scalar_type scalarY_type;
@@ -82,6 +90,8 @@ int ComputeWAXPBY_ref(const local_int_t n,
     #endif
     for (local_int_t i=0; i<n; i++) wv[i] = alpha * xv[i] + beta * yv[i];
   }
+
+  HPGMP_RANGE_POP(__FUNCTION__);
 
   return 0;
 }

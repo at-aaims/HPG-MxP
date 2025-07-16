@@ -47,6 +47,9 @@
 */
 template<class SparseMatrix_type, class Vector_type>
 int ComputeMG(const SparseMatrix_type & A, const Vector_type & r, Vector_type & x, bool symmetric) {
+
+  HPGMP_RANGE_PUSH(__FUNCTION__);
+
   assert(x.local_length()==A.localNumberOfColumns); // Make sure x contain space for halo values
 
   // initialize x to zero
@@ -63,8 +66,10 @@ int ComputeMG(const SparseMatrix_type & A, const Vector_type & r, Vector_type & 
       for (int i=0; i< numberOfPresmootherSteps; ++i)
           ierr += ComputeGS_Forward_ref(A, r, x);
     }
-    if (ierr!=0)
-        return ierr;
+    if (ierr!=0) {
+      HPGMP_RANGE_POP(__FUNCTION__);
+      return ierr;
+    }
 
     // Compute residual vector
     TICK();
@@ -78,24 +83,30 @@ int ComputeMG(const SparseMatrix_type & A, const Vector_type & r, Vector_type & 
     // Restriction operation
     TICK();
     ierr = ComputeRestriction_ref(A, r);
-    if (ierr!=0)
-        return ierr;
+    if (ierr!=0) {
+      HPGMP_RANGE_POP(__FUNCTION__);
+      return ierr;
+    }
     TOCK(x.time3);
 
     // MG on coarser-grid
     A.mgData->xc->time1 = A.mgData->xc->time2 = 0.0;
     A.mgData->xc->time3 = A.mgData->xc->time4 = 0.0;
     ierr = ComputeMG_ref(*A.Ac,*A.mgData->rc, *A.mgData->xc, symmetric);
-    if (ierr!=0)
-        return ierr;
+    if (ierr!=0) {
+      HPGMP_RANGE_POP(__FUNCTION__);
+      return ierr;
+    }
     x.time1 += A.mgData->xc->time1; x.time2 += A.mgData->xc->time2;
     x.time3 += A.mgData->xc->time3; x.time4 += A.mgData->xc->time4;
 
     // Prolongation operation
     TICK();
     ierr = ComputeProlongation_ref(A, x);
-    if (ierr!=0)
-        return ierr;
+    if (ierr!=0) {
+      HPGMP_RANGE_POP(__FUNCTION__);
+      return ierr;
+    }
     TOCK(x.time4);
 
     // Post-smoothing
@@ -107,8 +118,10 @@ int ComputeMG(const SparseMatrix_type & A, const Vector_type & r, Vector_type & 
       for (int i=0; i< numberOfPostsmootherSteps; ++i)
           ierr += ComputeGS_Forward_ref(A, r, x);
     }
-    if (ierr!=0)
-        return ierr;
+    if (ierr!=0) {
+      HPGMP_RANGE_POP(__FUNCTION__);
+      return ierr;
+    }
   }
   else {
     // coarsest grid
@@ -117,8 +130,14 @@ int ComputeMG(const SparseMatrix_type & A, const Vector_type & r, Vector_type & 
     } else {
       ierr = ComputeGS_Forward_ref(A, r, x);
     }
-    if (ierr!=0) return ierr;
+    if (ierr!=0) {
+      HPGMP_RANGE_POP(__FUNCTION__);
+      return ierr;
+    }
   }
+
+  HPGMP_RANGE_POP(__FUNCTION__);
+
   return 0;
 }
 

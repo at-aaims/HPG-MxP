@@ -24,11 +24,14 @@
 #include "ComputeGEMV_ref.hpp"
 #include "hpgmp.hpp"
 #include "DataTypes.hpp"
+#include "Profiling.hpp"
 
 template<class MultiVector_type, class Vector_type, class SerialDenseMatrix_type>
 int ComputeGEMV_ref(const local_int_t m, const local_int_t n,
                     const typename MultiVector_type::scalar_type alpha, const MultiVector_type & A, const SerialDenseMatrix_type & x,
                     const typename      Vector_type::scalar_type beta,  Vector_type & y) {
+
+  HPGMP_RANGE_PUSH(__FUNCTION__);
 
   typedef typename       MultiVector_type::scalar_type scalarA_type;
   typedef typename SerialDenseMatrix_type::scalar_type scalarX_type;
@@ -148,6 +151,9 @@ int ComputeGEMV_ref(const local_int_t m, const local_int_t n,
 
     y.update_device_data();
   }
+
+  HPGMP_RANGE_POP(__FUNCTION__);
+
   return 0;
 }
 

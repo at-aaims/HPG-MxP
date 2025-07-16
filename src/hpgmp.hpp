@@ -109,6 +109,8 @@ struct HPGMP_gen_opts {
 typedef HPGMP_Params_STRUCT HPGMP_Params;
 #ifdef HPGMP_NO_MPI
   typedef int comm_type;
+#define MPI_Abort(comm, errorcode) abort();
+#define MPI_Barrier(comm);
 #else
   #include "mpi.h"
   typedef MPI_Comm comm_type;

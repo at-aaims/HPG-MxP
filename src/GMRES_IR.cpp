@@ -67,6 +67,8 @@ int GMRES_IR(const SparseMatrix_type & A, const SparseMatrix_type2 & A_lo,
              int & niters, typename SparseMatrix_type::scalar_type & normr_hi, typename SparseMatrix_type::scalar_type & normr0_hi,
              const bool doPreconditioning, bool verbose, TestGMRESData_type & test_data) {
 
+  HPGMP_RANGE_PUSH(__FUNCTION__);
+
   // (working) precision for outer loop
   typedef typename SparseMatrix_type::scalar_type scalar_type;
   typedef MultiVector<scalar_type> MultiVector_type;
@@ -546,6 +548,7 @@ int GMRES_IR(const SparseMatrix_type & A, const SparseMatrix_type2 & A_lo,
   test_data.flops[2] += flops_spmv;
   test_data.flops[3] += flops_orth;
 
+  HPGMP_RANGE_POP(__FUNCTION__);
   if(!converged) {
       HPGMP_fout << "GMRES-IR did not converge!\n";
       return 1;
