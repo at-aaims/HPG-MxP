@@ -21,7 +21,7 @@ def read_csv_and_plot_pie_chart(csv_file, output_prefix):
 
     df["n_procs"] = df["n_procs"] // npn
     num_bars = df["n_procs"].nunique()
-    
+
     dist = 4
     bwide = 1.5
     x_base = np.arange(0, dist*num_bars, dist)
@@ -64,7 +64,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Parse iteration summary from a text file.')
     parser.add_argument('file_path', type=str, help='Path to the input text file')
     parser.add_argument('output_prefix', type=str, help='Path to the output CSV file')
-    
+
     # Parse the command line arguments
     args = parser.parse_args()
     # Set the path to your CSV file
