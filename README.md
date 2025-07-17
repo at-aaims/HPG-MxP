@@ -5,7 +5,7 @@ Piotr Luszczek, and Jack Dongarra
 
 This version is maintained by the National Center for Computational Sciences, Oak Ridge National Laboratory.
 
-## Introduction ##
+## Introduction
 
 HPG-MxP is a software package that performs a fixed number of multigrid preconditioned
 (using a Gauss-Seidel smoother) Generalized minimal residual (PGMRES) iterations.
@@ -33,11 +33,14 @@ implementation of the  Message Passing Interface (MPI) if enabling the MPI
 build of HPG-MxP, and a compiler that supports OpenMP syntax. An implementation
 compliant with MPI version 1.1 is sufficient.
 
-## Installation ##
+## Installation
 
-See the file `INSTALL` in this directory. Please note that only CMake builds are currently supported.
+See the [installation](doc/install.md) instructions.
+Please note that only CMake builds are currently supported.
 
-## Valid Runs ##
+## Valid Runs
+
+Please see the instructions to [run](doc/run.md) the code.
 
 HPG-MxP can be run in just a few minutes from start to finish.  However, official
 runs must be at least 1800 seconds (30 minutes) as reported in the output file.
@@ -57,11 +60,7 @@ Future memory system architectures may require restatement of the specific memor
 size requirements.  But the guiding principle will always be that the problem
 size should reflect what would be reasonable for a real sparse iterative solver.
 
-## Tuning ##
-
-See the file `TUNING` in this directory.
-
-## Bugs ##
+## Bugs
 
 Known problems and bugs with this release are documented in the file
 `BUGS`.
