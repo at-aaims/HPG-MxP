@@ -1,9 +1,12 @@
 # High Performance Generalized minimal residual - Mixed-Precision (HPG-MxP) Benchmark
 
+The [original implementation](https://github.com/hpg-mxp/hpg-mxp) is written by
 Ichitaro Yamazaki, Jennifer Loe, Christian Glusa, Sivasankaran Rajamanickam,
-Piotr Luszczek, and Jack Dongarra
+Piotr Luszczek, and Jack Dongarra.
+Please refer to that repository for documentation on the original implementation.
 
-This version is maintained by the National Center for Computational Sciences, Oak Ridge National Laboratory.
+This version is maintained by the National Center for Computational Sciences
+at Oak Ridge National Laboratory.
 
 ## Introduction
 
