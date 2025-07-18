@@ -21,6 +21,7 @@
 
 template<class SparseMatrix_type, class TestGMRESData_type>
 void ReportResults(const SparseMatrix_type & A, int numberOfMgLevels,
-                   const TestGMRESData_type & testcg_data, int global_failure);
+                   const TestGMRESData_type & testcg_data, int global_failure,
+                   const HPGMP_gen_opts& gopts);
 
 #endif // REPORTRESULTS_HPP

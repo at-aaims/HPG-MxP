@@ -31,10 +31,9 @@
 
 #ifdef HPGMP_DEBUG
 #include <fstream>
-using std::endl;
+#endif
 
 #include "hpgmp.hpp"
-#endif
 
 /*!
  Creates a YAML file and writes the information about the HPGMP run, its results, and validity.
@@ -50,7 +49,8 @@ using std::endl;
 */
 template<class SparseMatrix_type, class TestGMRESData_type>
 void ReportResults(const SparseMatrix_type & A, int numberOfMgLevels,
-                   const TestGMRESData_type & test_data, int global_failure) {
+                   const TestGMRESData_type & test_data, const int global_failure,
+                   const HPGMP_gen_opts& gopts) {
 
   typedef typename SparseMatrix_type::scalar_type scalar_type;
   typedef Vector<scalar_type> Vector_type;
@@ -169,9 +169,19 @@ void ReportResults(const SparseMatrix_type & A, int numberOfMgLevels,
     // Count number of bytes used per equation
     double fnbytesPerEquation = fnbytes/fnrow;
 
+    // Run type and validation type
+
     // Instantiate YAML document
     OutputFile doc("HPGMP-Benchmark", "0.1");
     doc.add("Release date", "May 5, 2023");
+    doc.add("Run type", get_string(gopts.run_type));
+    const bool is_benchmark = (gopts.run_type == run_t::benchmark
+                               || gopts.run_type == run_t::benchmark_no_ref);
+    if(is_benchmark) {
+        doc.add("Validation type", get_string(gopts.validation_type));
+    } else {
+        doc.add("Validation type", "None");
+    }
 
     doc.add("Machine Summary","");
     doc.get("Machine Summary")->add("Distributed Processes",A.geom->size);
@@ -359,19 +369,21 @@ void ReportResults(const SparseMatrix_type & A, int numberOfMgLevels,
                   + c_opt.spmv.get_total_memory_bytes() + c_opt.mg_gs.get_total_memory_bytes()
                   + c_opt.mg_rp.get_total_memory_bytes() + c_opt.vecupd.get_total_memory_bytes()
                   + c_opt.qr_host.get_total_memory_bytes());
-    doc.get(membwstr)->add(" - Raw Ortho  (mxp)", c_opt.ortho.get_total_memory_bytes()
-                                                           /test_data.opt_times[3]/1.0e9);
-    doc.get(membwstr)->add(" - Raw SpMV   (mxp)", c_opt.spmv.get_total_memory_bytes()
-                                                           /test_data.opt_times[4]/1.0e9);
-    doc.get(membwstr)->add(" - Raw MG     (mxp)", optMGBytes/test_data.opt_times[6]/1.0e9);
-    doc.get(membwstr)->add(" -   GS       (mxp)", c_opt.mg_gs.get_total_memory_bytes()
-                                                           /test_data.opt_times[8]/1.0e9);
-    doc.get(membwstr)->add(" -   RestrPro (mxp)", c_opt.mg_rp.get_total_memory_bytes() /
-                                  (test_data.opt_times[9]+test_data.opt_times[10]) / 1.0e9);
-    doc.get(membwstr)->add(" - Raw vecupd (mxp)", c_opt.vecupd.get_total_memory_bytes() /
-                                                       test_data.opt_times[11]/1.0e9);
-    //doc.get(membwstr)->add(" - Raw QRhost (mxp)", c_opt.qr_host.get_total_memory_bytes()/1.0e9);
-    doc.get(membwstr)->add(" - Raw Total  (mxp)", optTotalBytes / test_data.opt_times[0] / 1.0e9);
+    if (test_data.optTotalTime > 0.0) {
+      doc.get(membwstr)->add(" - Raw Ortho  (mxp)", c_opt.ortho.get_total_memory_bytes()
+                                                             /test_data.opt_times[3]/1.0e9);
+      doc.get(membwstr)->add(" - Raw SpMV   (mxp)", c_opt.spmv.get_total_memory_bytes()
+                                                             /test_data.opt_times[4]/1.0e9);
+      doc.get(membwstr)->add(" - Raw MG     (mxp)", optMGBytes/test_data.opt_times[6]/1.0e9);
+      doc.get(membwstr)->add(" -   GS       (mxp)", c_opt.mg_gs.get_total_memory_bytes()
+                                                             /test_data.opt_times[8]/1.0e9);
+      doc.get(membwstr)->add(" -   RestrPro (mxp)", c_opt.mg_rp.get_total_memory_bytes() /
+                                    (test_data.opt_times[9]+test_data.opt_times[10]) / 1.0e9);
+      doc.get(membwstr)->add(" - Raw vecupd (mxp)", c_opt.vecupd.get_total_memory_bytes() /
+                                                         test_data.opt_times[11]/1.0e9);
+      //doc.get(membwstr)->add(" - Raw QRhost (mxp)", c_opt.qr_host.get_total_memory_bytes()/1.0e9);
+      doc.get(membwstr)->add(" - Raw Total  (mxp)", optTotalBytes / test_data.opt_times[0] / 1.0e9);
+    }
 
     const double refTotalBytes = (c_ref.ortho.get_total_memory_bytes()
                   + c_ref.spmv.get_total_memory_bytes() + c_ref.mg_gs.get_total_memory_bytes()
@@ -395,10 +407,12 @@ void ReportResults(const SparseMatrix_type & A, int numberOfMgLevels,
     doc.get(membwstr)->add("Total for benchmark", optTotalBytes / test_data.opt_times[0] / 1e9 / penalGflops);
 
     doc.add("GFLOP/s Summary","");
-    doc.get("GFLOP/s Summary")->add("Raw Orho", test_data.opt_flops[3]/test_data.opt_times[3]/1.0E9);
-    doc.get("GFLOP/s Summary")->add("Raw SpMV", test_data.opt_flops[2]/test_data.opt_times[4]/1.0E9);
-    doc.get("GFLOP/s Summary")->add("Raw MG",   test_data.opt_flops[1]/test_data.opt_times[6]/1.0E9);
-    doc.get("GFLOP/s Summary")->add("Raw Total",test_data.opt_flops[0]/test_data.opt_times[0]/1.0E9);
+    if (test_data.optTotalTime > 0.0) {
+      doc.get("GFLOP/s Summary")->add("Raw Orho", test_data.opt_flops[3]/test_data.opt_times[3]/1.0E9);
+      doc.get("GFLOP/s Summary")->add("Raw SpMV", test_data.opt_flops[2]/test_data.opt_times[4]/1.0E9);
+      doc.get("GFLOP/s Summary")->add("Raw MG",   test_data.opt_flops[1]/test_data.opt_times[6]/1.0E9);
+      doc.get("GFLOP/s Summary")->add("Raw Total",test_data.opt_flops[0]/test_data.opt_times[0]/1.0E9);
+    }
     if (test_data.refTotalTime > 0.0) {
       doc.get("GFLOP/s Summary")->add(" - Raw Orho  (reference)",test_data.ref_flops[3]/test_data.ref_times[3]/1.0E9);
       doc.get("GFLOP/s Summary")->add(" - Raw SpMV  (reference)",test_data.ref_flops[2]/test_data.ref_times[4]/1.0E9);
@@ -406,15 +420,17 @@ void ReportResults(const SparseMatrix_type & A, int numberOfMgLevels,
       doc.get("GFLOP/s Summary")->add(" - Raw Total (reference)",test_data.ref_flops[0]/test_data.ref_times[0]/1.0E9);
       doc.get("GFLOP/s Summary")->add(" - Total     (reference)",test_data.refTotalFlops/test_data.refTotalTime/1.0E9);
     }
-    double totalGflops = (test_data.opt_flops[0]/test_data.opt_times[0]/1.0E9) / penalGflops;
-    doc.get("GFLOP/s Summary")->add("Total for benchmark",totalGflops);
+    const double totalGflops = (test_data.opt_flops[0]/test_data.opt_times[0]/1.0E9) / penalGflops;
+    if (test_data.optTotalTime > 0.0) {
+      doc.get("GFLOP/s Summary")->add("Total for benchmark",totalGflops);
+    }
 
     doc.add("User Optimization Overheads","");
     doc.get("User Optimization Overheads")->add("Optimization phase time (sec)", test_data.OptimizeTime);
     doc.get("User Optimization Overheads")->add("Optimization phase time vs reference SpMV+MG time", test_data.OptimizeTime/test_data.SpmvMgTime);
 
     doc.add("Final Summary","");
-    bool isValidRun = (!global_failure);//&& (testsymmetry_data.count_fail==0) 
+    const bool isValidRun = (!global_failure) && is_benchmark;//&& (testsymmetry_data.count_fail==0) 
     if (isValidRun) {
       doc.get("Final Summary")->add("HPGMP result is VALID with a GFLOP/s rating of", totalGflops);
       if (!A.isDotProductOptimized) {
@@ -458,8 +474,8 @@ void ReportResults(const SparseMatrix_type & A, int numberOfMgLevels,
  * --------------- */
 template
 void ReportResults< SparseMatrix<double>, TestGMRESData<double> >
-  (const SparseMatrix<double>&, int, const TestGMRESData<double>&, int);
+  (const SparseMatrix<double>&, int, const TestGMRESData<double>&, int, const HPGMP_gen_opts&);
 
 template
 void ReportResults< SparseMatrix<float>, TestGMRESData<float> >
-  (const SparseMatrix<float>&, int, const TestGMRESData<float>&, int);
+  (const SparseMatrix<float>&, int, const TestGMRESData<float>&, int, const HPGMP_gen_opts&);

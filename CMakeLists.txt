@@ -118,7 +118,7 @@ set(host_sources
     src/SetupMatrix.cpp src/SetupProblem.cpp
     src/ValidGMRES.cpp src/BenchGMRES.cpp
     src/WriteProblem.cpp
-    src/YAML_Doc.cpp src/YAML_Element.cpp
+    src/YAML_Doc.cpp src/YAML_Element.cpp src/options_strings.cpp
     src/ComputeSPMV.cpp 
     src/ComputeDotProduct.cpp src/ComputeDotProduct_ref.cpp src/ComputeDotProduct_gpu.cpp src/ComputeDotProduct_blas.cpp
     src/ComputeTRSM.cpp

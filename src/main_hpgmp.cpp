@@ -122,6 +122,20 @@ int main(int argc, char * argv[]) {
       }
   }
 
+  if(gopts.run_type == run_t::benchmark) {
+      if(myRank == 0) {
+          std::cout << "Running full benchmark mode." << std::endl;
+      }
+  } else if(gopts.run_type == run_t::standalone_ref) {
+      if(myRank == 0) {
+          std::cout << "Running standalone reference (DP) mode." << std::endl;
+      }
+  } else {
+      if(myRank == 0) {
+          std::cout << "Running standalone MxP mode." << std::endl;
+      }
+  }
+
   int ierr = MPI_Comm_set_errhandler(validation_comm, MPI_ERRORS_RETURN);
   if(ierr != MPI_SUCCESS) {
       printf("! Could not set MPI error handler on validation!\n"); fflush(stdout);
@@ -189,8 +203,10 @@ int main(int argc, char * argv[]) {
   const scalar_type tolerance = 1e-9;
   test_data.restart_length = restart_length;
   test_data.tolerance = tolerance;
+  const bool to_validate = (gopts.run_type == run_t::benchmark
+                            || gopts.run_type == run_t::benchmark_no_ref);
 
-  if (myRank < sizeValidComm) {
+  if (myRank < sizeValidComm && to_validate) {
     TICK();
     global_failure = ValidGMRES<TestGMRESData_type, scalar_type, scalar_type2, project_type>(
                            argc, argv, gopts.validation_type, validation_comm, ctx.get(),
@@ -202,6 +218,10 @@ int main(int argc, char * argv[]) {
     }
   }
 
+  if(!to_validate) {
+      test_data.refNumIters = test_data.optNumIters = 1;
+  }
+
 
   /////////////////////
   // Benchmark phase //
@@ -210,7 +230,7 @@ int main(int argc, char * argv[]) {
     const bool runReference = true;
     TICK();
     BenchGMRES<TestGMRESData_type, scalar_type, scalar_type2, project_type>(argc, argv,
-            benchmark_comm, ctx.get(), numberOfMgLevels, verbose, runReference, global_failure,
+            benchmark_comm, ctx.get(), numberOfMgLevels, verbose, global_failure, gopts,
             test_data);
     double t_bench{};
     TOCK(t_bench);
@@ -219,36 +239,6 @@ int main(int argc, char * argv[]) {
                 << std::endl;
     }
   }
-
- 
-#if 0 
-  ////////////////////
-  // Report Results //
-  ////////////////////
-  {
-    // setup problem for reporting (TODO: remove)
-    Geometry * geom = new Geometry;
-
-    SparseMatrix_type A;
-    GMRESData_type data;
-
-    SparseMatrix_type2 A2;
-    GMRESData_type2 data2;
-
-    Vector_type b, x;
-    SetupProblem("report_", argc, argv, benchmark_comm, ctx.get(), numberOfMgLevels, verbose, geom, A, data, A2, data2, b, x, test_data);
-
-
-    // Report results to YAML file
-    ReportResults(A, numberOfMgLevels, test_data, global_failure);
-
-    // Clean up
-    DeleteMatrix(A);
-    DeleteMatrix(A2);
-    DeleteGeometry(*geom);
-    delete geom;
-  }
-#endif
 
   HPGMP_Finalize();
 #ifndef HPGMP_NO_MPI

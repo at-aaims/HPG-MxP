@@ -62,11 +62,12 @@ HPGMP_Init(int * argc_p, char ** *argv_p) {
     const int argc = *argc_p;
     char **argv = *argv_p;
     // Options to be read
-    constexpr int nparams = 1;
-    const std::array<std::string,nparams> cparams = {"--validation_type"};
+    constexpr int nparams = 2;
+    const std::array<std::string,nparams> cparams = {"--validation_type", "--run_type"};
     std::array<std::string,nparams> values;
     // Default values
     values[0] = "standard";
+    values[1] = "benchmark";
 
     // Read cmd line args
     for (int i = 1; i <= argc && argv[i]; ++i) {
@@ -90,6 +91,17 @@ HPGMP_Init(int * argc_p, char ** *argv_p) {
         opts.validation_type = validation_t::fullscale;
     } else {
         throw std::runtime_error("Invalid value for validation_type!");
+    }
+    if(values[1] == "benchmark") {
+        opts.run_type = run_t::benchmark;
+    } else if(values[1] == "benchmark_no_ref") {
+        opts.run_type = run_t::benchmark_no_ref;
+    } else if(values[1] == "standalone_ref") {
+        opts.run_type = run_t::standalone_ref;
+    } else if(values[1] == "standalone_mxp") {
+        opts.run_type = run_t::standalone_mxp;
+    } else {
+        throw std::runtime_error("Invalid value for run_type!");
     }
     return opts;
 }

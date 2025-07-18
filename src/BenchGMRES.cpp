@@ -65,7 +65,7 @@ void test_mg_spmv(MPI_Comm comm, DeviceCtx *dctx, const Geometry *const geom,
  */
 template<class TestGMRESDataType, class scalar_type, class scalar_type2, class project_type>
 int BenchGMRES(int argc, char **argv, comm_type comm, DeviceCtx *const dctx, int numberOfMgLevels,
-               bool verbose, bool runReference, const bool validation_failure,
+               const bool verbose, const bool validation_failure, const HPGMP_gen_opts& gopts,
                TestGMRESDataType & test_data)
 {
   HPGMP_RANGE_PUSH(__FUNCTION__);
@@ -131,6 +131,8 @@ int BenchGMRES(int argc, char **argv, comm_type comm, DeviceCtx *const dctx, int
   // =====================================================================
   // Run optimized GMRES (here, we are calling GMRES_IR) for a fixed number of iterations
   // and record the obtained Gflop/s
+  if(gopts.run_type == run_t::benchmark || gopts.run_type == run_t::benchmark_no_ref
+          || gopts.run_type == run_t::standalone_mxp)
   {
     //warmup
     x.fill_zero();
@@ -267,6 +269,10 @@ int BenchGMRES(int argc, char **argv, comm_type comm, DeviceCtx *const dctx, int
         test_data.opt_times_comp[i] = test_data.times_comp[i];
     for (int i=0; i<n_timed_ops; i++)
         test_data.opt_times_comm[i] = test_data.times_comm[i];
+  } else {
+    // If mxp was not run
+    test_data.optTotalFlops = 0.0;
+    test_data.optTotalTime  = 0.0;
   }
 
   const double benchmark_done = mytimer();
@@ -279,7 +285,7 @@ int BenchGMRES(int argc, char **argv, comm_type comm, DeviceCtx *const dctx, int
   // (Optional)
   // Run reference GMRES implementation for a fixed number of iterations
   // and record the obtained Gflop/s
-  if (runReference) {
+  if (gopts.run_type == run_t::benchmark || gopts.run_type == run_t::standalone_ref) {
 #ifdef HPGMP_WITH_PROFILING
     const int n_ref_calls = 1;
 #else
@@ -371,7 +377,7 @@ int BenchGMRES(int argc, char **argv, comm_type comm, DeviceCtx *const dctx, int
   }
     
   // Report results 
-  ReportResults(A, numberOfMgLevels, test_data, validation_failure);
+  ReportResults(A, numberOfMgLevels, test_data, validation_failure, gopts);
 
   const double reporting_done = mytimer();
   if(A.geom->rank == 0) {
@@ -402,17 +408,20 @@ int BenchGMRES(int argc, char **argv, comm_type comm, DeviceCtx *const dctx, int
 // uniform version
 template
 int BenchGMRES< TestGMRESData<double>, double, double, double >
-  (int, char**, comm_type, DeviceCtx*, int, bool, bool, bool, TestGMRESData<double>&);
+  (int, char**, comm_type, DeviceCtx*, int, bool, bool, const HPGMP_gen_opts&,
+   TestGMRESData<double>&);
 
 template
 int BenchGMRES< TestGMRESData<float>, float, float, float >
-  (int, char**, comm_type, DeviceCtx*, int, bool, bool, bool, TestGMRESData<float>&);
+  (int, char**, comm_type, DeviceCtx*, int, bool, bool, const HPGMP_gen_opts&,
+   TestGMRESData<float>&);
 
 
 // mixed version
 template
 int BenchGMRES< TestGMRESData<double>, double, float, float >
-  (int, char**, comm_type, DeviceCtx*, int, bool, bool, bool, TestGMRESData<double>&);
+  (int, char**, comm_type, DeviceCtx*, int, bool, bool, const HPGMP_gen_opts&,
+   TestGMRESData<double>&);
 
 
 template<class TestGMRESDataType, class SparseMatrixType, class VectorType>
