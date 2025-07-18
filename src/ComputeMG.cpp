@@ -80,7 +80,7 @@ int ComputeMG(const SparseMatrix_type & A, const Vector_type & r, Vector_type & 
     TICK();
 
     for(int i=0; i < numberOfPresmootherSteps; ++i) {
-      if(i = 0) {
+      if(i == 0) {
         ierr += ell_multicolor_gs_zero_initial(symmetric, mat.get(), &r, &x);
         //ft.mg_gs.flops[0] += A.totalNumberOfNonzeros;
         ft.mg_gs.add_flops<scalar_type>(A.totalNumberOfNonzeros);

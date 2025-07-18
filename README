@@ -1,9 +1,0 @@
-#########################################################################
-High Performance Generalized minimal residual - Mixed-Precision (HPG-MxP)
-#########################################################################
-
-:Author: Ichitaro Yamazaki, Jennifer Loe, Christian Glusa, Sivasankaran Rajamanickam, Piotr Luszczek, and Jack Dongarra
-:Revision: 0.1
-:Date: May 5, 2023
-
-For overview of HPG-MpX please see README.md file.

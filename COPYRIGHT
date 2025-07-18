@@ -1,3 +1,19 @@
+HPG-MxP
+=======
+
+This version is built on the original version by Yamazaki et al. The copyright to the
+original code is found below. This version is maintained by the
+National Center for Computational Sciences at Oak Ridge National Laboratory (ORNL).
+
+ORNL modifications
+------------------
+Copyright 2025 Oak Ridge National Laboratory.
+Under the terms of Contract DE-AC05-00OR22725,
+the U.S. Government retains certain rights.
+
+The modifications are licensed under the same 3-clause BSD license and disclaimer
+found below for the original source code.
+
 ========================================================================================
  -- High Performance Generalized minimal residual - Mixed-Precision (HPG-MxP) Benchmark
     HPG-MxP - 0.1 - May 5, 2023
@@ -11,7 +27,7 @@
 
     Ichitaro Yamazaki
     Jennifer Loe
-    Christian Gulsa
+    Christian Glusa
     Sivasankaran Rajamanickam
     Scalable Algorithms Group, Center for Computing Research
     Sandia National Laboratories, Albuquerque, NM

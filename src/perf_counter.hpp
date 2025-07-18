@@ -15,7 +15,7 @@ public:
 
     /// Get index in counter arrays based on precision type. 
     template <typename T> 
-    constexpr std::enable_if_t<std::is_floating_point<T>::value, int> index() const
+    static constexpr std::enable_if_t<std::is_floating_point<T>::value, int> index()
     {
         if constexpr (std::is_same<T, double>::value) {
             return 0;

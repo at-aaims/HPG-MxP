@@ -1,17 +1,14 @@
-######################################################################################
 # High Performance Generalized minimal residual - Mixed-Precision (HPG-MxP) Benchmark
-######################################################################################
 
+The [original implementation](https://github.com/hpg-mxp/hpg-mxp) is written by
 Ichitaro Yamazaki, Jennifer Loe, Christian Glusa, Sivasankaran Rajamanickam,
-Piotr Luszczek, and Jack Dongarra
+Piotr Luszczek, and Jack Dongarra.
+Please refer to that repository for documentation on the original implementation.
 
-Revision: 0.1
+This version is maintained by the National Center for Computational Sciences
+at Oak Ridge National Laboratory.
 
-Date: May 5, 2023
-
-This version is developed and maintained by Aditya Kashi at Oak Ridge National Laboratory.
-
-## Introduction ##
+## Introduction
 
 HPG-MxP is a software package that performs a fixed number of multigrid preconditioned
 (using a Gauss-Seidel smoother) Generalized minimal residual (PGMRES) iterations.
@@ -39,11 +36,14 @@ implementation of the  Message Passing Interface (MPI) if enabling the MPI
 build of HPG-MxP, and a compiler that supports OpenMP syntax. An implementation
 compliant with MPI version 1.1 is sufficient.
 
-## Installation ##
+## Installation
 
-See the file `INSTALL` in this directory.
+See the [installation](doc/install.md) instructions.
+Please note that only CMake builds are currently supported.
 
-## Valid Runs ##
+## Valid Runs
+
+Please see the instructions to [run](doc/run.md) the code.
 
 HPG-MxP can be run in just a few minutes from start to finish.  However, official
 runs must be at least 1800 seconds (30 minutes) as reported in the output file.
@@ -63,25 +63,7 @@ Future memory system architectures may require restatement of the specific memor
 size requirements.  But the guiding principle will always be that the problem
 size should reflect what would be reasonable for a real sparse iterative solver.
 
-## Documentation ##
-
-The source code documentation can be generated with a Doxygen (version 1.8 or
-newer). In this directory type:
-
-    doxygen tools/hpcg.dox
-
-Doxygen will then generate various output formats in the `out` directory.
-
-## Tuning ##
-
-See the file `TUNING` in this directory.
-
-## Bugs ##
+## Bugs
 
 Known problems and bugs with this release are documented in the file
 `BUGS`.
-
-## Further information ##
-
-Check out  the website  http://www.hpcg-benchmark.org/ for the latest
-information and performance results.
