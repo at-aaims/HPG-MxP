@@ -20,6 +20,24 @@ then you can run the following::
     mpirun -np 8 xhpgmp 32 24 16
 ```
 
+## Other command line options
+
+### Running modes
+
+There are 4 possible run modes for the code, selected at run time by the `xhpgmp` flag `--run_type` with 4 possible values:
+- `benchmark`: The regular benchmark run with the timed double precision GMRES run in the end. Includes validation. Default.
+- `benchmark_no_ref`: Regular benchmark but without double precision GMRES run in the end. Includes validation.
+- `standalone_mxp`: Excludes validation, and only performs 10 timed MxP GMRES-IR runs. Ignores running time.
+- `standalone_ref`: Excludes validation, and only performs 10 repetitions of double precision GMRES.
+
+### Validation modes
+
+The standard benchmark by Yamazaki et al. defines the validation phase on a small fixed number of ranks, typically 1 node. It then converges the double-precision GMRES on that sub-communicator of processes to 9 orders of magnitude, followed by mixed-precision GMRES-IR to 9 orders of magnitude. The ratio of iterations requried, $ n_d / n_{mxp} $ is taken as the ratio to penalize the final attained GFLOPS number.
+
+However, there may be a concern that this may underestimate the degradation of convergence in real applications. We introduced validation at full scale to address this issue. All the processes available in the run, and used for the benchmarking phase, are also used for the validation phase. The global problem size used for the two phases is also the same. Two modes are provided:
+- `standard`: Standard 1-node validation of Yamazaki et al.
+- `fullscale`: Full scale DP GMRES is performed to a maximum of $n_d$ (10,000) iterations or relative residual tolerance 1e-9 (whichever comes first), and the attained residual reduction is recorded. This value is set as the tolerance for MxP GMRES-IR and the number of iterations $n_{mxp}$ are recorded.
+
 ## Setting up the input data file hpgmp.dat
 
 Current as of release HPGMP - 0.1 - May 5, 2023
