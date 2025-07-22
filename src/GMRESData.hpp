@@ -66,14 +66,13 @@ public:
 };
 
 
-template<class SC>
 class TestGMRESData {
 public:
   static constexpr int n_fl_ops = 4;     ///< Number of numerical operations for which flops are counted in GMRES
   static constexpr int n_timed_ops = 12; ///< Number of operations which are timed in GMRES
 
   int restart_length;     //!< restart length
-  SC tolerance;           //!< tolerance = reference residual norm 
+  double tolerance;           //!< tolerance = reference residual norm 
   double runningTime;     //!<
   double minOfficialTime; //!<
 

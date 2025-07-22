@@ -51,7 +51,6 @@ using scalar_type =  double;
 using scalar_type2 = float;
 using project_type = float;
 
-typedef TestGMRESData<scalar_type> TestGMRESData_type;
 typedef Vector<scalar_type> Vector_type;
 typedef SparseMatrix<scalar_type> SparseMatrix_type;
 typedef GMRESData<scalar_type> GMRESData_type;
@@ -141,7 +140,7 @@ int main(int argc, char * argv[]) {
 #endif
 
   // Use this array for collecting timing information
-  TestGMRESData_type test_data;
+  TestGMRESData test_data;
   //test_data.times = NULL;
   //test_data.flops = NULL;
   test_data.validation_nprocs = sizeValidComm;
@@ -157,7 +156,7 @@ int main(int argc, char * argv[]) {
   test_data.tolerance = tolerance;
   test_data.restart_length = restart_length;
   if (myRank < sizeValidComm) {
-    global_failure = ValidGMRES<TestGMRESData_type, scalar_type, scalar_type2, project_type>(
+    global_failure = ValidGMRES<scalar_type, scalar_type2, project_type>(
                          argc, argv, validation_t::standard, validation_comm, ctx.get(), numberOfMgLevels, verbose,
                          test_data);
   }

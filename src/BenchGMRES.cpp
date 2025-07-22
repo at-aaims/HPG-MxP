@@ -43,11 +43,12 @@ using std::endl;
 #include "BenchGMRES.hpp"
 #include "mytimer.hpp"
 #include "ReportResults.hpp"
+#include "estimate_run_time.hpp"
 
 /// Record execution time of SpMV and MG kernels for reporting times
-template<class TestGMRESDataType, class SparseMatrixType, class VectorType>
+template<class SparseMatrixType, class VectorType>
 void test_mg_spmv(MPI_Comm comm, DeviceCtx *dctx, const Geometry *const geom,
-                      const SparseMatrixType& A, TestGMRESDataType& test_data);
+                  const SparseMatrixType& A, TestGMRESData& test_data);
 
 /*!
   Benchmark the optimized GMRES implementation
@@ -63,10 +64,10 @@ void test_mg_spmv(MPI_Comm comm, DeviceCtx *dctx, const Geometry *const geom,
 
   @see GMRES()
  */
-template<class TestGMRESDataType, class scalar_type, class scalar_type2, class project_type>
+template<class scalar_type, class scalar_type2, class project_type>
 int BenchGMRES(int argc, char **argv, comm_type comm, DeviceCtx *const dctx, int numberOfMgLevels,
                const bool verbose, const bool validation_failure, const HPGMP_gen_opts& gopts,
-               TestGMRESDataType & test_data)
+               TestGMRESData& test_data)
 {
   HPGMP_RANGE_PUSH(__FUNCTION__);
   typedef Vector<scalar_type> Vector_type;
@@ -98,7 +99,7 @@ int BenchGMRES(int argc, char **argv, comm_type comm, DeviceCtx *const dctx, int
   }
 
   // Record execution time of reference SpMV and MG kernels for reporting times
-  test_mg_spmv<TestGMRESDataType, SparseMatrix_type, Vector_type>(comm, dctx, geom, A, test_data);
+  test_mg_spmv<SparseMatrix_type, Vector_type>(comm, dctx, geom, A, test_data);
 
   const double setup_done = mytimer();
   if(geom->rank == 0) {
@@ -125,8 +126,8 @@ int BenchGMRES(int argc, char **argv, comm_type comm, DeviceCtx *const dctx, int
   const bool precond = true;
   test_data.maxNumIters = maxIters;
     
-  constexpr int n_fl_ops = TestGMRESDataType::n_fl_ops;
-  constexpr int n_timed_ops = TestGMRESDataType::n_timed_ops;
+  constexpr int n_fl_ops = TestGMRESData::n_fl_ops;
+  constexpr int n_timed_ops = TestGMRESData::n_timed_ops;
 
   // =====================================================================
   // Run optimized GMRES (here, we are calling GMRES_IR) for a fixed number of iterations
@@ -134,59 +135,18 @@ int BenchGMRES(int argc, char **argv, comm_type comm, DeviceCtx *const dctx, int
   if(gopts.run_type == run_t::benchmark || gopts.run_type == run_t::benchmark_no_ref
           || gopts.run_type == run_t::standalone_mxp)
   {
-    //warmup
-    x.fill_zero();
-    GMRES_IR(A, A_lo, data, data_lo, b, x, restart_length, maxIters, tolerance, niters,
-             normr, normr0, precond, verbose, test_data);
-#ifdef HPGMP_VERBOSE
-    MPI_Barrier(comm);
-    if(geom->rank == 0) {
-        std::cout << "BenchGMRES: Completed warmup GMRES-IR run." << std::endl;
-    }
-#endif
-    if (verbose && A.geom->rank==0) {
-      HPGMP_fout << "Warm-up runs" << endl;
-    }
-
 #ifdef HPGMP_WITH_PROFILING
     const int numberOfGmresCalls = 1;
 #else // HPGMP_WITH_PROFILING
-    const int timing_calls = 10;
-    double gmresir_run_time = 0;
-    
-    for (int i=0; i < timing_calls; ++i) {
-      x.fill_zero();
-
-      const double time_tic = mytimer();
-      const int ierr = GMRES_IR(A, A_lo, data, data_lo, b, x,
-                                restart_length, maxIters, tolerance, niters, normr, normr0,
-                                precond, verbose, test_data);
-      gmresir_run_time += (mytimer() - time_tic);
-      if(i == 0) {
-        if (A.geom->rank==0) {
-            std::cout << "BenchGMRES: Time taken by first timing solve = " << gmresir_run_time
-                      << std::endl;
-            std::cout << "BenchGMRES: Iterations taken by first timing solve = " << niters
-                      << std::endl;
-        }
-      }
-    }
-
-    gmresir_run_time /= timing_calls;
-
-    double avg_run_time = 0;
-#ifndef HPGMP_NO_MPI
-    MPI_Allreduce(&gmresir_run_time, &avg_run_time, 1, MPI_DOUBLE, MPI_SUM, comm);
-#else
-    avg_run_time = gmresir_run_time;
-#endif
-    avg_run_time /= geom->size;
+    const double avg_run_time = estimate_run_time(comm, A, A_lo, data, data_lo, b, x, maxIters,
+            restart_length, verbose);
 
     // Get number of iterations to fill the required time
     const int numberOfGmresCalls = test_data.runningTime >= 0.0 ?
         ceil(test_data.runningTime / avg_run_time) :
         ceil(test_data.minOfficialTime / avg_run_time);
 #endif // HPGMP_WITH_PROFILING
+
     if (A.geom->rank==0) {
         std::cout << "Number of benchmarking GMRES runs will be " << numberOfGmresCalls
                   << std::endl;
@@ -216,9 +176,6 @@ int BenchGMRES(int argc, char **argv, comm_type comm, DeviceCtx *const dctx, int
                                 precond, verbose, test_data);
       const double time_toc = (mytimer() - time_tic);
       time_solve_total += time_toc;
-
-      if (i == 0) {
-      }
 
       if (ierr > 1) {
           HPGMP_fout << "NaN Error in call to GMRES-IR: " << ierr << ".\n" << endl;
@@ -407,26 +364,26 @@ int BenchGMRES(int argc, char **argv, comm_type comm, DeviceCtx *const dctx, int
 
 // uniform version
 template
-int BenchGMRES< TestGMRESData<double>, double, double, double >
+int BenchGMRES<double, double, double >
   (int, char**, comm_type, DeviceCtx*, int, bool, bool, const HPGMP_gen_opts&,
-   TestGMRESData<double>&);
+   TestGMRESData&);
 
 template
-int BenchGMRES< TestGMRESData<float>, float, float, float >
+int BenchGMRES<float, float, float >
   (int, char**, comm_type, DeviceCtx*, int, bool, bool, const HPGMP_gen_opts&,
-   TestGMRESData<float>&);
+   TestGMRESData&);
 
 
 // mixed version
 template
-int BenchGMRES< TestGMRESData<double>, double, float, float >
+int BenchGMRES<double, float, float >
   (int, char**, comm_type, DeviceCtx*, int, bool, bool, const HPGMP_gen_opts&,
-   TestGMRESData<double>&);
+   TestGMRESData&);
 
 
-template<class TestGMRESDataType, class SparseMatrixType, class VectorType>
+template<class SparseMatrixType, class VectorType>
 void test_mg_spmv(MPI_Comm comm, DeviceCtx *const dctx, const Geometry *const geom,
-                  const SparseMatrixType& A, TestGMRESDataType& test_data)
+                  const SparseMatrixType& A, TestGMRESData& test_data)
 {
     const local_int_t nrow = A.localNumberOfRows;
     const local_int_t ncol = A.localNumberOfColumns;

@@ -47,9 +47,9 @@
 
   @see YAML_Doc
 */
-template<class SparseMatrix_type, class TestGMRESData_type>
+template<class SparseMatrix_type>
 void ReportResults(const SparseMatrix_type & A, int numberOfMgLevels,
-                   const TestGMRESData_type & test_data, const int global_failure,
+                   const TestGMRESData& test_data, const int global_failure,
                    const HPGMP_gen_opts& gopts) {
 
   typedef typename SparseMatrix_type::scalar_type scalar_type;
@@ -473,9 +473,9 @@ void ReportResults(const SparseMatrix_type & A, int numberOfMgLevels,
  * specializations *
  * --------------- */
 template
-void ReportResults< SparseMatrix<double>, TestGMRESData<double> >
-  (const SparseMatrix<double>&, int, const TestGMRESData<double>&, int, const HPGMP_gen_opts&);
+void ReportResults< SparseMatrix<double>>
+  (const SparseMatrix<double>&, int, const TestGMRESData&, int, const HPGMP_gen_opts&);
 
 template
-void ReportResults< SparseMatrix<float>, TestGMRESData<float> >
-  (const SparseMatrix<float>&, int, const TestGMRESData<float>&, int, const HPGMP_gen_opts&);
+void ReportResults< SparseMatrix<float>>
+  (const SparseMatrix<float>&, int, const TestGMRESData&, int, const HPGMP_gen_opts&);

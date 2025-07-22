@@ -19,9 +19,9 @@
 #include "SparseMatrix.hpp"
 #include "TestGMRES.hpp"
 
-template<class SparseMatrix_type, class TestGMRESData_type>
+template<class SparseMatrix_type>
 void ReportResults(const SparseMatrix_type & A, int numberOfMgLevels,
-                   const TestGMRESData_type & testcg_data, int global_failure,
+                   const TestGMRESData& testcg_data, int global_failure,
                    const HPGMP_gen_opts& gopts);
 
 #endif // REPORTRESULTS_HPP

@@ -58,13 +58,13 @@
 
   @see GMRES_ref()
 */
-template<class SparseMatrix_type, class GMRESData_type, class Vector_type, class TestGMRESData_type>
+template<class SparseMatrix_type, class GMRESData_type, class Vector_type>
 int GMRES(const SparseMatrix_type& A, GMRESData_type& data, const Vector_type& b, Vector_type& x,
           const int restart_length, const int max_iter,
           const typename SparseMatrix_type::scalar_type tolerance,
           int & niters, typename SparseMatrix_type::scalar_type & normr,
           typename SparseMatrix_type::scalar_type & normr0,
-          const bool doPreconditioning, const bool verbose, TestGMRESData_type& test_data)
+          const bool doPreconditioning, const bool verbose, TestGMRESData& test_data)
 {
   HPGMP_RANGE_PUSH(__FUNCTION__);
   typedef typename SparseMatrix_type::scalar_type scalar_type;
@@ -402,12 +402,12 @@ int GMRES(const SparseMatrix_type& A, GMRESData_type& data, const Vector_type& b
  * --------------- */
 
 template
-int GMRES< SparseMatrix<double>, GMRESData<double>, Vector<double>, TestGMRESData<double> >
+int GMRES< SparseMatrix<double>, GMRESData<double>, Vector<double>>
   (SparseMatrix<double> const&, GMRESData<double>&, Vector<double> const&, Vector<double>&,
-   const int, const int, double, int&, double&, double&, bool, bool, TestGMRESData<double>&);
+   const int, const int, double, int&, double&, double&, bool, bool, TestGMRESData&);
 
 template
-int GMRES< SparseMatrix<float>, GMRESData<float>, Vector<float>, TestGMRESData<float> >
+int GMRES< SparseMatrix<float>, GMRESData<float>, Vector<float>>
   (SparseMatrix<float> const&, GMRESData<float>&, Vector<float> const&, Vector<float>&,
-   const int, const int, float, int&, float&, float&, bool, bool, TestGMRESData<float>&);
+   const int, const int, float, int&, float&, float&, bool, bool, TestGMRESData&);
 
