@@ -52,12 +52,19 @@ void test_mg_spmv(MPI_Comm comm, DeviceCtx *dctx, const Geometry *const geom,
                   const SparseMatrixType& A, TestGMRESData& test_data);
 
 // Get number of iterations to fill the required time
-inline int get_num_iterations(const double runTime, const double minOfficialTime,
-                              const double avg_gmres_time, const run_t run_type)
+template<typename scalar_type, typename scalar_type2>
+inline int get_num_iterations(comm_type comm,
+        const SparseMatrix<scalar_type>& A, const SparseMatrix<scalar_type2>& A_lo,
+        GMRESData<scalar_type>& data, GMRESData<scalar_type2>& data_lo,
+        const Vector<scalar_type>& b, Vector<scalar_type>& x, int max_iters,
+        const int restart_length, const bool verbose,
+        const double runTime, const double minOfficialTime, const run_t run_type)
 {
-    const int numberOfGmresCalls = runTime >= 0.0 ?
-        ceil(runTime / avg_gmres_time) : ceil(minOfficialTime / avg_gmres_time);
     if(run_type == run_t::benchmark || run_type == run_t::benchmark_no_ref) {
+        const double avg_run_time = estimate_run_time(comm, A, A_lo, data, data_lo, b, x,
+                max_iters, restart_length, verbose);
+        const int numberOfGmresCalls = runTime >= 0.0 ?
+            ceil(runTime / avg_run_time) : ceil(minOfficialTime / avg_run_time);
         return numberOfGmresCalls;
     } else {
         return non_benchmark_num_runs;
@@ -152,12 +159,10 @@ int BenchGMRES(int argc, char **argv, comm_type comm, DeviceCtx *const dctx, int
 #ifdef HPGMP_WITH_PROFILING
     const int numberOfGmresCalls = 1;
 #else // HPGMP_WITH_PROFILING
-    const double avg_run_time = estimate_run_time(comm, A, A_lo, data, data_lo, b, x, maxIters,
-            restart_length, verbose);
-
-    // Get number of iterations to fill the required time
-    const int numberOfGmresCalls = get_num_iterations(test_data.runningTime,
-            test_data.minOfficialTime, avg_run_time, gopts.run_type);
+    // Get number of iterations to fill the required time depending on the run type
+    const int numberOfGmresCalls = get_num_iterations(
+            comm, A, A_lo, data, data_lo, b, x, maxIters, restart_length, verbose,
+            test_data.runningTime, test_data.minOfficialTime, gopts.run_type);
 #endif // HPGMP_WITH_PROFILING
 
     if (A.geom->rank==0) {
