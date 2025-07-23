@@ -51,10 +51,10 @@
  */
 
 
-template<class TestGMRESSData_type, class scalar_type, class scalar_type2, class project_type>
+template<class scalar_type, class scalar_type2, class project_type>
 int ValidGMRES(const int argc, char **argv, const validation_t validation_type, comm_type comm,
-                    DeviceCtx *const dctx,
-                    const int numberOfMgLevels, const bool verbose, TestGMRESSData_type& test_data)
+               DeviceCtx *const dctx, const int numberOfMgLevels, const bool verbose,
+               TestGMRESData& test_data)
 {
   typedef Vector<scalar_type> Vector_type;
   typedef SparseMatrix<scalar_type> SparseMatrix_type;
@@ -84,7 +84,7 @@ int ValidGMRES(const int argc, char **argv, const validation_t validation_type, 
   // Solver Parameters
   const int restart_length = test_data.restart_length;
   const int max_iters = 10000;
-  const scalar_type tolerance = test_data.tolerance;
+  const auto tolerance = static_cast<scalar_type>(test_data.tolerance);
   if (A.geom->rank == 0) {
       std::cout << " Validate GMRES ";
       if(validation_type == validation_t::fullscale) {
@@ -228,12 +228,12 @@ int ValidGMRES(const int argc, char **argv, const validation_t validation_type, 
 
 // uniform version
 template
-int ValidGMRES<TestGMRESData<double>,  double, double, double > (int, char**, validation_t, comm_type, DeviceCtx*, int, bool, TestGMRESData<double>&);
+int ValidGMRES<double, double, double > (int, char**, validation_t, comm_type, DeviceCtx*, int, bool, TestGMRESData&);
 
 template
-int ValidGMRES<TestGMRESData<float>, float, float, float > (int, char**, validation_t, comm_type, DeviceCtx*, int, bool, TestGMRESData<float>&);
+int ValidGMRES<float, float, float > (int, char**, validation_t, comm_type, DeviceCtx*, int, bool, TestGMRESData&);
 
 // mixed version
 template
-int ValidGMRES<TestGMRESData<double>, double, float, float > (int, char**, validation_t, comm_type, DeviceCtx*, int, bool, TestGMRESData<double>&);
+int ValidGMRES<double, float, float > (int, char**, validation_t, comm_type, DeviceCtx*, int, bool, TestGMRESData&);
 

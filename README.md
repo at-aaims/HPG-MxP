@@ -11,7 +11,20 @@ at Oak Ridge National Laboratory.
 ## Introduction
 
 HPG-MxP is a software package that performs a fixed number of multigrid preconditioned
-(using a Gauss-Seidel smoother) Generalized minimal residual (PGMRES) iterations.
+(using a Gauss-Seidel smoother) Generalized minimal residual (PGMRES) iterations in order to
+solve a possibly nonsymmetric large sparse linear system of equations.
+It is designed to be a benchmark to measure a computer's performance for sparse linear algebra
+workloads typical in scientific computing while allowing the use of mixed precision methods.
+The solution is required to have convergence characteristics and accuracy similar to
+double precision GMRES.
+It is based on the High Performance Conjugate Gradient Benchmark ([HPCG](https://github.com/hpcg-benchmark/hpcg))
+which restricts all implementations to use only the IEEE double precision format (FP64).
+This is somewhat analogous to how the High Performance Linpack
+([HPL](https://icl.utk.edu/hpl/index.html)) benchmark solves a large dense linear system
+and restricts the numerical format to FP64, while the [HPL-MxP](https://github.com/ROCm/rocHPL-MxP)
+benchmark solves an easier system but uses iterative refinement to allow the use of
+lower precision formats in the factorization stage while still obtaining a solution as accurate
+as using only FP64.
 
 The HPG-MxP rating is is a weighted GFLOP/s (billion floating operations per second) value
 that is composed of the operations performed in the PGMRES iteration phase over
@@ -31,10 +44,12 @@ These various modes are required in order to address sufficiently big problems
 if the range of indexing goes above 2^31 (roughly 2.1B), or to conserve storage
 costs if the range of indexing is less than 2^31.
 
-The  HPG-MxP  software  package requires the availibility on your system of an
-implementation of the  Message Passing Interface (MPI) if enabling the MPI
-build of HPG-MxP, and a compiler that supports OpenMP syntax. An implementation
-compliant with MPI version 1.1 is sufficient.
+This HPG-MxP software package requires the availibility on your system of an
+implementation of the Message Passing Interface (MPI) if enabling the MPI
+build of HPG-MxP, a compiler that supports OpenMP syntax, and an accelerator compiler
+and library ecosystem.
+
+This implementation uses several ideas from AMD's HPCG implementation [rocHPCG](https://github.com/ROCm/rocHPCG).
 
 ## Installation
 
@@ -67,3 +82,10 @@ size should reflect what would be reasonable for a real sparse iterative solver.
 
 Known problems and bugs with this release are documented in the file
 `BUGS`.
+
+## Citing
+
+The additional optimizations, features and other changes over the reference implementation are
+described in the paper:
+Kashi et al., "Scaling the memory wall using mixed-precision - HPG-MxP on an exascale machine",
+arXiv:2507.11512 [cs.DC], July 2025.

@@ -110,7 +110,7 @@ endif()
 
 set(host_sources
     src/device_ctx.cpp src/MultiVector.cpp src/SparseMatrix.cpp
-    src/GMRES.cpp src/GMRES_IR.cpp src/TestGMRES.cpp
+    src/GMRES.cpp src/GMRES_IR.cpp src/TestGMRES.cpp src/estimate_run_time.cpp
     src/ComputeResidual.cpp src/GenerateGeometry.cpp
     src/GenerateNonsymProblem.cpp src/GenerateNonsymProblem_v1_ref.cpp src/CheckProblem.cpp
     src/OptimizeProblem.cpp src/ReadHpgmpDat.cpp src/ReportResults.cpp
@@ -118,7 +118,7 @@ set(host_sources
     src/SetupMatrix.cpp src/SetupProblem.cpp
     src/ValidGMRES.cpp src/BenchGMRES.cpp
     src/WriteProblem.cpp
-    src/YAML_Doc.cpp src/YAML_Element.cpp
+    src/YAML_Doc.cpp src/YAML_Element.cpp src/options_strings.cpp
     src/ComputeSPMV.cpp 
     src/ComputeDotProduct.cpp src/ComputeDotProduct_ref.cpp src/ComputeDotProduct_gpu.cpp src/ComputeDotProduct_blas.cpp
     src/ComputeTRSM.cpp

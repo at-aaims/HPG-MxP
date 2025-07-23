@@ -66,9 +66,9 @@ inline void ScaleVectorValue(Vector_type & v, local_int_t index, typename Vector
  */
 
 
-template<class SparseMatrix_type, class SparseMatrix_type2, class GMRESData_type, class GMRESData_type2, class Vector_type, class TestGMRESData_type>
+template<class SparseMatrix_type, class SparseMatrix_type2, class GMRESData_type, class GMRESData_type2, class Vector_type>
 int TestGMRES(SparseMatrix_type & A, SparseMatrix_type2 & A_lo, GMRESData_type & data, GMRESData_type2 & data_lo,
-              Vector_type & b, Vector_type & x, bool test_diagonal_exaggeration, bool test_noprecond, TestGMRESData_type & test_data) {
+              Vector_type & b, Vector_type & x, bool test_diagonal_exaggeration, bool test_noprecond, TestGMRESData& test_data) {
 
   typedef typename SparseMatrix_type::scalar_type scalar_type;
   typedef typename SparseMatrix_type2::scalar_type scalar_type2;
@@ -128,12 +128,8 @@ int TestGMRES(SparseMatrix_type & A, SparseMatrix_type2 & A_lo, GMRESData_type &
   bool verbose = true;
   scalar_type tolerance = 1.0e-12; // Set tolerance to reasonable value for grossly scaled diagonal terms
 
-  constexpr int num_flops = TestGMRESData_type::n_fl_ops;
-  constexpr int num_times = TestGMRESData_type::n_timed_ops;
-  //test_data.flops = (double*)malloc(num_flops * sizeof(double));
-  //test_data.times = (double*)malloc(num_times * sizeof(double));
-  //test_data.times_comp = (double*)malloc(num_times * sizeof(double));
-  //test_data.times_comm = (double*)malloc(num_times * sizeof(double));
+  constexpr int num_flops = TestGMRESData::n_fl_ops;
+  constexpr int num_times = TestGMRESData::n_timed_ops;
   for (int i=0; i<num_flops; i++) test_data.flops[i] = 0.0;
   for (int i=0; i<num_times; i++) test_data.times[i] = 0.0;
   for (int i=0; i<num_times; i++) test_data.times_comp[i] = 0.0;
@@ -205,19 +201,13 @@ int TestGMRES(SparseMatrix_type & A, SparseMatrix_type2 & A_lo, GMRESData_type &
   ReplaceMatrixDiagonal(A, origDiagA);
   ReplaceMatrixDiagonal(A_lo, origDiagA2);//TODO again, probably funny casting here. 
   CopyVector(origB, b);
-  // Delete vectors
-  //DeleteVector(origDiagA);
-  //DeleteVector(exaggeratedDiagA);
-  //DeleteVector(origDiagA2);
-  //DeleteVector(exagDiagA2);
-  //DeleteVector(origB);
 
   return 0;
 }
 
-template<class SparseMatrix_type, class GMRESData_type, class Vector_type, class TestGMRESData_type>
+template<class SparseMatrix_type, class GMRESData_type, class Vector_type>
 int TestGMRES(SparseMatrix_type & A, GMRESData_type & data, Vector_type & b, Vector_type & x,
-              bool test_diagonal_exaggeration, bool test_noprecond, TestGMRESData_type & test_data) {
+              bool test_diagonal_exaggeration, bool test_noprecond, TestGMRESData& test_data) {
   return TestGMRES(A, A, data, data, b, x, test_diagonal_exaggeration, test_noprecond, test_data);
 }
 
@@ -228,26 +218,26 @@ int TestGMRES(SparseMatrix_type & A, GMRESData_type & data, Vector_type & b, Vec
 
 // uniform
 template
-int TestGMRES< SparseMatrix<double>, GMRESData<double>, Vector<double>, TestGMRESData<double> >
-  (SparseMatrix<double>&, GMRESData<double>&, Vector<double>&, Vector<double>&, bool, bool, TestGMRESData<double>&);
+int TestGMRES< SparseMatrix<double>, GMRESData<double>, Vector<double>>
+  (SparseMatrix<double>&, GMRESData<double>&, Vector<double>&, Vector<double>&, bool, bool, TestGMRESData&);
 
 template
-int TestGMRES< SparseMatrix<float>, GMRESData<float>, Vector<float>, TestGMRESData<float> >
-  (SparseMatrix<float>&, GMRESData<float>&, Vector<float>&, Vector<float>&, bool, bool, TestGMRESData<float>&);
+int TestGMRES< SparseMatrix<float>, GMRESData<float>, Vector<float>>
+  (SparseMatrix<float>&, GMRESData<float>&, Vector<float>&, Vector<float>&, bool, bool, TestGMRESData&);
 
 
 // uniform version
 template
-int TestGMRES< SparseMatrix<double>, SparseMatrix<double>, GMRESData<double>, GMRESData<double>, Vector<double>, TestGMRESData<double> >
-  (SparseMatrix<double>&, SparseMatrix<double>&, GMRESData<double>&, GMRESData<double>&, Vector<double>&, Vector<double>&, bool, bool, TestGMRESData<double>&);
+int TestGMRES< SparseMatrix<double>, SparseMatrix<double>, GMRESData<double>, GMRESData<double>, Vector<double>>
+  (SparseMatrix<double>&, SparseMatrix<double>&, GMRESData<double>&, GMRESData<double>&, Vector<double>&, Vector<double>&, bool, bool, TestGMRESData&);
 
 template
-int TestGMRES< SparseMatrix<float>, SparseMatrix<float>, GMRESData<float>, GMRESData<float>, Vector<float>, TestGMRESData<float> >
-  (SparseMatrix<float>&, SparseMatrix<float>&, GMRESData<float>&, GMRESData<float>&, Vector<float>&, Vector<float>&, bool, bool, TestGMRESData<float>&);
+int TestGMRES< SparseMatrix<float>, SparseMatrix<float>, GMRESData<float>, GMRESData<float>, Vector<float>>
+  (SparseMatrix<float>&, SparseMatrix<float>&, GMRESData<float>&, GMRESData<float>&, Vector<float>&, Vector<float>&, bool, bool, TestGMRESData&);
 
 
 // mixed version
 template
-int TestGMRES< SparseMatrix<double>, SparseMatrix<float>, GMRESData<double>, GMRESData<float>, Vector<double>, TestGMRESData<double> >
-  (SparseMatrix<double>&, SparseMatrix<float>&, GMRESData<double>&, GMRESData<float>&, Vector<double>&, Vector<double>&, bool, bool, TestGMRESData<double>&);
+int TestGMRES< SparseMatrix<double>, SparseMatrix<float>, GMRESData<double>, GMRESData<float>, Vector<double>>
+  (SparseMatrix<double>&, SparseMatrix<float>&, GMRESData<double>&, GMRESData<float>&, Vector<double>&, Vector<double>&, bool, bool, TestGMRESData&);
 

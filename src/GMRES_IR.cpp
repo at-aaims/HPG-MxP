@@ -60,12 +60,12 @@
 
   @see GMRES_IR_ref()
 */
-template<class SparseMatrix_type, class SparseMatrix_type2, class GMRESData_type, class GMRESData_type2, class Vector_type, class TestGMRESData_type>
+template<class SparseMatrix_type, class SparseMatrix_type2, class GMRESData_type, class GMRESData_type2, class Vector_type>
 int GMRES_IR(const SparseMatrix_type & A, const SparseMatrix_type2 & A_lo,
              GMRESData_type & data, GMRESData_type2 & data_lo, const Vector_type & b_hi, Vector_type & x_hi,
              const int restart_length, const int max_iter, const typename SparseMatrix_type::scalar_type tolerance,
              int & niters, typename SparseMatrix_type::scalar_type & normr_hi, typename SparseMatrix_type::scalar_type & normr0_hi,
-             const bool doPreconditioning, bool verbose, TestGMRESData_type & test_data) {
+             const bool doPreconditioning, bool verbose, TestGMRESData& test_data) {
 
   HPGMP_RANGE_PUSH(__FUNCTION__);
 
@@ -567,21 +567,21 @@ int GMRES_IR(const SparseMatrix_type & A, const SparseMatrix_type2 & A_lo,
 
 // uniform
 template
-int GMRES_IR< SparseMatrix<double>, SparseMatrix<double>, GMRESData<double>, GMRESData<double>, Vector<double>, TestGMRESData<double> >
+int GMRES_IR< SparseMatrix<double>, SparseMatrix<double>, GMRESData<double>, GMRESData<double>, Vector<double>>
   (SparseMatrix<double> const&, SparseMatrix<double> const&, GMRESData<double>&, GMRESData<double>&,
    Vector<double> const&, Vector<double>&, const int, const int, double, int&, double&, double&, bool, bool,
-   TestGMRESData<double>&);
+   TestGMRESData&);
 
 template
-int GMRES_IR< SparseMatrix<float>, SparseMatrix<float>, GMRESData<float>, GMRESData<float>, Vector<float>, TestGMRESData<float> >
+int GMRES_IR< SparseMatrix<float>, SparseMatrix<float>, GMRESData<float>, GMRESData<float>, Vector<float>>
   (SparseMatrix<float> const&, SparseMatrix<float> const&, GMRESData<float>&, GMRESData<float>&,
    Vector<float> const&, Vector<float>&, const int, const int, float, int&, float&, float&, bool, bool,
-   TestGMRESData<float>&);
+   TestGMRESData&);
 
 
 // mixed
 template
-int GMRES_IR< SparseMatrix<double>, SparseMatrix<float>, GMRESData<double>, GMRESData<float>, Vector<double>, TestGMRESData<double> >
+int GMRES_IR< SparseMatrix<double>, SparseMatrix<float>, GMRESData<double>, GMRESData<float>, Vector<double>>
   (SparseMatrix<double> const&, SparseMatrix<float> const&, GMRESData<double>&, GMRESData<float>&,
    Vector<double> const&, Vector<double>&, const int, const int, double, int&, double&, double&, bool, bool,
-   TestGMRESData<double>&);
+   TestGMRESData&);

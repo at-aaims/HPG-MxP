@@ -93,6 +93,18 @@ enum class validation_t {
     fullscale
 };
 
+std::string get_string(validation_t val_type);
+
+/// Available types of program run
+enum class run_t {
+    benchmark,             ///< Official benchmark mode (with standard or fullscale validation)
+    benchmark_no_ref,      ///< Official benchmark mode without timed reference run
+    standalone_ref,        ///< Only double precision GMRES without validation
+    standalone_mxp         ///< Only mixed precision GMRES-IR without validation
+};
+
+std::string get_string(run_t run_type);
+
 /// Algorithm and data structure options
 struct hpgmp_options {
     sp_matrix_format_t sp_mat_format;
@@ -101,6 +113,7 @@ struct hpgmp_options {
 
 struct HPGMP_gen_opts {
     validation_t validation_type;
+    run_t run_type;
 };
 
 /*!

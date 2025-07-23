@@ -58,7 +58,6 @@ using std::endl;
 
 typedef double scalar_type;
 //typedef float  scalar_type;
-typedef TestGMRESData<scalar_type> TestGMRESData_type;
 
 typedef Vector<scalar_type> Vector_type;
 typedef SparseMatrix<scalar_type> SparseMatrix_type;
@@ -195,7 +194,7 @@ int main(int argc, char * argv[]) {
   //////////////////////////////
   bool test_diagonal_exaggeration = false;
   bool test_noprecond = true;
-  TestGMRESData_type test_data;
+  TestGMRESData test_data;
 
 #ifdef HPGMP_DEBUG
   t1 = mytimer();
@@ -231,9 +230,6 @@ int main(int argc, char * argv[]) {
   if (rank==0) HPGMP_fout << "Total validation (mixed-precision TestGMRES) execution time in main (sec) = " << mytimer() - t1 << endl;
 #endif
 
-  // free
-  //DeleteMatrix(A2);
-  //DeleteMatrix(A);
   HPGMP_Finalize();
 #ifndef HPGMP_NO_MPI
   MPI_Finalize();

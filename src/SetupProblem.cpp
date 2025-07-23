@@ -46,11 +46,11 @@ using std::endl;
   @see GenerateGeometry
 */
 
-template<class SparseMatrix_type, class SparseMatrix_type2, class GMRESData_type, class GMRESData_type2, class Vector_type, class TestGMRESData_type>
+template<class SparseMatrix_type, class SparseMatrix_type2, class GMRESData_type, class GMRESData_type2, class Vector_type>
 void SetupProblem(const char *title, int argc, char ** argv, comm_type comm, DeviceCtx *const dctx,
                   int numberOfMgLevels, bool verbose, Geometry * geom, SparseMatrix_type & A,
                   GMRESData_type & data, SparseMatrix_type2 & A2, GMRESData_type2 & data2,
-                  Vector_type & b, Vector_type & x, TestGMRESData_type & test_data)
+                  Vector_type & b, Vector_type & x, TestGMRESData& test_data)
 {
   HPGMP_Params params;
   HPGMP_Init_Params(title, &argc, &argv, params, comm);
@@ -136,18 +136,18 @@ void SetupProblem(const char *title, int argc, char ** argv, comm_type comm, Dev
 
 // uniform
 template
-void SetupProblem< SparseMatrix<double>, SparseMatrix<double>, GMRESData<double>, GMRESData<double>, Vector<double>, TestGMRESData<double> >
+void SetupProblem< SparseMatrix<double>, SparseMatrix<double>, GMRESData<double>, GMRESData<double>, Vector<double>>
  (const char*, int, char**, comm_type, DeviceCtx*, int, bool, Geometry*, SparseMatrix<double>&, GMRESData<double>&, SparseMatrix<double>&, GMRESData<double>&,
-  Vector<double>&, Vector<double>&, TestGMRESData<double>&);
+  Vector<double>&, Vector<double>&, TestGMRESData&);
 
 template
-void SetupProblem< SparseMatrix<float>, SparseMatrix<float>, GMRESData<float>, GMRESData<float>, Vector<float>, TestGMRESData<float> >
+void SetupProblem< SparseMatrix<float>, SparseMatrix<float>, GMRESData<float>, GMRESData<float>, Vector<float>>
  (const char*, int, char**, comm_type, DeviceCtx*, int, bool, Geometry*, SparseMatrix<float>&, GMRESData<float>&, SparseMatrix<float>&, GMRESData<float>&,
-  Vector<float>&, Vector<float>&, TestGMRESData<float>&);
+  Vector<float>&, Vector<float>&, TestGMRESData&);
 
 // mixed
 template
-void SetupProblem< SparseMatrix<double>, SparseMatrix<float>, GMRESData<double>, GMRESData<float>, Vector<double>, TestGMRESData<double> >
+void SetupProblem< SparseMatrix<double>, SparseMatrix<float>, GMRESData<double>, GMRESData<float>, Vector<double>>
  (const char*, int, char**, comm_type, DeviceCtx*, int, bool, Geometry*, SparseMatrix<double>&, GMRESData<double>&, SparseMatrix<float>&, GMRESData<float>&,
-  Vector<double>&, Vector<double>&, TestGMRESData<double>&);
+  Vector<double>&, Vector<double>&, TestGMRESData&);
 
