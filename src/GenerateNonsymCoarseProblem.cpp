@@ -118,8 +118,8 @@ void GenerateNonsymCoarseProblem(DeviceCtx *const dctx, const SparseMatrix_type 
   GenerateGeometry(Af.geom->size, Af.geom->rank, Af.geom->numThreads, Af.geom->pz, zlc, zuc,
                    nxc, nyc, nzc, Af.geom->npx, Af.geom->npy, Af.geom->npz, geomc);
 
-  bool init_vect = false;
-  Vector_type * tmp;
+  const bool init_vect = false;
+  Vector_type * tmp{};
   SparseMatrix_type * Ac = new SparseMatrix_type;
   Ac->initialize(geomc, Af.comm, dctx);
   GenerateNonsymProblem(dctx, *Ac, tmp, tmp, tmp, init_vect);

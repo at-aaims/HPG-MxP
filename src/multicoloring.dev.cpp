@@ -221,10 +221,10 @@ __global__ void kernel_jpl(const local_int_t m,
     }
 
     // Get row hash value
-    local_int_t row_hash = hash[row];
+    const local_int_t row_hash = hash[row];
 
-    local_int_t idx = row * BLOCKSIZEX + threadIdx.x;
-    local_int_t col = __ldcg(mtxIndL + idx);
+    const local_int_t idx = row * BLOCKSIZEX + threadIdx.x;
+    const local_int_t col = __ldcg(mtxIndL + idx);
 
     if(col >= 0 && col < m)
     {
@@ -285,9 +285,6 @@ void multicolor_JPL(SparseMatrix<scalar>& A)
 
     A.perm = reinterpret_cast<local_int_t*>(A.dctx->device_alloc(m * sizeof(local_int_t)));
     A.dctx->device_memset(A.perm, -1, sizeof(local_int_t)*m);
-    //if(hipMemset(A.perm, -1, sizeof(local_int_t) * m) != hipSuccess) {
-    //    throw DeviceAPIError("memset failed in multicolor_JPL!");
-    //}
 
     A.nblocks = 0;
 
@@ -323,9 +320,6 @@ void multicolor_JPL(SparseMatrix<scalar>& A)
     {
         blocksize >>= 1;
     }
-
-    //auto d_nonzerosInRow = reinterpret_cast<char*>(A.dctx->device_alloc(m*sizeof(char)));
-    //A.dctx->copy_host_to_device_sync(d_nonzerosInRow, A.nonzerosInRow, m*sizeof(char));
 
     // Run Jones-Plassmann Luby algorithm until all vertices have been colored
     while(colored != m)
@@ -366,7 +360,6 @@ void multicolor_JPL(SparseMatrix<scalar>& A)
     A.ublocks = A.nblocks - 1;
 
     A.dctx->device_free(A.d_rowHash);
-    //A.dctx->device_free(d_nonzerosInRow);
 
     auto tmp_color = reinterpret_cast<local_int_t*>(A.dctx->device_alloc(m*sizeof(local_int_t)));
     auto tmp_perm = reinterpret_cast<local_int_t*>(A.dctx->device_alloc(m*sizeof(local_int_t)));

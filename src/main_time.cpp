@@ -44,7 +44,6 @@ using std::endl;
 #include "CheckAspectRatio.hpp"
 #include "CheckProblem.hpp"
 #include "OptimizeProblem.hpp"
-#include "WriteProblem.hpp"
 #include "mytimer.hpp"
 #include "ComputeSPMV_ref.hpp"
 #include "ComputeMG_ref.hpp"

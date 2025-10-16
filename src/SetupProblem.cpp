@@ -90,6 +90,10 @@ void SetupProblem(const char *title, int argc, char ** argv, comm_type comm, Dev
   // Setup single-precision A 
   init_vect = false;
   SetupMatrix(dctx, numberOfMgLevels, A2, geom, data2, &b, &x, &xexact, init_vect, comm);
+
+  A.delete_host_global_indices();
+  A2.delete_host_global_indices();
+
   setup_time = mytimer() - setup_time; // Capture total time of setup
 #ifdef HPGMP_VERBOSE
   MPI_Barrier(comm);
