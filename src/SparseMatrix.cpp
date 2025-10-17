@@ -1,23 +1,44 @@
 #include "SparseMatrix.hpp"
 
 template <class SC>
-void SparseMatrix<SC>::delete_host_global_indices()
+void SparseMatrix<SC>::delete_host_data()
 {
 #ifndef HPGMP_CONTIGUOUS_ARRAYS
     for (local_int_t i = 0; i< localNumberOfRows; ++i) {
         delete [] mtxIndG[i];
         mtxIndG[i] = nullptr;
+        delete [] mtxIndL[i];
+        mtxIndL[i] = nullptr;
+        delete [] matrixValues[i];
+        matrixValues[i] = nullptr;
     }
 #else
-    delete [] mtxIndG[0];
-    mtxIndG[0] = nullptr;
+    if(mtxIndG) {
+        delete [] mtxIndG[0];
+        mtxIndG[0] = nullptr;
+        delete [] mtxIndL[0];
+        mtxIndL[0] = nullptr;
+        delete [] matrixValues[0];
+        matrixValues[0] = nullptr;
+    }
 #endif
     if (mtxIndG) {
         delete [] mtxIndG;
+        delete [] mtxIndL;
+        delete [] matrixValues;
         mtxIndG = nullptr;
+        mtxIndL = nullptr;
+        matrixValues = nullptr;
     }
+    if (matrixDiagonal) {
+        delete [] matrixDiagonal;
+        matrixDiagonal = nullptr;
+    }
+    globalToLocalMap.clear();
+    localToGlobalMap.clear();
+    localToGlobalMap.shrink_to_fit();
     if(Ac) {
-        Ac->delete_host_global_indices();
+        Ac->delete_host_data();
     }
 }
 
@@ -25,21 +46,19 @@ template <class SparseMatrix_type>
 void DeleteMatrix(SparseMatrix_type & A)
 {
 #ifndef HPGMP_CONTIGUOUS_ARRAYS
-    for (local_int_t i = 0; i< A.localNumberOfRows; ++i) {
-        delete [] A.matrixValues[i];
-        delete [] A.mtxIndL[i];
-    }
     if (A.mtxIndG) {
         for (local_int_t i = 0; i< A.localNumberOfRows; ++i) {
             delete [] A.mtxIndG[i];
+            delete [] A.mtxIndL[i];
+            delete [] A.matrixValues[i];
         }
     }
 #else
-    delete [] A.matrixValues[0];
     if (A.mtxIndG) {
         delete [] A.mtxIndG[0];
+        delete [] A.matrixValues[0];
+        delete [] A.mtxIndL[0];
     }
-    delete [] A.mtxIndL[0];
 #endif
     if (A.title)                 delete [] A.title;
     if (A.nonzerosInRow)         delete [] A.nonzerosInRow;
