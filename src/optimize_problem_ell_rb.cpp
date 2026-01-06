@@ -38,12 +38,6 @@
 #include "permute.hpp"
 #include "multicoloring.hpp"
 
-/** This routine repeats some things from the reference optimization,
- * but deletes any memory allocated in the process.
- */
-template <typename mat_scalar>
-void seemingly_necessary_stuff_from_reference(SparseMatrix<mat_scalar>* M);
-
 /*!
   Optimizes the data structures used for GMRES to increase the
   performance of the benchmark version of the preconditioned GMRES algorithm.
@@ -146,6 +140,7 @@ template
 int OptimizeProblemELL(SparseMatrix<float>& A, GMRESData<double>& data,
                     Vector<double>& b, Vector<double>& x, Vector<double>& xexact);
 
+#if 0
 template <typename SC>
 void seemingly_necessary_stuff_from_reference(SparseMatrix<SC>* M)
 {
@@ -276,6 +271,7 @@ void seemingly_necessary_stuff_from_reference(SparseMatrix<SC>* M)
       curLevelMatrix = curLevelMatrix->Ac;
     } while (curLevelMatrix != nullptr);
 }
+#endif
 
 // Helper function (see OptimizeProblem.hpp for details)
 template<class SparseMatrix_type>

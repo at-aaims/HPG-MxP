@@ -51,6 +51,8 @@ public:
       comm = c;
   }
 
+  void delete_host_data();
+
   DeviceCtx *dctx = nullptr;
   char  * title = nullptr; //!< name of the sparse matrix
   const Geometry * geom = nullptr; //!< geometry associated with this matrix

@@ -47,7 +47,7 @@ void SetupMatrix(DeviceCtx *const dctx, int numberOfMgLevels, SparseMatrix_type 
       std::cout << "Completed generating nonsym problem." << std::endl;
   }
 #endif
-  SetupHalo(A); //TODO: This is currently called in main.. Should it really be called in both places?  Which one? 
+  SetupHalo(A);
 #ifdef HPGMP_VERBOSE
   if(geom->rank == 0) {
       std::cout << "Completed setting up halos." << std::endl;

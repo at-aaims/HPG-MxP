@@ -90,6 +90,7 @@ void SetupProblem(const char *title, int argc, char ** argv, comm_type comm, Dev
   // Setup single-precision A 
   init_vect = false;
   SetupMatrix(dctx, numberOfMgLevels, A2, geom, data2, &b, &x, &xexact, init_vect, comm);
+
   setup_time = mytimer() - setup_time; // Capture total time of setup
 #ifdef HPGMP_VERBOSE
   MPI_Barrier(comm);
@@ -111,6 +112,8 @@ void SetupProblem(const char *title, int argc, char ** argv, comm_type comm, Dev
   }
 #endif
 
+  A.delete_host_data();
+
   // Call user-tunable set up function for A2
   OptimizeProblem(A2, data, b, x, xexact);
   opt_time = mytimer() - opt_time; // Capture total time of setup
@@ -120,6 +123,9 @@ void SetupProblem(const char *title, int argc, char ** argv, comm_type comm, Dev
       std::cout << "   SetupProblem: Optimized LP problem." << std::endl;
   }
 #endif
+
+  A2.delete_host_data();
+
   //times[7] = opt_time;
   test_data.OptimizeTime = opt_time;
 
