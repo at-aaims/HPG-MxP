@@ -39,30 +39,31 @@
   @return Returns zero on success and a non-zero value otherwise.
 */
 template<class SparseMatrix_type, class Vector_type>
-int ComputeProlongation_ref(const SparseMatrix_type & Af, Vector_type & xf) {
+int ComputeProlongation_ref(const SparseMatrix_type& Af, Vector_type& xf)
+{
 
-  typedef typename SparseMatrix_type::scalar_type scalar_type;
+    typedef typename SparseMatrix_type::scalar_type scalar_type;
 
-  //scalar_type * xfv = xf.values;
-  //scalar_type * xcv = Af.mgData->xc->values;
-  //local_int_t * f2c = Af.mgData->f2cOperator;
-  const local_int_t nc = Af.mgData->rc->local_length();
+    //scalar_type * xfv = xf.values;
+    //scalar_type * xcv = Af.mgData->xc->values;
+    //local_int_t * f2c = Af.mgData->f2cOperator;
+    const local_int_t nc = Af.mgData->rc->local_length();
 
-  const scalar_type one (1.0);
-  const local_int_t n = xf.local_length();
-  scalar_type * d_xfv = xf.d_values();
-  scalar_type * d_xcv = Af.mgData->xc->d_values();
+    const scalar_type one(1.0);
+    const local_int_t n = xf.local_length();
+    scalar_type* d_xfv  = xf.d_values();
+    scalar_type* d_xcv  = Af.mgData->xc->d_values();
 
-  auto sphandle = Af.dctx->get_sparse_handle();
+    auto sphandle = Af.dctx->get_sparse_handle();
 
-  #if defined(HPGMP_WITH_CUDA)
+#if defined(HPGMP_WITH_CUDA)
     cusparseStatus_t status;
-    #if CUDA_VERSION >= 11000
+#if CUDA_VERSION >= 11000
     cudaDataType computeType;
     if (std::is_same<scalar_type, double>::value) {
-      computeType = CUDA_R_64F;
+        computeType = CUDA_R_64F;
     } else if (std::is_same<scalar_type, float>::value) {
-      computeType = CUDA_R_32F;
+        computeType = CUDA_R_32F;
     }
     // create matrix
     cusparseSpMatDescr_t Af_cusparse;
@@ -73,59 +74,59 @@ int ComputeProlongation_ref(const SparseMatrix_type & Af, Vector_type & xf) {
     // create vectors
     cusparseDnVecDescr_t vecX, vecY;
     cusparseCreateDnVec(&vecX, nc, d_xcv, computeType);
-    cusparseCreateDnVec(&vecY, n,  d_xfv, computeType);
+    cusparseCreateDnVec(&vecY, n, d_xfv, computeType);
     // SpMV
     status = cusparseSpMV(sphandle, CUSPARSE_OPERATION_TRANSPOSE,
                           &one, Af_cusparse,
-                                vecX,
+                          vecX,
                           &one, vecY,
                           computeType, CUSPARSE_MV_ALG_DEFAULT, Af.mgData->buffer_P);
     if (CUSPARSE_STATUS_SUCCESS != status) {
-      printf( " Failed cusparseSpMV for Prolongation\n" );
+        printf(" Failed cusparseSpMV for Prolongation\n");
     }
-    #else
+#else
     if (std::is_same<scalar_type, double>::value) {
-      status = cusparseDcsrmv(sphandle, CUSPARSE_OPERATION_TRANSPOSE,
-                              nc, n, nc,
-                              (const double*)&one, Af.mgData->descrR,
-                              (double*)Af.mgData->d_nzvals, Af.mgData->d_row_ptr, Af.mgData->d_col_idx,
-                              (double*)d_xcv,
-                              (const double*)&one, (double*)d_xfv);
+        status = cusparseDcsrmv(sphandle, CUSPARSE_OPERATION_TRANSPOSE,
+                                nc, n, nc,
+                                (const double*)&one, Af.mgData->descrR,
+                                (double*)Af.mgData->d_nzvals, Af.mgData->d_row_ptr, Af.mgData->d_col_idx,
+                                (double*)d_xcv,
+                                (const double*)&one, (double*)d_xfv);
     } else if (std::is_same<scalar_type, float>::value) {
-      status = cusparseScsrmv(sphandle, CUSPARSE_OPERATION_TRANSPOSE,
-                              nc, n, nc,
-                              (const float*)&one, Af.mgData->descrR,
-                              (float*)Af.mgData->d_nzvals, Af.mgData->d_row_ptr, Af.mgData->d_col_idx,
-                              (float*)d_xcv,
-                              (const float*)&one, (float*)d_xfv);
+        status = cusparseScsrmv(sphandle, CUSPARSE_OPERATION_TRANSPOSE,
+                                nc, n, nc,
+                                (const float*)&one, Af.mgData->descrR,
+                                (float*)Af.mgData->d_nzvals, Af.mgData->d_row_ptr, Af.mgData->d_col_idx,
+                                (float*)d_xcv,
+                                (const float*)&one, (float*)d_xfv);
     }
     if (CUSPARSE_STATUS_SUCCESS != status) {
-      printf( " Failed cusparseDcsrmv for Prolongation\n" );
+        printf(" Failed cusparseDcsrmv for Prolongation\n");
     }
-    #endif
-  #elif defined(HPGMP_WITH_HIP)
-  rocsparse_datatype rocsparse_compute_type = rocsparse_datatype_f64_r;
-  if (std::is_same<scalar_type, float>::value) {
-    rocsparse_compute_type = rocsparse_datatype_f32_r;
-  }
-  size_t buffer_size = Af.mgData->buffer_size_P;
-  rocsparse_dnvec_descr vecX, vecY;
-  rocsparse_create_dnvec_descr(&vecX, nc, (void*)d_xcv, rocsparse_compute_type);
-  rocsparse_create_dnvec_descr(&vecY, n,  (void*)d_xfv, rocsparse_compute_type);
-  if (rocsparse_status_success != 
-      rocsparse_spmv(sphandle, rocsparse_operation_none,
-           &one, Af.mgData->descrP, vecX, &one, vecY,
-           rocsparse_compute_type, rocsparse_spmv_alg_default,
-           #if ROCM_VERSION >= 50400
-           rocsparse_spmv_stage_compute,
-           #endif
-           &buffer_size, Af.mgData->buffer_P))
-  {
-    printf( " Failed rocsparse_spmv(%dx%d)\n",nc,n );
-  }
-  #endif
+#endif
+#elif defined(HPGMP_WITH_HIP)
+    rocsparse_datatype rocsparse_compute_type = rocsparse_datatype_f64_r;
+    if (std::is_same<scalar_type, float>::value) {
+        rocsparse_compute_type = rocsparse_datatype_f32_r;
+    }
+    size_t buffer_size = Af.mgData->buffer_size_P;
+    rocsparse_dnvec_descr vecX, vecY;
+    rocsparse_create_dnvec_descr(&vecX, nc, (void*)d_xcv, rocsparse_compute_type);
+    rocsparse_create_dnvec_descr(&vecY, n, (void*)d_xfv, rocsparse_compute_type);
+    if (rocsparse_status_success !=
+        rocsparse_spmv(sphandle, rocsparse_operation_none,
+                       &one, Af.mgData->descrP, vecX, &one, vecY,
+                       rocsparse_compute_type, rocsparse_spmv_alg_default,
+#if ROCM_VERSION >= 50400
+                       rocsparse_spmv_stage_compute,
+#endif
+                       &buffer_size, Af.mgData->buffer_P))
+    {
+        printf(" Failed rocsparse_spmv(%dx%d)\n", nc, n);
+    }
+#endif
 
-  return 0;
+    return 0;
 }
 
 
@@ -133,10 +134,10 @@ int ComputeProlongation_ref(const SparseMatrix_type & Af, Vector_type & xf) {
  * specializations *
  * --------------- */
 
-template
-int ComputeProlongation_ref< SparseMatrix<double>, Vector<double> >(SparseMatrix<double> const&, Vector<double>&);
+template int ComputeProlongation_ref< SparseMatrix<double>, Vector<double> >(
+    SparseMatrix<double> const&, Vector<double>&);
 
-template
-int ComputeProlongation_ref< SparseMatrix<float>, Vector<float> >(SparseMatrix<float> const&, Vector<float>&);
+template int ComputeProlongation_ref< SparseMatrix<float>, Vector<float> >(
+    SparseMatrix<float> const&, Vector<float>&);
 
 #endif

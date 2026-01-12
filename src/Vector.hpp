@@ -29,7 +29,7 @@
 #include <stdexcept>
 
 #ifdef HPGMP_WITH_BLAS
- #include "cblas.h"
+#include "cblas.h"
 #endif
 
 #ifndef HPGMP_NO_MPI
@@ -42,59 +42,60 @@
 #include "matrix_base.hpp"
 
 template<class SC = double>
-class Vector {
+class Vector
+{
 public:
-  typedef SC scalar_type;
+    typedef SC scalar_type;
 
-  /** Creates uninitialized vector.
+    /** Creates uninitialized vector.
    *
    * @sa initialize
    */
-  Vector();
+    Vector();
 
-  /** Creates a vector.
+    /** Creates a vector.
    *
    * @param local_length  Length of local part of the vector.
    * @param comm  MPI communicator associated with the distributed vector.
    * @param device_ctx  Context of the device (accelerator/CPU) on which this vector resides.
    */
-  Vector(local_int_t localLength, comm_type comm, DeviceCtx *dev_ctx);
+    Vector(local_int_t localLength, comm_type comm, DeviceCtx* dev_ctx);
 
-  /** Creates a vector view.
+    /** Creates a vector view.
    *
    * @param local_length  Length of local part of the vector.
    * @param comm  MPI communicator associated with the distributed vector.
    * @param device_ctx  Context of the device (accelerator/CPU) on which this vector resides.
    */
-  Vector(local_int_t localLength, comm_type comm, DeviceCtx *dev_ctx, SC *values, SC *d_values);
+    Vector(local_int_t localLength, comm_type comm, DeviceCtx* dev_ctx, SC* values, SC* d_values);
 
-  ~Vector();
- 
-  /// Initialize the vector. 
-  void initialize(local_int_t localLength, comm_type comm, DeviceCtx *dev_ctx);
+    ~Vector();
 
-  /// Initialize a non-managing view into a different entity.
-  void initialize_view(local_int_t localLength, comm_type comm, DeviceCtx *dev_ctx,
-                       SC *values, SC *d_values);
+    /// Initialize the vector.
+    void initialize(local_int_t localLength, comm_type comm, DeviceCtx* dev_ctx);
 
-  SC* values() { return values_; }
-  SC* d_values() { return d_values_; }
-  const SC* values() const { return values_; }
-  const SC* d_values() const { return d_values_; }
-  local_int_t local_length() const { return localLength_; }
+    /// Initialize a non-managing view into a different entity.
+    void initialize_view(local_int_t localLength, comm_type comm, DeviceCtx* dev_ctx,
+                         SC* values, SC* d_values);
 
-  DeviceCtx *get_device_context() const { return dctx_; }
-  comm_type get_comm() const { return comm_; }
+    SC* values() { return values_; }
+    SC* d_values() { return d_values_; }
+    const SC* values() const { return values_; }
+    const SC* d_values() const { return d_values_; }
+    local_int_t local_length() const { return localLength_; }
 
-  dev_blas_ctx get_blas_handle() const { return dctx_->get_blas_handle(); }
+    DeviceCtx* get_device_context() const { return dctx_; }
+    comm_type get_comm() const { return comm_; }
 
-  /// Updates the host copy of the vector from device data.
-  void update_host_mirror() const;
+    dev_blas_ctx get_blas_handle() const { return dctx_->get_blas_handle(); }
 
-  /// Updates the device data of the vector from the host buffer's data.
-  void update_device_data() const;
- 
-  /** @brief Begin halo update for operations like SpMV and SpTRSV.
+    /// Updates the host copy of the vector from device data.
+    void update_host_mirror() const;
+
+    /// Updates the device data of the vector from the host buffer's data.
+    void update_device_data() const;
+
+    /** @brief Begin halo update for operations like SpMV and SpTRSV.
    *
    * For a non-blocking build, this performs asynchronous packing of the send buffer
    * on the halo stream. It also inserts a wait event on the (interior) compute stream.
@@ -104,26 +105,26 @@ public:
    *
    * Builds are blocking if HPGMP_ONLY_BLOCKING_COMMS is set.
    */
-  void update_halos_pack_send_buffer(const DistMatrixBase *mat) const;
-  
-  /// (Non-blocking builds only) Synchronize halos tream and issue asynchronous send and receives.
-  void update_halos_send_receive(const DistMatrixBase *mat) const;
+    void update_halos_pack_send_buffer(const DistMatrixBase* mat) const;
 
-  /// (Non-blocking builds only) Wait for the communications and send data to GPU if necessary.
-  void update_halos_finalize(const DistMatrixBase *mat) const;
+    /// (Non-blocking builds only) Synchronize halos tream and issue asynchronous send and receives.
+    void update_halos_send_receive(const DistMatrixBase* mat) const;
 
-  // Some operations
+    /// (Non-blocking builds only) Wait for the communications and send data to GPU if necessary.
+    void update_halos_finalize(const DistMatrixBase* mat) const;
 
-  /// Fill vector with zero values
-  void fill_zero();
+    // Some operations
 
-  /// Fills vector with random values between 1 and 2.
-  void fill_random();
+    /// Fill vector with zero values
+    void fill_zero();
 
-  /// Scales the vector by multiplying with a scalar.
-  void scale(scalar_type value);
+    /// Fills vector with random values between 1 and 2.
+    void fill_random();
 
-  /** @brief Permutes a vector based on given indices.
+    /// Scales the vector by multiplying with a scalar.
+    void scale(scalar_type value);
+
+    /** @brief Permutes a vector based on given indices.
    *
    * @param perm  Local indices such that v_new[perm[i]] = v_old[i].
    *              We assume it has the same length as this vector.
@@ -131,39 +132,39 @@ public:
    * @warning Calling this function invalidates outstanding outside pointers
    *          returned by d_values().
    */
-  void permute(const local_int_t *perm);
-  
-  mutable double time1_{}, time2_{};
-  mutable double time3_{}, time4_{};
+    void permute(const local_int_t* perm);
+
+    mutable double time1_{}, time2_{};
+    mutable double time3_{}, time4_{};
 
 private:
-  local_int_t localLength_ = 0;  //!< length of local portion of the vector
+    local_int_t localLength_ = 0; //!< length of local portion of the vector
 
-  /// communicator
-  comm_type comm_;
+    /// communicator
+    comm_type comm_;
 
-  /// Device context for this vector
-  DeviceCtx *dctx_;
+    /// Device context for this vector
+    DeviceCtx* dctx_;
 
-  SC * values_ = nullptr;     //!< array of values
+    SC* values_ = nullptr; //!< array of values
 
-  SC * d_values_ = nullptr;   //!< array of values
-  bool is_view_ = false;
+    SC* d_values_ = nullptr; //!< array of values
+    bool is_view_ = false;
 
 #ifndef HPGMP_NO_MPI
-  event_t send_gather_;
-  mutable std::vector<MPI_Request> send_reqs_;
-  mutable std::vector<MPI_Request> recv_reqs_;
-  mutable bool halos_buffer_packed_ = false;
+    event_t send_gather_;
+    mutable std::vector<MPI_Request> send_reqs_;
+    mutable std::vector<MPI_Request> recv_reqs_;
+    mutable bool halos_buffer_packed_ = false;
 #endif
 
-  /*!
+    /*!
    This is for storing optimized data structures created in OptimizeProblem and
    used inside optimized ComputeSPMV().
    */
-  void * optimizationData = nullptr;
+    void* optimizationData = nullptr;
 
-  mutable double t0_;
+    mutable double t0_;
 };
 
 /*!
@@ -173,6 +174,6 @@ private:
  * @param[in] w Output vector
  */
 template<class scalar_src, class scalar_dst>
-void CopyVector(const Vector<scalar_src> & v, Vector<scalar_dst> & w);
+void CopyVector(const Vector<scalar_src>& v, Vector<scalar_dst>& w);
 
 #endif // VECTOR_HPP

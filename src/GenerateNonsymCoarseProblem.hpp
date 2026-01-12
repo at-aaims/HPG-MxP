@@ -19,6 +19,6 @@
 #include "SparseMatrix.hpp"
 
 template<class SparseMatrix_type>
-void GenerateNonsymCoarseProblem(DeviceCtx *dctx, const SparseMatrix_type & A);
+void GenerateNonsymCoarseProblem(DeviceCtx* dctx, const SparseMatrix_type& A);
 
 #endif // GENERATE_NONSYM_COARSEPROBLEM_HPP

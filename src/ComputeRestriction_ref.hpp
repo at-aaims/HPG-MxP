@@ -20,6 +20,6 @@
 #include "SparseMatrix.hpp"
 
 template<class SparseMatrix_type, class Vector_type>
-int ComputeRestriction_ref(const SparseMatrix_type & A, const Vector_type & rf);
+int ComputeRestriction_ref(const SparseMatrix_type& A, const Vector_type& rf);
 
 #endif // COMPUTERESTRICTION_REF_HPP

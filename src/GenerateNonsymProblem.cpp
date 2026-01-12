@@ -44,19 +44,20 @@
 */
 
 template<class SparseMatrix_type, class Vector_type>
-void GenerateNonsymProblem(DeviceCtx *const dctx, SparseMatrix_type & A,
-                           Vector_type * b, Vector_type * x, Vector_type * xexact, bool init_vect) {
+void GenerateNonsymProblem(DeviceCtx* const dctx, SparseMatrix_type& A,
+                           Vector_type* b, Vector_type* x, Vector_type* xexact, bool init_vect)
+{
 
-  // The call to this reference version of GenerateProblem can be replaced with custom code.
-  // However, the data structures must remain unchanged such that the CheckProblem function is satisfied.
-  // Furthermore, any code must work for general unstructured sparse matrices.  Special knowledge about the
-  // specific nature of the sparsity pattern may not be explicitly used.
+    // The call to this reference version of GenerateProblem can be replaced with custom code.
+    // However, the data structures must remain unchanged such that the CheckProblem function is satisfied.
+    // Furthermore, any code must work for general unstructured sparse matrices.  Special knowledge about the
+    // specific nature of the sparsity pattern may not be explicitly used.
 
-  #if 1
-  return GenerateNonsymProblem_v1_ref(dctx, A, b, x, xexact, init_vect);
-  #else
-  return GenerateNonsymProblem_ref(A, b, x, xexact, init_vect);
-  #endif
+#if 1
+    return GenerateNonsymProblem_v1_ref(dctx, A, b, x, xexact, init_vect);
+#else
+    return GenerateNonsymProblem_ref(A, b, x, xexact, init_vect);
+#endif
 }
 
 
@@ -65,14 +66,13 @@ void GenerateNonsymProblem(DeviceCtx *const dctx, SparseMatrix_type & A,
  * --------------- */
 
 // uniform
-template
-void GenerateNonsymProblem< SparseMatrix<double>, Vector<double> >(DeviceCtx*, SparseMatrix<double>&, Vector<double>*, Vector<double>*, Vector<double>*, bool);
+template void GenerateNonsymProblem< SparseMatrix<double>, Vector<double> >(
+    DeviceCtx*, SparseMatrix<double>&, Vector<double>*, Vector<double>*, Vector<double>*, bool);
 
-template
-void GenerateNonsymProblem< SparseMatrix<float>, Vector<float> >(DeviceCtx*, SparseMatrix<float>&, Vector<float>*, Vector<float>*, Vector<float>*, bool);
+template void GenerateNonsymProblem< SparseMatrix<float>, Vector<float> >(
+    DeviceCtx*, SparseMatrix<float>&, Vector<float>*, Vector<float>*, Vector<float>*, bool);
 
 
 // mixed
-template
-void GenerateNonsymProblem< SparseMatrix<float>, Vector<double> >(DeviceCtx*, SparseMatrix<float>&, Vector<double>*, Vector<double>*, Vector<double>*, bool);
-
+template void GenerateNonsymProblem< SparseMatrix<float>, Vector<double> >(
+    DeviceCtx*, SparseMatrix<float>&, Vector<double>*, Vector<double>*, Vector<double>*, bool);

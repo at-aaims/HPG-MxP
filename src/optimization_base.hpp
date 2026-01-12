@@ -10,8 +10,7 @@ class OptimizationData
 {
 public:
     /// Ensures custom derived optimization structures are destroyed correctly.
-    virtual ~OptimizationData()
-    { }
+    virtual ~OptimizationData() { }
 };
 
 #endif

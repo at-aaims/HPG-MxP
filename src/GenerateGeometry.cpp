@@ -52,116 +52,114 @@ void GenerateGeometry(const int size, const int rank, const int numThreads,
                       const int pz, const local_int_t zl, const local_int_t zu,
                       const local_int_t nx, const local_int_t ny, const local_int_t nz,
                       int npx, int npy, int npz,
-                      Geometry *const geom)
+                      Geometry* const geom)
 {
 
-  if (npx * npy * npz <= 0 || npx * npy * npz > size)
-    ComputeOptimalShapeXYZ( size, npx, npy, npz );
+    if (npx * npy * npz <= 0 || npx * npy * npz > size)
+        ComputeOptimalShapeXYZ(size, npx, npy, npz);
 
-  std::array<int,2> partz_ids;
-  std::array<local_int_t,2> partz_nz;
-  int npartz = 0;
-  if (pz==0) { // No variation in nz sizes
-    npartz = 1;
-    partz_ids[0] = npz;
-    partz_nz[0] = nz;
-  }
-  else {
-    npartz = 2;
-    partz_ids[0] = pz;
-    partz_ids[1] = npz;
-    partz_nz[1] = zl;
-    partz_nz[1] = zu;
-  }
-//  partz_ids[npartz-1] = npz; // The last element of this array is always npz
-  int ipartz_ids = 0;
-  for (int i=0; i< npartz; ++i) {
-    assert(ipartz_ids<partz_ids[i]);  // Make sure that z partitioning is consistent with computed npz value
-    ipartz_ids = partz_ids[i];
-  }
-
-  // Now compute this process's indices in the 3D cube
-  int ipz = rank/(npx*npy);
-  int ipy = (rank-ipz*npx*npy)/npx;
-  int ipx = rank%npx;
-
-#ifdef HPGMP_DEBUG
-  if (rank==0)
-    HPGMP_fout   << "size = "<< size << endl
-        << "nx  = " << nx << endl
-        << "ny  = " << ny << endl
-        << "nz  = " << nz << endl
-        << "npx = " << npx << endl
-        << "npy = " << npy << endl
-        << "npz = " << npz << endl;
-
-  HPGMP_fout    << "For rank = " << rank << endl
-      << "ipx = " << ipx << endl
-      << "ipy = " << ipy << endl
-      << "ipz = " << ipz << endl;
-
-  assert(size>=npx*npy*npz);
-#endif
-  geom->size = size;
-  geom->rank = rank;
-  geom->numThreads = numThreads;
-  geom->nx = nx;
-  geom->ny = ny;
-  geom->nz = nz;
-  geom->npx = npx;
-  geom->npy = npy;
-  geom->npz = npz;
-  geom->pz = pz;
-  geom->npartz = npartz;
-  geom->partz_ids = partz_ids;
-  geom->partz_nz = partz_nz;
-  geom->ipx = ipx;
-  geom->ipy = ipy;
-  geom->ipz = ipz;
-
-// These values should be defined to take into account changes in nx, ny, nz values
-// due to variable local grid sizes
-  global_int_t gnx = npx*nx;
-  global_int_t gny = npy*ny;
-  //global_int_t gnz = npz*nz;
-  // We now permit varying values for nz for any nx-by-ny plane of MPI processes.
-  // npartz is the number of different groups of nx-by-ny groups of processes.
-  // partz_ids is an array of length npartz where each value indicates the z process of the last process in the ith nx-by-ny group.
-  // partz_nz is an array of length npartz containing the value of nz for the ith group.
-
-  //        With no variation, npartz = 1, partz_ids[0] = npz, partz_nz[0] = nz
-
-  global_int_t gnz = 0;
-  ipartz_ids = 0;
-
-  for (int i=0; i< npartz; ++i) {
-    ipartz_ids = partz_ids[i] - ipartz_ids;
-    gnz += partz_nz[i]*ipartz_ids;
-  }
-  //global_int_t giz0 = ipz*nz;
-  global_int_t giz0 = 0;
-  ipartz_ids = 0;
-  for (int i=0; i< npartz; ++i) {
-    int ipart_nz = partz_nz[i];
-    if (ipz < partz_ids[i]) {
-      giz0 += (ipz-ipartz_ids)*ipart_nz;
-      break;
+    std::array<int, 2> partz_ids;
+    std::array<local_int_t, 2> partz_nz;
+    int npartz = 0;
+    if (pz == 0) { // No variation in nz sizes
+        npartz       = 1;
+        partz_ids[0] = npz;
+        partz_nz[0]  = nz;
     } else {
-      ipartz_ids = partz_ids[i];
-      giz0 += ipartz_ids*ipart_nz;
+        npartz       = 2;
+        partz_ids[0] = pz;
+        partz_ids[1] = npz;
+        partz_nz[1]  = zl;
+        partz_nz[1]  = zu;
+    }
+    //  partz_ids[npartz-1] = npz; // The last element of this array is always npz
+    int ipartz_ids = 0;
+    for (int i = 0; i < npartz; ++i) {
+        assert(ipartz_ids < partz_ids[i]); // Make sure that z partitioning is consistent with computed npz value
+        ipartz_ids = partz_ids[i];
     }
 
-  }
-  global_int_t gix0 = ipx*nx;
-  global_int_t giy0 = ipy*ny;
+    // Now compute this process's indices in the 3D cube
+    int ipz = rank / (npx * npy);
+    int ipy = (rank - ipz * npx * npy) / npx;
+    int ipx = rank % npx;
 
-// Keep these values for later
-  geom->gnx = gnx;
-  geom->gny = gny;
-  geom->gnz = gnz;
-  geom->gix0 = gix0;
-  geom->giy0 = giy0;
-  geom->giz0 = giz0;
+#ifdef HPGMP_DEBUG
+    if (rank == 0)
+        HPGMP_fout << "size = " << size << endl
+                   << "nx  = " << nx << endl
+                   << "ny  = " << ny << endl
+                   << "nz  = " << nz << endl
+                   << "npx = " << npx << endl
+                   << "npy = " << npy << endl
+                   << "npz = " << npz << endl;
 
-  return;
+    HPGMP_fout << "For rank = " << rank << endl
+               << "ipx = " << ipx << endl
+               << "ipy = " << ipy << endl
+               << "ipz = " << ipz << endl;
+
+    assert(size >= npx * npy * npz);
+#endif
+    geom->size       = size;
+    geom->rank       = rank;
+    geom->numThreads = numThreads;
+    geom->nx         = nx;
+    geom->ny         = ny;
+    geom->nz         = nz;
+    geom->npx        = npx;
+    geom->npy        = npy;
+    geom->npz        = npz;
+    geom->pz         = pz;
+    geom->npartz     = npartz;
+    geom->partz_ids  = partz_ids;
+    geom->partz_nz   = partz_nz;
+    geom->ipx        = ipx;
+    geom->ipy        = ipy;
+    geom->ipz        = ipz;
+
+    // These values should be defined to take into account changes in nx, ny, nz values
+    // due to variable local grid sizes
+    global_int_t gnx = npx * nx;
+    global_int_t gny = npy * ny;
+    //global_int_t gnz = npz*nz;
+    // We now permit varying values for nz for any nx-by-ny plane of MPI processes.
+    // npartz is the number of different groups of nx-by-ny groups of processes.
+    // partz_ids is an array of length npartz where each value indicates the z process of the last process in the ith nx-by-ny group.
+    // partz_nz is an array of length npartz containing the value of nz for the ith group.
+
+    //        With no variation, npartz = 1, partz_ids[0] = npz, partz_nz[0] = nz
+
+    global_int_t gnz = 0;
+    ipartz_ids       = 0;
+
+    for (int i = 0; i < npartz; ++i) {
+        ipartz_ids = partz_ids[i] - ipartz_ids;
+        gnz += partz_nz[i] * ipartz_ids;
+    }
+    //global_int_t giz0 = ipz*nz;
+    global_int_t giz0 = 0;
+    ipartz_ids        = 0;
+    for (int i = 0; i < npartz; ++i) {
+        int ipart_nz = partz_nz[i];
+        if (ipz < partz_ids[i]) {
+            giz0 += (ipz - ipartz_ids) * ipart_nz;
+            break;
+        } else {
+            ipartz_ids = partz_ids[i];
+            giz0 += ipartz_ids * ipart_nz;
+        }
+    }
+    global_int_t gix0 = ipx * nx;
+    global_int_t giy0 = ipy * ny;
+
+    // Keep these values for later
+    geom->gnx  = gnx;
+    geom->gny  = gny;
+    geom->gnz  = gnz;
+    geom->gix0 = gix0;
+    geom->giy0 = giy0;
+    geom->giz0 = giz0;
+
+    return;
 }

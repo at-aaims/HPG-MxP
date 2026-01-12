@@ -19,7 +19,7 @@
 #include "Vector.hpp"
 
 template<class Vector_type, class scalar_type = typename Vector_type::scalar_type>
-int ComputeDotProduct(const local_int_t n, const Vector_type & x, const Vector_type & y,
-                      scalar_type & result, double & time_allreduce, bool & isOptimized);
+int ComputeDotProduct(const local_int_t n, const Vector_type& x, const Vector_type& y,
+                      scalar_type& result, double& time_allreduce, bool& isOptimized);
 
 #endif // COMPUTEDOTPRODUCT_HPP

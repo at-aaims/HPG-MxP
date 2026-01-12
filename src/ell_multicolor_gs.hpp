@@ -28,12 +28,12 @@
  *
  * @return returns 0 upon success and non-zero otherwise
  */
-template <typename mscalar, typename vscalar>
-int ell_multicolor_gs(bool symmetric, const ELLMatrix<mscalar> *A, const Vector<vscalar> *r,
-                     Vector<vscalar> *x);
+template<typename mscalar, typename vscalar>
+int ell_multicolor_gs(bool symmetric, const ELLMatrix<mscalar>* A, const Vector<vscalar>* r,
+                      Vector<vscalar>* x);
 
-template <typename mscalar, typename vscalar>
-int ell_multicolor_gs_zero_initial(bool symmetric, const ELLMatrix<mscalar> *A,
-        const Vector<vscalar> *r, Vector<vscalar> *x);
+template<typename mscalar, typename vscalar>
+int ell_multicolor_gs_zero_initial(bool symmetric, const ELLMatrix<mscalar>* A,
+                                   const Vector<vscalar>* r, Vector<vscalar>* x);
 
 #endif

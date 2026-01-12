@@ -20,7 +20,7 @@
  HPGMP routine
  */
 
-// Main routine of a program that calls the HPGMP GMRES and GMRES-IR 
+// Main routine of a program that calls the HPGMP GMRES and GMRES-IR
 // solvers to solve the problem, and then prints results.
 
 #ifndef HPGMP_NO_MPI
@@ -47,7 +47,7 @@
 #include "mytimer.hpp"
 #include "ComputeDotProduct.hpp"
 
-using scalar_type =  double;
+using scalar_type  = double;
 using scalar_type2 = float;
 using project_type = float;
 
@@ -68,141 +68,144 @@ typedef GMRESData<scalar_type2, project_type> GMRESData_type2;
   @return Returns zero on success and a non-zero value otherwise.
 
 */
-int main(int argc, char * argv[]) {
+int main(int argc, char* argv[])
+{
 
 #ifndef HPGMP_NO_MPI
-  int provided_thread_support = -1;
-  MPI_Init_thread(&argc, &argv, MPI_THREAD_FUNNELED, &provided_thread_support);
-  if(provided_thread_support != MPI_THREAD_FUNNELED) {
-      printf("!!Unsuppored threading mode!!\n"); fflush(stdout);
-      MPI_Abort(MPI_COMM_WORLD, -1);
-  }
+    int provided_thread_support = -1;
+    MPI_Init_thread(&argc, &argv, MPI_THREAD_FUNNELED, &provided_thread_support);
+    if (provided_thread_support != MPI_THREAD_FUNNELED) {
+        printf("!!Unsuppored threading mode!!\n");
+        fflush(stdout);
+        MPI_Abort(MPI_COMM_WORLD, -1);
+    }
 #endif
-  HPGMP_Init(&argc, &argv);
+    HPGMP_Init(&argc, &argv);
 
-  int myRank = 0;
+    int myRank = 0;
 #ifndef HPGMP_NO_MPI
-  int numRanks = 1;
-  MPI_Comm_rank(MPI_COMM_WORLD, &myRank);
-  MPI_Comm_size(MPI_COMM_WORLD, &numRanks);
+    int numRanks = 1;
+    MPI_Comm_rank(MPI_COMM_WORLD, &myRank);
+    MPI_Comm_size(MPI_COMM_WORLD, &numRanks);
 #endif
 
-  auto ctx = std::make_unique<DeviceCtx>(myRank);
+    auto ctx = std::make_unique<DeviceCtx>(myRank);
 
-  //////////////////////////
-  // Create Communicators //
-  //////////////////////////
-  int sizeValidComm = 8;
+    //////////////////////////
+    // Create Communicators //
+    //////////////////////////
+    int sizeValidComm = 8;
 #ifndef HPGMP_NO_MPI
-  int color = 0;
-  if (sizeValidComm > numRanks) {
-    sizeValidComm = numRanks;
-  }
-  if (myRank < sizeValidComm) {
-    color = 1;
-  }
-  MPI_Comm validation_comm = MPI_COMM_WORLD;
-  MPI_Comm benchmark_comm = MPI_COMM_WORLD;
-  MPI_Comm_split(MPI_COMM_WORLD, color, myRank, &validation_comm);
-# ifdef HPGMP_VERBOSE
-  if (myRank == 0) {
-      std::cout << "main: created split validation comm." << std::endl;
-  }
-# endif
+    int color = 0;
+    if (sizeValidComm > numRanks) {
+        sizeValidComm = numRanks;
+    }
+    if (myRank < sizeValidComm) {
+        color = 1;
+    }
+    MPI_Comm validation_comm = MPI_COMM_WORLD;
+    MPI_Comm benchmark_comm  = MPI_COMM_WORLD;
+    MPI_Comm_split(MPI_COMM_WORLD, color, myRank, &validation_comm);
+#ifdef HPGMP_VERBOSE
+    if (myRank == 0) {
+        std::cout << "main: created split validation comm." << std::endl;
+    }
+#endif
 #else
-  comm_type validation_comm = 0;
-  comm_type benchmark_comm = 0;
+    comm_type validation_comm = 0;
+    comm_type benchmark_comm  = 0;
 #endif
 
-  const int numberOfMgLevels = 4; // Number of levels including first
- 
-  std::string working_precision = "double", inner_precision = "double", project_precision = "double";
-  if(std::is_same<scalar_type,float>::value) {
-      working_precision = "float";
-  }
-  if(std::is_same<scalar_type2,float>::value) {
-      inner_precision = "float";
-  }
-  if(std::is_same<project_type,float>::value) {
-      project_precision = "float";
-  }
-  if(myRank == 0) {
-      std::cout << "Running HPG-MxP benchmark with working precision " << working_precision
-                << ",\n  inner precision " << inner_precision
-                << " and projection precision " << project_precision << "." << std::endl;
-  }
+    const int numberOfMgLevels = 4; // Number of levels including first
+
+    std::string working_precision = "double", inner_precision = "double", project_precision = "double";
+    if (std::is_same<scalar_type, float>::value) {
+        working_precision = "float";
+    }
+    if (std::is_same<scalar_type2, float>::value) {
+        inner_precision = "float";
+    }
+    if (std::is_same<project_type, float>::value) {
+        project_precision = "float";
+    }
+    if (myRank == 0) {
+        std::cout << "Running HPG-MxP benchmark with working precision " << working_precision
+                  << ",\n  inner precision " << inner_precision
+                  << " and projection precision " << project_precision << "." << std::endl;
+    }
 
 
 #ifdef HPGMP_DEBUG
-  const bool verbose = true;
+    const bool verbose = true;
 #else
-  const bool verbose = false;
+    const bool verbose = false;
 #endif
 
-  // Use this array for collecting timing information
-  TestGMRESData test_data;
-  //test_data.times = NULL;
-  //test_data.flops = NULL;
-  test_data.validation_nprocs = sizeValidComm;
+    // Use this array for collecting timing information
+    TestGMRESData test_data;
+    //test_data.times = NULL;
+    //test_data.flops = NULL;
+    test_data.validation_nprocs = sizeValidComm;
 
 
-  //////////////////////
-  // Validation phase //
-  //////////////////////
-  int global_failure = 0;
-  const int restart_length = 40;
-  const scalar_type tolerance = 1e-9;
+    //////////////////////
+    // Validation phase //
+    //////////////////////
+    int global_failure          = 0;
+    const int restart_length    = 40;
+    const scalar_type tolerance = 1e-9;
 
-  test_data.tolerance = tolerance;
-  test_data.restart_length = restart_length;
-  if (myRank < sizeValidComm) {
-    global_failure = ValidGMRES<scalar_type, scalar_type2, project_type>(
-                         argc, argv, validation_t::standard, validation_comm, ctx.get(), numberOfMgLevels, verbose,
-                         test_data);
-  }
-
-
-  {
-    Geometry * geom = new Geometry;
-
-    SparseMatrix_type A;
-    GMRESData_type data;
-
-    SparseMatrix_type2 A_lo;
-    GMRESData_type2 data_lo;
-
-    Vector_type b, x;
-    SetupProblem("bench_",argc, argv, benchmark_comm, ctx.get(), numberOfMgLevels, verbose, geom,
-                 A, data, A_lo, data_lo, b, x, test_data);
-  
-    const auto nrow = A.localNumberOfRows;
-    x.fill_random();
-    double t11{};
-    double t_allreduce{};
-    double normr{};
-    const int numops = 10;
-    for(int i = 0; i < numops; i++) {
-        normr = 0;
-        double t0{};
-        TICK();
-        ComputeDotProduct(nrow, b, x, normr, t_allreduce, A.isDotProductOptimized);
-        TOCK(t11);
+    test_data.tolerance      = tolerance;
+    test_data.restart_length = restart_length;
+    if (myRank < sizeValidComm) {
+        global_failure = ValidGMRES<scalar_type, scalar_type2, project_type>(
+            argc, argv, validation_t::standard, validation_comm, ctx.get(), numberOfMgLevels, verbose,
+            test_data);
     }
 
-    t11 /= numops; t_allreduce /= numops;
-    if(myRank == 0) {
-        std::cout << "Time taken by dot = " << t11 << ", allreduce took " << t_allreduce
-                  << std::endl;
+
+    {
+        Geometry* geom = new Geometry;
+
+        SparseMatrix_type A;
+        GMRESData_type data;
+
+        SparseMatrix_type2 A_lo;
+        GMRESData_type2 data_lo;
+
+        Vector_type b, x;
+        SetupProblem("bench_", argc, argv, benchmark_comm, ctx.get(), numberOfMgLevels, verbose, geom,
+                     A, data, A_lo, data_lo, b, x, test_data);
+
+        const auto nrow = A.localNumberOfRows;
+        x.fill_random();
+        double t11{};
+        double t_allreduce{};
+        double normr{};
+        const int numops = 10;
+        for (int i = 0; i < numops; i++) {
+            normr = 0;
+            double t0{};
+            TICK();
+            ComputeDotProduct(nrow, b, x, normr, t_allreduce, A.isDotProductOptimized);
+            TOCK(t11);
+        }
+
+        t11 /= numops;
+        t_allreduce /= numops;
+        if (myRank == 0) {
+            std::cout << "Time taken by dot = " << t11 << ", allreduce took " << t_allreduce
+                      << std::endl;
+        }
+
+        DeleteMatrix(A);
+        DeleteMatrix(A_lo);
+        delete geom;
     }
 
-    DeleteMatrix(A);
-    DeleteMatrix(A_lo);
-    delete geom;
-  }
-
-  HPGMP_Finalize();
+    HPGMP_Finalize();
 #ifndef HPGMP_NO_MPI
-  MPI_Finalize();
+    MPI_Finalize();
 #endif
-  return 0;
+    return 0;
 }

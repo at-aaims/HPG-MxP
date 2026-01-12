@@ -26,8 +26,8 @@
 
   @see HPGMP_Init
 */
-int
-HPGMP_Finalize(void) {
-  HPGMP_fout.close();
-  return 0;
+int HPGMP_Finalize(void)
+{
+    HPGMP_fout.close();
+    return 0;
 }

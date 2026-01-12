@@ -20,6 +20,6 @@
 #include "Vector.hpp"
 
 template<class SparseMatrix_type, class Vector_type>
-int ComputeSYMGS(const SparseMatrix_type & A, const Vector_type & r, Vector_type & x);
+int ComputeSYMGS(const SparseMatrix_type& A, const Vector_type& r, Vector_type& x);
 
 #endif // COMPUTESYMGS_HPP

@@ -41,12 +41,13 @@
   @see ComputeDotProduct_ref
 */
 template<class Vector_type, class scalar_type>
-int ComputeDotProduct(const local_int_t n, const Vector_type & x, const Vector_type & y,
-                      scalar_type & result, double & time_allreduce, bool & isOptimized) {
+int ComputeDotProduct(const local_int_t n, const Vector_type& x, const Vector_type& y,
+                      scalar_type& result, double& time_allreduce, bool& isOptimized)
+{
 
-  // This line and the next two lines should be removed and your version of ComputeDotProduct should be used.
-  isOptimized = false;
-  return ComputeDotProduct_ref(n, x, y, result, time_allreduce);
+    // This line and the next two lines should be removed and your version of ComputeDotProduct should be used.
+    isOptimized = false;
+    return ComputeDotProduct_ref(n, x, y, result, time_allreduce);
 }
 
 
@@ -54,9 +55,8 @@ int ComputeDotProduct(const local_int_t n, const Vector_type & x, const Vector_t
  * specializations *
  * --------------- */
 
-template
-int ComputeDotProduct< Vector<double> >(int, Vector<double> const&, Vector<double> const&, double&, double&, bool&);
+template int ComputeDotProduct< Vector<double> >(
+    int, Vector<double> const&, Vector<double> const&, double&, double&, bool&);
 
-template
-int ComputeDotProduct< Vector<float> >(int, Vector<float> const&, Vector<float> const&, float&, double&, bool&);
-
+template int ComputeDotProduct< Vector<float> >(
+    int, Vector<float> const&, Vector<float> const&, float&, double&, bool&);

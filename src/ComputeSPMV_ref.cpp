@@ -28,7 +28,7 @@
 #endif
 
 #ifndef HPGMP_NO_OPENMP
- #include <omp.h>
+#include <omp.h>
 #endif
 #include <cassert>
 
@@ -48,41 +48,42 @@
   @see ComputeSPMV
 */
 template<class SparseMatrix_type, class Vector_type>
-int ComputeSPMV_ref(const SparseMatrix_type & A, Vector_type & x, Vector_type & y) {
+int ComputeSPMV_ref(const SparseMatrix_type& A, Vector_type& x, Vector_type& y)
+{
 
-  HPGMP_RANGE_PUSH(__FUNCTION__);
+    HPGMP_RANGE_PUSH(__FUNCTION__);
 
-  assert(x.localLength>=A.localNumberOfColumns); // Test vector lengths
-  assert(y.localLength>=A.localNumberOfRows);
-  typedef typename SparseMatrix_type::scalar_type scalar_type;
+    assert(x.localLength >= A.localNumberOfColumns); // Test vector lengths
+    assert(y.localLength >= A.localNumberOfRows);
+    typedef typename SparseMatrix_type::scalar_type scalar_type;
 
-  const local_int_t nrow = A.localNumberOfRows;
-  scalar_type * const xv = x.values;
-  scalar_type * const yv = y.values;
+    const local_int_t nrow = A.localNumberOfRows;
+    scalar_type* const xv  = x.values;
+    scalar_type* const yv  = y.values;
 
 #ifndef HPGMP_NO_MPI
-  if (A.geom->size > 1) {
-    ExchangeHalo(A, x);
-  }
+    if (A.geom->size > 1) {
+        ExchangeHalo(A, x);
+    }
 #endif
 
 #ifndef HPGMP_NO_OPENMP
-  #pragma omp parallel for
+#pragma omp parallel for
 #endif
-  for (local_int_t i=0; i< nrow; i++)  {
-    scalar_type sum = 0.0;
-    const scalar_type * const cur_vals = A.matrixValues[i];
-    const local_int_t * const cur_inds = A.mtxIndL[i];
-    const int cur_nnz = A.nonzerosInRow[i];
+    for (local_int_t i = 0; i < nrow; i++) {
+        scalar_type sum                   = 0.0;
+        const scalar_type* const cur_vals = A.matrixValues[i];
+        const local_int_t* const cur_inds = A.mtxIndL[i];
+        const int cur_nnz                 = A.nonzerosInRow[i];
 
-    for (int j=0; j< cur_nnz; j++)
-      sum += cur_vals[j]*xv[cur_inds[j]];
-    yv[i] = sum;
-  }
+        for (int j = 0; j < cur_nnz; j++)
+            sum += cur_vals[j] * xv[cur_inds[j]];
+        yv[i] = sum;
+    }
 
-  HPGMP_RANGE_POP(__FUNCTION__);
+    HPGMP_RANGE_POP(__FUNCTION__);
 
-  return 0;
+    return 0;
 }
 
 
@@ -90,10 +91,10 @@ int ComputeSPMV_ref(const SparseMatrix_type & A, Vector_type & x, Vector_type & 
  * specializations *
  * --------------- */
 
-template
-int ComputeSPMV_ref< SparseMatrix<double>, Vector<double> >(const SparseMatrix<double> &, Vector<double>&, Vector<double>&);
+template int ComputeSPMV_ref< SparseMatrix<double>, Vector<double> >(
+    const SparseMatrix<double>&, Vector<double>&, Vector<double>&);
 
-template
-int ComputeSPMV_ref< SparseMatrix<float>, Vector<float> >(const SparseMatrix<float> &, Vector<float>&, Vector<float>&);
+template int ComputeSPMV_ref< SparseMatrix<float>, Vector<float> >(
+    const SparseMatrix<float>&, Vector<float>&, Vector<float>&);
 
 #endif

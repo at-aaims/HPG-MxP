@@ -23,14 +23,14 @@
 
 #include "mytimer.hpp"
 #ifndef HPGMP_NO_MPI
- #include <mpi.h>
- #include "Utils_MPI.hpp"
+#include <mpi.h>
+#include "Utils_MPI.hpp"
 #endif
 #include "ComputeDotProduct_ref.hpp"
 #include "hpgmp.hpp"
 
 #ifndef HPGMP_NO_OPENMP
- #include <omp.h>
+#include <omp.h>
 #endif
 #include <cassert>
 
@@ -50,49 +50,54 @@
   @see ComputeDotProduct
 */
 template<class Vector_type, class scalar_type>
-int ComputeDotProduct_ref(const local_int_t n, const Vector_type & x, const Vector_type & y,
-                          scalar_type & result, double & time_allreduce) {
+int ComputeDotProduct_ref(const local_int_t n, const Vector_type& x, const Vector_type& y,
+                          scalar_type& result, double& time_allreduce)
+{
 
-  HPGMP_RANGE_PUSH(__FUNCTION__);
+    HPGMP_RANGE_PUSH(__FUNCTION__);
 
-  assert(x.localLength>=n); // Test vector lengths
-  assert(y.localLength>=n);
+    assert(x.localLength >= n); // Test vector lengths
+    assert(y.localLength >= n);
 
-  scalar_type local_result (0.0);
+    scalar_type local_result(0.0);
 
-  scalar_type * xv = x.values;
-  scalar_type * yv = y.values;
-  if (yv==xv) {
-    #ifndef HPGMP_NO_OPENMP
-    #pragma omp parallel for reduction (+:local_result)
-    #endif
-    for (local_int_t i=0; i<n; i++) local_result += xv[i]*xv[i];
-  } else {
-    #ifndef HPGMP_NO_OPENMP
-    #pragma omp parallel for reduction (+:local_result)
-    #endif
-    for (local_int_t i=0; i<n; i++) local_result += xv[i]*yv[i];
-  }
+    scalar_type* xv = x.values;
+    scalar_type* yv = y.values;
+    if (yv == xv) {
+#ifndef HPGMP_NO_OPENMP
+        // clang-format off
+        #pragma omp parallel for reduction(+ : local_result)
+        // clang-format on
+#endif
+        for (local_int_t i = 0; i < n; i++) local_result += xv[i] * xv[i];
+    } else {
+#ifndef HPGMP_NO_OPENMP
+        // clang-format off
+        #pragma omp parallel for reduction(+ : local_result)
+        // clang-format on
+#endif
+        for (local_int_t i = 0; i < n; i++) local_result += xv[i] * yv[i];
+    }
 
 #ifndef HPGMP_NO_MPI
-  // Use MPI's reduce function to collect all partial sums
-  double t0 = mytimer();
-  int size; // Number of MPI processes, My process ID
-  MPI_Comm_size(x.comm, &size);
+    // Use MPI's reduce function to collect all partial sums
+    double t0 = mytimer();
+    int size; // Number of MPI processes, My process ID
+    MPI_Comm_size(x.comm, &size);
 
-  result = local_result;
-  if (size > 1) {
-    MPI_Datatype MPI_SCALAR_TYPE = MpiTypeTraits<scalar_type>::getType ();
-    MPI_Allreduce(MPI_IN_PLACE, &result, 1, MPI_SCALAR_TYPE, MPI_SUM, x.comm);
-  }
-  time_allreduce += mytimer() - t0;
+    result = local_result;
+    if (size > 1) {
+        MPI_Datatype MPI_SCALAR_TYPE = MpiTypeTraits<scalar_type>::getType();
+        MPI_Allreduce(MPI_IN_PLACE, &result, 1, MPI_SCALAR_TYPE, MPI_SUM, x.comm);
+    }
+    time_allreduce += mytimer() - t0;
 #else
-  time_allreduce += 0.0;
+    time_allreduce += 0.0;
 #endif
 
-  HPGMP_RANGE_POP(__FUNCTION__);
+    HPGMP_RANGE_POP(__FUNCTION__);
 
-  return 0;
+    return 0;
 }
 
 
@@ -100,10 +105,10 @@ int ComputeDotProduct_ref(const local_int_t n, const Vector_type & x, const Vect
  * specializations *
  * --------------- */
 
-template
-int ComputeDotProduct_ref<Vector<double> >(int, Vector<double> const&, Vector<double> const&, double&, double&);
+template int ComputeDotProduct_ref<Vector<double> >(
+    int, Vector<double> const&, Vector<double> const&, double&, double&);
 
-template
-int ComputeDotProduct_ref<Vector<float> >(int, Vector<float> const&, Vector<float> const&, float&, double&);
+template int ComputeDotProduct_ref<Vector<float> >(
+    int, Vector<float> const&, Vector<float> const&, float&, double&);
 
 #endif

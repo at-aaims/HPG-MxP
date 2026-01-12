@@ -46,15 +46,15 @@
   @see ComputeGS_Forward_ref
 */
 template<class SparseMatrix_type, class Vector_type>
-int ComputeGS_Forward(const SparseMatrix_type & A, const Vector_type & r, Vector_type & x) {
+int ComputeGS_Forward(const SparseMatrix_type& A, const Vector_type& r, Vector_type& x)
+{
 
-  // This line and the next two lines should be removed and your version of ComputeSYMGS should be used.
-  return ComputeGS_Forward_ref(A, r, x);
+    // This line and the next two lines should be removed and your version of ComputeSYMGS should be used.
+    return ComputeGS_Forward_ref(A, r, x);
 }
 
-template
-int ComputeGS_Forward< SparseMatrix<double>, Vector<double> >(SparseMatrix<double> const&, Vector<double> const&, Vector<double>&);
+template int ComputeGS_Forward< SparseMatrix<double>, Vector<double> >(
+    SparseMatrix<double> const&, Vector<double> const&, Vector<double>&);
 
-template
-int ComputeGS_Forward< SparseMatrix<float>, Vector<float> >(SparseMatrix<float> const&, Vector<float> const&, Vector<float>&);
-
+template int ComputeGS_Forward< SparseMatrix<float>, Vector<float> >(
+    SparseMatrix<float> const&, Vector<float> const&, Vector<float>&);

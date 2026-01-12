@@ -53,31 +53,31 @@
   @see GenerateGeometry
   @see GenerateProblem
 */
-template <typename mat_scalar, typename solver_scalar, typename vec_scalar>
+template<typename mat_scalar, typename solver_scalar, typename vec_scalar>
 int OptimizeProblemELL(SparseMatrix<mat_scalar>& A, GMRESData<solver_scalar>& data,
                        Vector<vec_scalar>& b, Vector<vec_scalar>& x, Vector<vec_scalar>& xexact)
 {
     b.update_device_data();
     xexact.update_device_data();
 
-    auto dctx = A.dctx;
+    auto dctx             = A.dctx;
     const int local_nrows = A.localNumberOfRows;
 
     SparseMatrix<mat_scalar>* M = &A;
-    int igrid = 0;
-    while(M != NULL)
+    int igrid                   = 0;
+    while (M != NULL)
     {
 
         // Allocate device copies of data needed for ELL and RBGS
         const auto local_nrows = M->localNumberOfRows;
-        M->d_mtxIndL = reinterpret_cast<local_int_t*>(
-                dctx->device_alloc(M->max_nnz_per_row*local_nrows*sizeof(local_int_t)));
+        M->d_mtxIndL           = reinterpret_cast<local_int_t*>(
+            dctx->device_alloc(M->max_nnz_per_row * local_nrows * sizeof(local_int_t)));
         dctx->copy_host_to_device_sync(M->d_mtxIndL, M->mtxIndL[0],
-                M->max_nnz_per_row*local_nrows*sizeof(local_int_t));
+                                       M->max_nnz_per_row * local_nrows * sizeof(local_int_t));
         M->d_matrixValues = reinterpret_cast<mat_scalar*>(
-                dctx->device_alloc(M->max_nnz_per_row*local_nrows*sizeof(mat_scalar)));
+            dctx->device_alloc(M->max_nnz_per_row * local_nrows * sizeof(mat_scalar)));
         dctx->copy_host_to_device_sync(M->d_matrixValues, M->matrixValues[0],
-                M->max_nnz_per_row*local_nrows*sizeof(mat_scalar));
+                                       M->max_nnz_per_row * local_nrows * sizeof(mat_scalar));
 
         // Perform matrix coloring
         multicolor_JPL(*M);
@@ -87,16 +87,16 @@ int OptimizeProblemELL(SparseMatrix<mat_scalar>& A, GMRESData<solver_scalar>& da
 
         // Convert matrix to ELL format
 #ifdef HPGMP_VERBOSE
-        if(A.geom->rank == 0) {
+        if (A.geom->rank == 0) {
             std::cout << "Setting up ELL on grid " << igrid << "." << std::endl;
         }
 #endif
-        auto moptdata = new EllOptData<mat_scalar>;
-        moptdata->mat = std::make_shared<ELLMatrix<mat_scalar>>(*M);
+        auto moptdata       = new EllOptData<mat_scalar>;
+        moptdata->mat       = std::make_shared<ELLMatrix<mat_scalar>>(*M);
         M->optimizationData = moptdata;
 #ifdef HPGMP_VERBOSE
         MPI_Barrier(A.comm);
-        if(A.geom->rank == 0) {
+        if (A.geom->rank == 0) {
             std::cout << "Built ELL on grid " << igrid << "." << std::endl;
         }
 #endif
@@ -128,17 +128,14 @@ int OptimizeProblemELL(SparseMatrix<mat_scalar>& A, GMRESData<solver_scalar>& da
 //    return 0.0;
 //}
 
-template
-int OptimizeProblemELL(SparseMatrix<double>& A, GMRESData<double>& data,
-                    Vector<double>& b, Vector<double>& x, Vector<double>& xexact);
+template int OptimizeProblemELL(SparseMatrix<double>& A, GMRESData<double>& data,
+                                Vector<double>& b, Vector<double>& x, Vector<double>& xexact);
 
-template
-int OptimizeProblemELL(SparseMatrix<float>& A, GMRESData<float>& data,
-                    Vector<float>& b, Vector<float>& x, Vector<float>& xexact);
+template int OptimizeProblemELL(SparseMatrix<float>& A, GMRESData<float>& data,
+                                Vector<float>& b, Vector<float>& x, Vector<float>& xexact);
 
-template
-int OptimizeProblemELL(SparseMatrix<float>& A, GMRESData<double>& data,
-                    Vector<double>& b, Vector<double>& x, Vector<double>& xexact);
+template int OptimizeProblemELL(SparseMatrix<float>& A, GMRESData<double>& data,
+                                Vector<double>& b, Vector<double>& x, Vector<double>& xexact);
 
 #if 0
 template <typename SC>
@@ -179,18 +176,18 @@ void seemingly_necessary_stuff_from_reference(SparseMatrix<SC>* M)
       curLevelMatrix->d_row_ptr = static_cast<int*>(dctx->device_alloc((nrow+1)*sizeof(int)));
       curLevelMatrix->d_col_idx = static_cast<int*>(dctx->device_alloc(nnz*sizeof(int)));
       curLevelMatrix->d_nzvals = static_cast<SC*>(dctx->device_alloc(nnz*sizeof(SC)));
-  #ifndef HPGMP_NO_MPI
+#ifndef HPGMP_NO_MPI
       curLevelMatrix->d_sendBuffer = static_cast<SC*>(dctx->device_alloc(nnz*sizeof(SC)));
       curLevelMatrix->d_elementsToSend = static_cast<local_int_t*>(
                                     dctx->device_alloc(totalToBeSent*sizeof(local_int_t)));
-  #endif
+#endif
       dctx->copy_host_to_device_sync(curLevelMatrix->d_row_ptr, h_row_ptr, (nrow+1)*sizeof(int));
       dctx->copy_host_to_device_sync(curLevelMatrix->d_col_idx, h_col_ind, nnz*sizeof(int));
       dctx->copy_host_to_device_sync(curLevelMatrix->d_nzvals, h_nzvals, nnz*sizeof(SC));
-  #ifndef HPGMP_NO_MPI
+#ifndef HPGMP_NO_MPI
       dctx->copy_host_to_device_sync(curLevelMatrix->d_elementsToSend,
               curLevelMatrix->elementsToSend, totalToBeSent*sizeof(local_int_t));
-  #endif
+#endif
       // free matrix on host
       free(h_row_ptr);
       free(h_col_ind);
@@ -275,12 +272,11 @@ void seemingly_necessary_stuff_from_reference(SparseMatrix<SC>* M)
 
 // Helper function (see OptimizeProblem.hpp for details)
 template<class SparseMatrix_type>
-double OptimizeProblemMemoryUse(const SparseMatrix_type & A) {
-  return 0.0;
+double OptimizeProblemMemoryUse(const SparseMatrix_type& A)
+{
+    return 0.0;
 }
 
-template
-double OptimizeProblemMemoryUse(const SparseMatrix<double>&);
-template
-double OptimizeProblemMemoryUse(const SparseMatrix<float>&);
+template double OptimizeProblemMemoryUse(const SparseMatrix<double>&);
 
+template double OptimizeProblemMemoryUse(const SparseMatrix<float>&);

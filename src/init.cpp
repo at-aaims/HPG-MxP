@@ -23,9 +23,9 @@
 #endif
 
 #ifdef _WIN32
-const char* NULLDEVICE="nul";
+const char* NULLDEVICE = "nul";
 #else
-const char* NULLDEVICE="/dev/null";
+const char* NULLDEVICE = "/dev/null";
 #endif
 
 #include <ctime>
@@ -49,22 +49,24 @@ std::ofstream HPGMP_fout; //!< output file stream for logging activities during 
 std::ofstream HPGMP_vout; //!< output file stream for verbose logging activities during HPGMP run
 
 static int
-startswith(const char * s, const char * prefix) {
-  size_t n = strlen( prefix );
-  if (strncmp( s, prefix, n ))
-    return 0;
-  return 1;
+startswith(const char* s, const char* prefix)
+{
+    size_t n = strlen(prefix);
+    if (strncmp(s, prefix, n))
+        return 0;
+    return 1;
 }
 
 HPGMP_gen_opts
-HPGMP_Init(int * argc_p, char ** *argv_p) {
+HPGMP_Init(int* argc_p, char*** argv_p)
+{
     HPGMP_gen_opts opts;
     const int argc = *argc_p;
-    char **argv = *argv_p;
+    char** argv    = *argv_p;
     // Options to be read
-    constexpr int nparams = 2;
-    const std::array<std::string,nparams> cparams = {"--validation_type", "--run_type"};
-    std::array<std::string,nparams> values;
+    constexpr int nparams                          = 2;
+    const std::array<std::string, nparams> cparams = {"--validation_type", "--run_type"};
+    std::array<std::string, nparams> values;
     // Default values
     values[0] = "standard";
     values[1] = "benchmark";
@@ -73,7 +75,7 @@ HPGMP_Init(int * argc_p, char ** *argv_p) {
     for (int i = 1; i <= argc && argv[i]; ++i) {
         std::stringstream ss(argv[i]);
         std::string prefix;
-        if(std::getline(ss, prefix, '=')) {
+        if (std::getline(ss, prefix, '=')) {
             for (int j = 0; j < nparams; ++j) {
                 if (prefix == cparams[j]) {
                     if (!std::getline(ss, values[j])) {
@@ -85,20 +87,20 @@ HPGMP_Init(int * argc_p, char ** *argv_p) {
             throw std::runtime_error("Could not read cmd line option prefix!");
         }
     }
-    if(values[0] == "standard") {
+    if (values[0] == "standard") {
         opts.validation_type = validation_t::standard;
-    } else if(values[0] == "fullscale") {
+    } else if (values[0] == "fullscale") {
         opts.validation_type = validation_t::fullscale;
     } else {
         throw std::runtime_error("Invalid value for validation_type!");
     }
-    if(values[1] == "benchmark") {
+    if (values[1] == "benchmark") {
         opts.run_type = run_t::benchmark;
-    } else if(values[1] == "benchmark_no_ref") {
+    } else if (values[1] == "benchmark_no_ref") {
         opts.run_type = run_t::benchmark_no_ref;
-    } else if(values[1] == "standalone_ref") {
+    } else if (values[1] == "standalone_ref") {
         opts.run_type = run_t::standalone_ref;
-    } else if(values[1] == "standalone_mxp") {
+    } else if (values[1] == "standalone_mxp") {
         opts.run_type = run_t::standalone_mxp;
     } else {
         throw std::runtime_error("Invalid value for run_type!");
@@ -123,122 +125,124 @@ HPGMP_Init(int * argc_p, char ** *argv_p) {
 
   @see HPGMP_Finalize
 */
-int
-HPGMP_Init_Params(const char *title, int * argc_p, char ** *argv_p, HPGMP_Params & params, comm_type comm) {
-  const int argc = *argc_p;
-  char ** argv = *argv_p;
-  char fname[80];
-  int i, j, *iparams;
-  char cparams[][7] = {"--nx=", "--ny=", "--nz=", "--rt=", "--pz=", "--zl=", "--zu=", "--npx=", "--npy=", "--npz="};
-  time_t rawtime;
-  tm * ptm;
-  const int nparams = (sizeof cparams) / (sizeof cparams[0]);
+int HPGMP_Init_Params(const char* title, int* argc_p, char*** argv_p, HPGMP_Params& params, comm_type comm)
+{
+    const int argc = *argc_p;
+    char** argv    = *argv_p;
+    char fname[80];
+    int i, j, *iparams;
+    char cparams[][7] = {"--nx=", "--ny=", "--nz=", "--rt=", "--pz=", "--zl=", "--zu=", "--npx=", "--npy=", "--npz="};
+    time_t rawtime;
+    tm* ptm;
+    const int nparams = (sizeof cparams) / (sizeof cparams[0]);
 #ifndef HPGMP_NO_MPI
-  bool broadcastParams = false; // Make true if parameters read from file.
+    bool broadcastParams = false; // Make true if parameters read from file.
 #endif
-  iparams = (int *)malloc(sizeof(int) * nparams);
+    iparams = (int*)malloc(sizeof(int) * nparams);
 
-  // Initialize iparams
-  for (i = 0; i < nparams; ++i) iparams[i] = 0;
+    // Initialize iparams
+    for (i = 0; i < nparams; ++i) iparams[i] = 0;
 
-  /* for sequential and some MPI implementations it's OK to read first three args */
-  for (i = 0; i < nparams; ++i)
-    if (argc <= i+1 || sscanf(argv[i+1], "%d", iparams+i) != 1 || iparams[i] < 10) iparams[i] = 0;
+    /* for sequential and some MPI implementations it's OK to read first three args */
+    for (i = 0; i < nparams; ++i)
+        if (argc <= i + 1 || sscanf(argv[i + 1], "%d", iparams + i) != 1 || iparams[i] < 10) iparams[i] = 0;
 
-  /* for some MPI environments, command line arguments may get complicated so we need a prefix */
-  for (i = 1; i <= argc && argv[i]; ++i)
-    for (j = 0; j < nparams; ++j)
-      if (startswith(argv[i], cparams[j]))
-        if (sscanf(argv[i]+strlen(cparams[j]), "%d", iparams+j) != 1)
-          iparams[j] = 0;
+    /* for some MPI environments, command line arguments may get complicated so we need a prefix */
+    for (i = 1; i <= argc && argv[i]; ++i)
+        for (j = 0; j < nparams; ++j)
+            if (startswith(argv[i], cparams[j]))
+                if (sscanf(argv[i] + strlen(cparams[j]), "%d", iparams + j) != 1)
+                    iparams[j] = 0;
 
-  // Check if --rt was specified on the command line
-  int * rt  = iparams+3;  // Assume runtime was not specified and will be read from the hpcg.dat file
-  if (iparams[3]) rt = 0; // If --rt was specified, we already have the runtime, so don't read it from file
-  if (! iparams[0] && ! iparams[1] && ! iparams[2]) { /* no geometry arguments on the command line */
-    ReadHpgmpDat(iparams, rt, iparams+7);
+    // Check if --rt was specified on the command line
+    int* rt = iparams + 3; // Assume runtime was not specified and will be read from the hpcg.dat file
+    if (iparams[3]) rt = 0; // If --rt was specified, we already have the runtime, so don't read it from file
+    if (!iparams[0] && !iparams[1] && !iparams[2]) { /* no geometry arguments on the command line */
+        ReadHpgmpDat(iparams, rt, iparams + 7);
 #ifndef HPGMP_NO_MPI
-    broadcastParams = true;
+        broadcastParams = true;
 #endif
-  }
+    }
 
-  // Check for small or unspecified nx, ny, nz values
-  // If any dimension is less than 16, make it the max over the other two dimensions, or 16, whichever is largest
-  for (i = 0; i < 3; ++i) {
-    if (iparams[i] < 16)
-      for (j = 1; j <= 2; ++j)
-        if (iparams[(i+j)%3] > iparams[i])
-          iparams[i] = iparams[(i+j)%3];
-    if (iparams[i] < 16)
-      iparams[i] = 16;
-  }
+    // Check for small or unspecified nx, ny, nz values
+    // If any dimension is less than 16, make it the max over the other two dimensions, or 16, whichever is largest
+    for (i = 0; i < 3; ++i) {
+        if (iparams[i] < 16)
+            for (j = 1; j <= 2; ++j)
+                if (iparams[(i + j) % 3] > iparams[i])
+                    iparams[i] = iparams[(i + j) % 3];
+        if (iparams[i] < 16)
+            iparams[i] = 16;
+    }
 
 // Broadcast values of iparams to all MPI processes
 #ifndef HPGMP_NO_MPI
-  if (broadcastParams) {
-    MPI_Bcast( iparams, nparams, MPI_INT, 0, comm );
-  }
+    if (broadcastParams) {
+        MPI_Bcast(iparams, nparams, MPI_INT, 0, comm);
+    }
 #endif
 
-  params.nx = iparams[0];
-  params.ny = iparams[1];
-  params.nz = iparams[2];
+    params.nx = iparams[0];
+    params.ny = iparams[1];
+    params.nz = iparams[2];
 
-  params.runningTime = iparams[3];
-  params.pz = iparams[4];
-  params.zl = iparams[5];
-  params.zu = iparams[6];
+    params.runningTime = iparams[3];
+    params.pz          = iparams[4];
+    params.zl          = iparams[5];
+    params.zu          = iparams[6];
 
-  params.npx = iparams[7];
-  params.npy = iparams[8];
-  params.npz = iparams[9];
+    params.npx = iparams[7];
+    params.npy = iparams[8];
+    params.npz = iparams[9];
 
 #ifndef HPGMP_NO_MPI
-  MPI_Comm_rank( comm, &params.comm_rank );
-  MPI_Comm_size( comm, &params.comm_size );
+    MPI_Comm_rank(comm, &params.comm_rank);
+    MPI_Comm_size(comm, &params.comm_size);
 #else
-  params.comm_rank = 0;
-  params.comm_size = 1;
+    params.comm_rank = 0;
+    params.comm_size = 1;
 #endif
 
 #ifdef HPGMP_NO_OPENMP
-  params.numThreads = 1;
+    params.numThreads = 1;
 #else
-  #pragma omp parallel
-  params.numThreads = omp_get_num_threads();
+    // clang-format off
+    #pragma omp parallel
+    // clang-format on
+    params.numThreads = omp_get_num_threads();
 #endif
-//  for (i = 0; i < nparams; ++i) std::cout << "rank = "<< params.comm_rank << " iparam["<<i<<"] = " << iparams[i] << "\n";
+    //  for (i = 0; i < nparams; ++i) std::cout << "rank = "<< params.comm_rank << " iparam["<<i<<"] = " << iparams[i] << "\n";
 
-  time ( &rawtime );
-  ptm = localtime(&rawtime);
-  HPGMP_fout.close();
-  if (0 == params.comm_rank) {
-    sprintf( fname, "%shpgmp%04d%02d%02dT%02d%02d%02d.txt", title,
-        1900 + ptm->tm_year, ptm->tm_mon+1, ptm->tm_mday, ptm->tm_hour, ptm->tm_min, ptm->tm_sec );
-    HPGMP_fout.open(fname);
-    #if defined(HPGMP_DETAILED_PRINT)
-    HPGMP_vout.open(fname);
-    #else
-    HPGMP_vout.open(NULLDEVICE);
-    #endif
-  } else {
+    time(&rawtime);
+    ptm = localtime(&rawtime);
+    HPGMP_fout.close();
+    if (0 == params.comm_rank) {
+        sprintf(fname, "%shpgmp%04d%02d%02dT%02d%02d%02d.txt", title,
+                1900 + ptm->tm_year, ptm->tm_mon + 1, ptm->tm_mday, ptm->tm_hour, ptm->tm_min, ptm->tm_sec);
+        HPGMP_fout.open(fname);
+#if defined(HPGMP_DETAILED_PRINT)
+        HPGMP_vout.open(fname);
+#else
+        HPGMP_vout.open(NULLDEVICE);
+#endif
+    } else {
 #if defined(HPGMP_DEBUG) || defined(HPGMP_DETAILED_DEBUG)
-    sprintf( fname, "%shpgmp%04d%02d%02dT%02d%02d%02d_%d.txt", title,
-        1900 + ptm->tm_year, ptm->tm_mon+1, ptm->tm_mday, ptm->tm_hour, ptm->tm_min, ptm->tm_sec, params.comm_rank );
-    HPGMP_fout.open(fname);
-    if (params.comm_rank == 0) {
-        std::cout << title << ": running time = " << params.runningTime << std::endl;
-    }
+        sprintf(fname, "%shpgmp%04d%02d%02dT%02d%02d%02d_%d.txt", title,
+                1900 + ptm->tm_year, ptm->tm_mon + 1, ptm->tm_mday, ptm->tm_hour, ptm->tm_min, ptm->tm_sec, params.comm_rank);
+        HPGMP_fout.open(fname);
+        if (params.comm_rank == 0) {
+            std::cout << title << ": running time = " << params.runningTime << std::endl;
+        }
 #else
-    HPGMP_fout.open(NULLDEVICE);
+        HPGMP_fout.open(NULLDEVICE);
 #endif
-  }
-  free( iparams );
+    }
+    free(iparams);
 
-  return 0;
+    return 0;
 }
 
-int
-HPGMP_Init_Params(int * argc_p, char ** *argv_p, HPGMP_Params & params, comm_type comm) {
-  return HPGMP_Init_Params("", argc_p, argv_p, params, comm);
+int HPGMP_Init_Params(int* argc_p, char*** argv_p, HPGMP_Params& params, comm_type comm)
+{
+    return HPGMP_Init_Params("", argc_p, argv_p, params, comm);
 }

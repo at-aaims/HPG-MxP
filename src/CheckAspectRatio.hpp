@@ -16,6 +16,5 @@
 
 #ifndef CHECKASPECTRATIO_HPP
 #define CHECKASPECTRATIO_HPP
-extern int CheckAspectRatio(double smallest_ratio, int x, int y, int z, const char *what, bool DoIo);
+extern int CheckAspectRatio(double smallest_ratio, int x, int y, int z, const char* what, bool DoIo);
 #endif // CHECKASPECTRATIO_HPP
-

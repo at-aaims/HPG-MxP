@@ -7,7 +7,7 @@
 
   @return Returns zero on success and a non-zero value otherwise.
  */
-int main(int argc, char * argv[])
+int main(int argc, char* argv[])
 {
 #ifndef HPGMP_NO_MPI
     MPI_Init(&argc, &argv);

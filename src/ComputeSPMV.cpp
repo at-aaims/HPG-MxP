@@ -44,14 +44,14 @@
   @see ComputeSPMV_ref
 */
 template<class SparseMatrix_type, class Vector_type>
-int ComputeSPMV(const SparseMatrix_type & A, Vector_type & x, Vector_type & y)
+int ComputeSPMV(const SparseMatrix_type& A, Vector_type& x, Vector_type& y)
 {
 #ifdef HPGMP_REFERENCE
-  // This line and the next two lines should be removed and your version of ComputeSPMV should be used.
-  A.isSpmvOptimized = false;
-  return ComputeSPMV_ref(A, x, y);
+    // This line and the next two lines should be removed and your version of ComputeSPMV should be used.
+    A.isSpmvOptimized = false;
+    return ComputeSPMV_ref(A, x, y);
 #else
-  return ComputeSPMV_ell(A, x, y);
+    return ComputeSPMV_ell(A, x, y);
 #endif
 }
 
@@ -60,9 +60,8 @@ int ComputeSPMV(const SparseMatrix_type & A, Vector_type & x, Vector_type & y)
  * specializations *
  * --------------- */
 
-template
-int ComputeSPMV< SparseMatrix<double>, Vector<double> >(const SparseMatrix<double> &, Vector<double>&, Vector<double>&);
+template int ComputeSPMV< SparseMatrix<double>, Vector<double> >(
+    const SparseMatrix<double>&, Vector<double>&, Vector<double>&);
 
-template
-int ComputeSPMV< SparseMatrix<float>, Vector<float> >(const SparseMatrix<float> &, Vector<float>&, Vector<float>&);
-
+template int ComputeSPMV< SparseMatrix<float>, Vector<float> >(
+    const SparseMatrix<float>&, Vector<float>&, Vector<float>&);

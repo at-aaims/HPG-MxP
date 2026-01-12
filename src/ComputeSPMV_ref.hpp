@@ -20,6 +20,6 @@
 #include "SparseMatrix.hpp"
 
 template<class SparseMatrix_type, class Vector_type>
-int ComputeSPMV_ref(const SparseMatrix_type & A, Vector_type & x, Vector_type & y);
+int ComputeSPMV_ref(const SparseMatrix_type& A, Vector_type& x, Vector_type& y);
 
-#endif  // COMPUTESPMV_REF_HPP
+#endif // COMPUTESPMV_REF_HPP

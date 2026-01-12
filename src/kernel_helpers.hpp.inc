@@ -10,16 +10,16 @@
  * If the value at a memory location is known to be used just once,
  * it's better to avoid caching in L1 cache using this function.
  */
-template <typename T>
-__device__ __forceinline__
-T __ldcg(const T *ptr) {
+template<typename T>
+__device__ __forceinline__ T __ldcg(const T* ptr)
+{
     return __builtin_nontemporal_load(ptr);
 }
 
 /// Use Clang builtin to replace CUDA nontemporal store function.
-template <typename T>
-__device__ __forceinline__
-void __stcg(T *ptr, const T value) {
+template<typename T>
+__device__ __forceinline__ void __stcg(T* ptr, const T value)
+{
     __builtin_nontemporal_store(value, ptr);
 }
 

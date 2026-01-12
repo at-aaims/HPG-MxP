@@ -1,0 +1,137 @@
+# .clang-format inferred with clang-unformat (https://www.github.com/alandefreitas/clang-unformat)
+Language: Cpp                                      # single option
+BasedOnStyle: WebKit                               # edit distance 56181
+AccessModifierOffset: -4                           # edit distance 56181
+AlignAfterOpenBracket: Align                       # edit distance 50153
+AlignArrayOfStructures: Right                      # Using default value Right
+AlignConsecutiveAssignments: Consecutive           # set by nkoukpaizan
+AlignConsecutiveBitFields: None                    # inherited from prefix Align
+AlignConsecutiveDeclarations: None                 # edit distance 50153
+AlignConsecutiveMacros: None                       # edit distance 50153
+AlignEscapedNewlines: Left                         # edit distance 50153
+AlignOperands: Align                               # set by nkoukpaizan
+AlignTrailingComments: false                       # edit distance 49827
+AllowAllArgumentsOnNextLine: false                 # set by nkoukpaizan
+AllowAllParametersOfDeclarationOnNextLine: false   # set by nkoukpaizan
+AllowShortBlocksOnASingleLine: Never               # Using default value Never
+AllowShortCaseLabelsOnASingleLine: true            # did not affect the output
+AllowShortEnumsOnASingleLine: true                 # did not affect the output
+AllowShortFunctionsOnASingleLine: Inline           # edit distance 49827
+AllowShortIfStatementsOnASingleLine: AllIfsAndElse # edit distance 49606
+AllowShortLambdasOnASingleLine: None               # Using default value None
+AllowShortLoopsOnASingleLine: true                 # edit distance 49246
+AlwaysBreakAfterDefinitionReturnType: None         # edit distance 49246
+AlwaysBreakAfterReturnType: None                   # edit distance 49246
+AlwaysBreakBeforeMultilineStrings: true            # did not affect the output
+AlwaysBreakTemplateDeclarations: Yes               # set by nkoukpaizan
+BinPackArguments: true                             # set by nkoukpaizan
+BinPackParameters: true                            # edit distance 49246
+BitFieldColonSpacing: Both                         # did not affect the output
+BreakBeforeBraces: Custom                          # edit distance 49204
+BraceWrapping:
+  AfterCaseLabel: false                            # inherited from prefix BraceWrapping
+  AfterClass: true                                 # set by nkoukpaizan
+  AfterControlStatement: MultiLine                 # edit distance 48998
+  AfterEnum: false                                 # edit distance 48998
+  AfterFunction: true                              # set by nkoukpaizan
+  AfterNamespace: false                            # edit distance 48998
+  AfterObjCDeclaration: false                      # inherited from prefix BraceWrapping
+  AfterStruct: true                                # set by nkoukpaizan
+  AfterUnion: false                                # inherited from prefix BraceWrapping
+  AfterExternBlock: false                          # inherited from prefix BraceWrapping
+  BeforeCatch: false                               # inherited from prefix BraceWrapping
+  BeforeElse: false                                # edit distance 48998
+  BeforeLambdaBody: false                          # inherited from prefix BraceWrapping
+  BeforeWhile: false                               # edit distance 48998
+  IndentBraces: false                              # edit distance 48998
+  SplitEmptyFunction: true                         # set by nkoukpaizan
+  SplitEmptyRecord: false                          # inherited from prefix BraceWrapping
+  SplitEmptyNamespace: false                       # inherited from prefix BraceWrapping
+BreakAfterJavaFieldAnnotations: true               # did not affect the output
+BreakBeforeBinaryOperators: None                   # edit distance 45181
+BreakBeforeConceptDeclarations: true               # inherited from prefix BreakBefore
+BreakBeforeTernaryOperators: true                  # edit distance 45181
+BreakConstructorInitializers: BeforeColon          # edit distance 45049
+BreakInheritanceList: BeforeColon                  # did not affect the output
+BreakStringLiterals: true                          # did not affect the output
+ColumnLimit: 0                                     # set by nkoukpaizan
+CompactNamespaces: true                            # did not affect the output
+ConstructorInitializerIndentWidth: 4               # set by nkoukpaizan
+ContinuationIndentWidth: 4                         # set by nkoukpaizan
+Cpp11BracedListStyle: true                         # edit distance 75313
+DeriveLineEnding: false                            # inherited from prefix Derive
+DerivePointerAlignment: false                      # edit distance 75313
+EmptyLineAfterAccessModifier: Never                # edit distance 75313
+EmptyLineBeforeAccessModifier: Leave               # edit distance 75312
+ExperimentalAutoDetectBinPacking: false            # edit distance 75312
+FixNamespaceComments: false                        # edit distance 75312
+IncludeBlocks: Preserve                            # edit distance 75312
+IndentAccessModifiers: false                       # edit distance 75312
+IndentCaseBlocks: false                            # inherited from prefix Indent
+IndentCaseLabels: false                            # inherited from prefix Indent
+IndentExternBlock: AfterExternBlock                # did not affect the output
+IndentGotoLabels: false                            # inherited from prefix Indent
+IndentPPDirectives: None                           # edit distance 75312
+IndentRequires: false                              # inherited from prefix Indent
+IndentWidth: 4                                     # set by nkoukpaizan
+IndentWrappedFunctionNames: false                  # edit distance 57794
+InsertTrailingCommas: None                         # did not affect the output
+KeepEmptyLinesAtTheStartOfBlocks: true             # edit distance 57794
+LambdaBodyIndentation: Signature                   # did not affect the output
+MaxEmptyLinesToKeep: 2                             # set by nkoukpaizan
+NamespaceIndentation: All                          # edit distance 57660
+PackConstructorInitializers: BinPack               # set by nkoukpaizan
+PenaltyBreakAssignment: 2                          # set by nkoukpaizan
+PenaltyBreakBeforeFirstCallParameter: 2            # edit distance 57439
+PenaltyBreakComment: 64                            # edit distance 57439
+PenaltyBreakFirstLessLess: 8                       # inherited from prefix PenaltyBreak
+PenaltyBreakOpenParenthesis: 2                     # edit distance 51704
+PenaltyBreakString: 64                             # edit distance 51704
+PenaltyBreakTemplateDeclaration: 2                 # set by nkoukpaizan
+PenaltyExcessCharacter: 4                          # edit distance 51156
+PenaltyIndentedWhitespace: 2                       # edit distance 49006
+PenaltyReturnTypeOnItsOwnLine: 2                   # set by nkoukpaizan
+PointerAlignment: Left                             # set by nkoukpaizan
+QualifierAlignment: Leave                          # edit distance 48954
+ReferenceAlignment: Left                           # edit distance 48777
+RemoveBracesLLVM: false                            # edit distance 48777
+ReflowComments: false                              # edit distance 48466
+RequiresClausePosition: OwnLine                    # did not affect the output
+SeparateDefinitionBlocks: Leave                    # edit distance 48466
+ShortNamespaceLines: 0                             # did not affect the output
+SortIncludes: Never                                # edit distance 45451
+SortUsingDeclarations: false                       # edit distance 45429
+SpaceAfterCStyleCast: false                        # edit distance 45429
+SpaceAfterLogicalNot: false                        # edit distance 45429
+SpaceAfterTemplateKeyword: false                   # edit distance 45404
+SpaceAroundPointerQualifiers: Default              # edit distance 45404
+SpaceBeforeAssignmentOperators: true               # edit distance 45404
+SpaceBeforeCaseColon: true                         # inherited from prefix SpaceBefore
+SpaceBeforeCpp11BracedList: false                  # edit distance 45337
+SpaceBeforeCtorInitializerColon: true              # edit distance 45337
+SpaceBeforeInheritanceColon: true                  # edit distance 45337
+SpaceBeforeParens: Custom                          # edit distance 45337
+SpaceBeforeParensOptions:
+  AfterControlStatements: true                     # edit distance 45337
+  AfterForeachMacros: true                         # inherited from prefix SpaceBefore
+  AfterFunctionDeclarationName: false              # edit distance 45337
+  AfterFunctionDefinitionName: false               # edit distance 45337
+  AfterIfMacros: true                              # inherited from prefix SpaceBefore
+  AfterOverloadedOperator: true                    # inherited from prefix SpaceBefore
+  AfterRequiresInClause: true                      # inherited from prefix SpaceBefore
+  AfterRequiresInExpression: true                  # inherited from prefix SpaceBefore
+  BeforeNonEmptyParentheses: false                 # edit distance 45337
+SpaceBeforeRangeBasedForLoopColon: true            # edit distance 45337
+SpaceBeforeSquareBrackets: false                   # edit distance 45337
+SpaceInEmptyBlock: true                            # edit distance 45337
+SpaceInEmptyParentheses: false                     # edit distance 45337
+SpacesBeforeTrailingComments: 1                    # edit distance 45337
+SpacesInAngles: Leave                              # edit distance 45078
+SpacesInCStyleCastParentheses: false               # edit distance 45078
+SpacesInConditionalStatement: false                # edit distance 45078
+SpacesInContainerLiterals: true                    # did not affect the output
+SpacesInParentheses: false                         # edit distance 45078
+Standard: Auto                                     # set by nkoukpaizan
+TabWidth: 0                                        # did not affect the output
+UseCRLF: false                                     # set by nkoukpaizan
+UseTab: Never                                      # edit distance 45078
