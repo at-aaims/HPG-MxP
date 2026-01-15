@@ -45,7 +45,9 @@ public:
           z(A.localNumberOfColumns, A.comm, dctx),
           p(A.localNumberOfColumns, A.comm, dctx),
           w(A.localNumberOfRows, A.comm, dctx),
-          Ap(A.localNumberOfRows, A.comm, dctx) { }
+          Ap(A.localNumberOfRows, A.comm, dctx)
+    {
+    }
 
     GMRESData() { }
 

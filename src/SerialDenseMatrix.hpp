@@ -42,7 +42,9 @@ public:
     typedef SC scalar_type;
 
     SerialDenseMatrix(const local_int_t m, const local_int_t n, DeviceCtx* const dctx)
-        : m_{m}, n_{n}, values_{new scalar_type[m * n]},
+        : m_{m},
+          n_{n},
+          values_{new scalar_type[m * n]},
 #ifdef HPGMP_WITH_ACCELERATION
           d_values_{(scalar_type*)dctx->device_alloc(m_ * n_ * sizeof(scalar_type))},
 #endif

@@ -53,7 +53,12 @@
 
 template<typename hiscalar, typename loscalar>
 ELLMatrix<hiscalar, loscalar>::ELLMatrix(const SparseMatrix<hiscalar>& A)
-    : DistMatrixBase(A), ldv_{((local_nrows_ - 1) / pad_mult_v + 1) * pad_mult_v}, ldi_{((local_nrows_ - 1) / pad_mult_i + 1) * pad_mult_i}, ell_width_{27}, col_idxs_{static_cast<local_int_t*>(dctx_->device_alloc(ell_width_ * ldi_ * sizeof(local_int_t)))}, values_{static_cast<hiscalar*>(dctx_->device_alloc(ell_width_ * ldv_ * sizeof(hiscalar)))}
+    : DistMatrixBase(A),
+      ldv_{((local_nrows_ - 1) / pad_mult_v + 1) * pad_mult_v},
+      ldi_{((local_nrows_ - 1) / pad_mult_i + 1) * pad_mult_i},
+      ell_width_{27},
+      col_idxs_{static_cast<local_int_t*>(dctx_->device_alloc(ell_width_ * ldi_ * sizeof(local_int_t)))},
+      values_{static_cast<hiscalar*>(dctx_->device_alloc(ell_width_ * ldv_ * sizeof(hiscalar)))}
 {
     int rank = 0;
 #ifndef HPGMP_NO_MPI

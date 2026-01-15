@@ -26,7 +26,11 @@ class DistMatrixBase
 {
 public:
     DistMatrixBase(comm_type comm, DeviceCtx* const dctx, const Geometry* const geom)
-        : comm_{comm}, dctx_{dctx}, geom_{geom} { }
+        : comm_{comm},
+          dctx_{dctx},
+          geom_{geom}
+    {
+    }
 
     template<typename scalar>
     DistMatrixBase(const SparseMatrix<scalar>& A);

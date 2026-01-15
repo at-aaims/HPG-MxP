@@ -80,7 +80,7 @@ KeepEmptyLinesAtTheStartOfBlocks: true             # edit distance 57794
 LambdaBodyIndentation: Signature                   # did not affect the output
 MaxEmptyLinesToKeep: 2                             # set by nkoukpaizan
 NamespaceIndentation: All                          # edit distance 57660
-PackConstructorInitializers: BinPack               # set by nkoukpaizan
+PackConstructorInitializers: Never                 # set by nkoukpaizan
 PenaltyBreakAssignment: 2                          # set by nkoukpaizan
 PenaltyBreakBeforeFirstCallParameter: 2            # edit distance 57439
 PenaltyBreakComment: 64                            # edit distance 57439

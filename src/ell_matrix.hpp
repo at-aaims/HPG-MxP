@@ -14,7 +14,9 @@ public:
     using scalar_type = hiscalar;
 
     ELLMatrix(comm_type comm, DeviceCtx* const dctx, const Geometry* const geom)
-        : DistMatrixBase(comm, dctx, geom) { }
+        : DistMatrixBase(comm, dctx, geom)
+    {
+    }
 
     /**
      * Initialize this matrix with a conversion of a HPGMP SparseMatrix.
