@@ -64,7 +64,8 @@ void SetupProblem(const char* title, int argc, char** argv, comm_type comm, Devi
 
     //////////////////////////////////////////////////////////
     // Construct the geometry and linear system
-    GenerateGeometry(size, rank, params.numThreads, params.pz, params.zl, params.zu, nx, ny, nz, params.npx, params.npy, params.npz, geom);
+    GenerateGeometry(size, rank, params.numThreads, params.pz, params.zl, params.zu,
+                     nx, ny, nz, params.npx, params.npy, params.npz, geom);
 #ifdef HPGMP_DEBUG
     MPI_Barrier(comm);
     if (rank == 0) {
@@ -142,14 +143,17 @@ void SetupProblem(const char* title, int argc, char** argv, comm_type comm, Devi
 
 // uniform
 template void SetupProblem< SparseMatrix<double>, SparseMatrix<double>, GMRESData<double>, GMRESData<double>, Vector<double>>(
-    const char*, int, char**, comm_type, DeviceCtx*, int, bool, Geometry*, SparseMatrix<double>&, GMRESData<double>&, SparseMatrix<double>&, GMRESData<double>&,
+    const char*, int, char**, comm_type, DeviceCtx*, int, bool, Geometry*, SparseMatrix<double>&,
+    GMRESData<double>&, SparseMatrix<double>&, GMRESData<double>&,
     Vector<double>&, Vector<double>&, TestGMRESData&);
 
 template void SetupProblem< SparseMatrix<float>, SparseMatrix<float>, GMRESData<float>, GMRESData<float>, Vector<float>>(
-    const char*, int, char**, comm_type, DeviceCtx*, int, bool, Geometry*, SparseMatrix<float>&, GMRESData<float>&, SparseMatrix<float>&, GMRESData<float>&,
+    const char*, int, char**, comm_type, DeviceCtx*, int, bool, Geometry*, SparseMatrix<float>&,
+    GMRESData<float>&, SparseMatrix<float>&, GMRESData<float>&,
     Vector<float>&, Vector<float>&, TestGMRESData&);
 
 // mixed
 template void SetupProblem< SparseMatrix<double>, SparseMatrix<float>, GMRESData<double>, GMRESData<float>, Vector<double>>(
-    const char*, int, char**, comm_type, DeviceCtx*, int, bool, Geometry*, SparseMatrix<double>&, GMRESData<double>&, SparseMatrix<float>&, GMRESData<float>&,
+    const char*, int, char**, comm_type, DeviceCtx*, int, bool, Geometry*, SparseMatrix<double>&,
+    GMRESData<double>&, SparseMatrix<float>&, GMRESData<float>&,
     Vector<double>&, Vector<double>&, TestGMRESData&);

@@ -30,7 +30,10 @@ using namespace std;
   @param[in] destination_Directory destination directory for the YAML document
   @param[in] destination_FileName file name for the YAML document
 */
-YAML_Doc::YAML_Doc(const std::string& miniApp_Name, const std::string& miniApp_Version, const std::string& destination_Directory, const std::string& destination_FileName)
+YAML_Doc::YAML_Doc(const std::string& miniApp_Name,
+                   const std::string& miniApp_Version,
+                   const std::string& destination_Directory,
+                   const std::string& destination_FileName)
 {
     miniAppName          = miniApp_Name;
     miniAppVersion       = miniApp_Version;

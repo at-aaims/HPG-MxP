@@ -87,11 +87,8 @@ int ComputeMG(const SparseMatrix_type& A, const Vector_type& r, Vector_type& x,
                 // the first color is treated differently:
                 ft.mg_gs.add_memory_traffic<scalar_type>(
                     3.0 * A.totalNumberOfRows / 8 + //
-                    7.0 / 8 * (A.totalNumberOfNonzeros + //
-                               A.totalNumberOfRows - 1) /
-                        2 +
-                    1 //
-                    + 2 * A.totalNumberOfRows);
+                    7.0 / 8 * (A.totalNumberOfNonzeros + A.totalNumberOfRows - 1) / 2 + //
+                    1 + 2 * A.totalNumberOfRows);
                 ft.mg_gs.add_memory_traffic<int>(7.0 / 8 * A.totalNumberOfNonzeros);
             } else {
                 ierr += ell_multicolor_gs(symmetric, mat.get(), &r, &x);

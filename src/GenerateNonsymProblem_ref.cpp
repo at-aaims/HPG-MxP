@@ -165,7 +165,8 @@ void GenerateNonsymProblem_ref(SparseMatrix_type& A, Vector_type* b, Vector_type
 
                 A.localToGlobalMap[currentLocalRow] = currentGlobalRow;
 #ifdef HPGMP_DETAILED_DEBUG
-                HPGMP_fout << " rank, globalRow, localRow = " << A.geom->rank << " " << currentGlobalRow << " " << A.globalToLocalMap[currentGlobalRow] << endl;
+                HPGMP_fout << " rank, globalRow, localRow = " << A.geom->rank << " " //
+                           << currentGlobalRow << " " << A.globalToLocalMap[currentGlobalRow] << endl;
 #endif
                 char numberOfNonzerosInRow              = 0;
                 matrix_scalar_type* currentValuePointer = matrixValues[currentLocalRow]; // Pointer to current value in current row

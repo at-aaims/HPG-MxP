@@ -355,7 +355,8 @@ void ReportResults(const SparseMatrix_type& A, int numberOfMgLevels,
     doc.get("GB/s Summary")->add("Raw Read B/W",fnreads/times[0]/1.0E9);
     doc.get("GB/s Summary")->add("Raw Write B/W",fnwrites/times[0]/1.0E9);
     doc.get("GB/s Summary")->add("Raw Total B/W",(fnreads+fnwrites)/(times[0])/1.0E9);
-    doc.get("GB/s Summary")->add("Total with convergence and optimization phase overhead",(frefnreads+frefnwrites)/(times[0]+(times[7]/10.0+times[9]/10.0))/1.0E9);
+    doc.get("GB/s Summary")->add("Total with convergence and optimization phase overhead",
+                                 (frefnreads+frefnwrites)/(times[0]+(times[7]/10.0+times[9]/10.0))/1.0E9);
 #endif
 
         // This final GFLOP/s rating includes the overhead of problem setup
@@ -363,7 +364,12 @@ void ReportResults(const SparseMatrix_type& A, int numberOfMgLevels,
 
         const std::string membwstr = "Memory Bandwidth (GB/s)";
         doc.add(membwstr, "");
-        const double optTotalBytes = (c_opt.ortho.get_total_memory_bytes() + c_opt.spmv.get_total_memory_bytes() + c_opt.mg_gs.get_total_memory_bytes() + c_opt.mg_rp.get_total_memory_bytes() + c_opt.vecupd.get_total_memory_bytes() + c_opt.qr_host.get_total_memory_bytes());
+        const double optTotalBytes = (c_opt.ortho.get_total_memory_bytes() + //
+                                      c_opt.spmv.get_total_memory_bytes() + //
+                                      c_opt.mg_gs.get_total_memory_bytes() + //
+                                      c_opt.mg_rp.get_total_memory_bytes() + //
+                                      c_opt.vecupd.get_total_memory_bytes() + //
+                                      c_opt.qr_host.get_total_memory_bytes());
         if (test_data.optTotalTime > 0.0) {
             doc.get(membwstr)->add(" - Raw Ortho  (mxp)", c_opt.ortho.get_total_memory_bytes() / test_data.opt_times[3] / 1.0e9);
             doc.get(membwstr)->add(" - Raw SpMV   (mxp)", c_opt.spmv.get_total_memory_bytes() / test_data.opt_times[4] / 1.0e9);
@@ -377,7 +383,12 @@ void ReportResults(const SparseMatrix_type& A, int numberOfMgLevels,
             doc.get(membwstr)->add(" - Raw Total  (mxp)", optTotalBytes / test_data.opt_times[0] / 1.0e9);
         }
 
-        const double refTotalBytes = (c_ref.ortho.get_total_memory_bytes() + c_ref.spmv.get_total_memory_bytes() + c_ref.mg_gs.get_total_memory_bytes() + c_ref.mg_rp.get_total_memory_bytes() + c_ref.vecupd.get_total_memory_bytes() + c_ref.qr_host.get_total_memory_bytes());
+        const double refTotalBytes = (c_ref.ortho.get_total_memory_bytes() + //
+                                      c_ref.spmv.get_total_memory_bytes() + //
+                                      c_ref.mg_gs.get_total_memory_bytes() + //
+                                      c_ref.mg_rp.get_total_memory_bytes() + //
+                                      c_ref.vecupd.get_total_memory_bytes() + //
+                                      c_ref.qr_host.get_total_memory_bytes());
         if (test_data.refTotalTime > 0.0) {
             doc.get(membwstr)->add(" - Raw Ortho  (reference)", c_ref.ortho.get_total_memory_bytes() / test_data.ref_times[3] / 1.0e9);
             doc.get(membwstr)->add(" - Raw SpMV   (reference)", c_ref.spmv.get_total_memory_bytes() / test_data.ref_times[4] / 1.0e9);
@@ -427,7 +438,8 @@ void ReportResults(const SparseMatrix_type& A, int numberOfMgLevels,
             }
             if (!A.isMgOptimized) {
                 if (A.geom->numThreads > 1)
-                    doc.get("Final Summary")->add("Reference version of ComputeMG used and number of threads greater than 1", "Performance results are severely suboptimal");
+                    doc.get("Final Summary")->add("Reference version of ComputeMG used and number of threads greater than 1", //
+                                                  "Performance results are severely suboptimal");
                 else // numThreads ==1
                     doc.get("Final Summary")->add("Reference version of ComputeMG used", "Performance results are most likely suboptimal");
             }

@@ -90,7 +90,8 @@ void CheckProblem(SparseMatrix_type& A, Vector_type* b, Vector_type* x, Vector_t
                 global_int_t currentGlobalRow = giz * gnx * gny + giy * gnx + gix;
                 assert(A.localToGlobalMap[currentLocalRow] == currentGlobalRow);
 #ifdef HPGMP_DETAILED_DEBUG
-                HPGMP_fout << " rank, globalRow, localRow = " << A.geom->rank << " " << currentGlobalRow << " " << A.globalToLocalMap.find(currentGlobalRow)->second << endl;
+                HPGMP_fout << " rank, globalRow, localRow = " << A.geom->rank << " " //
+                           << currentGlobalRow << " " << A.globalToLocalMap.find(currentGlobalRow)->second << endl;
 #endif
                 char numberOfNonzerosInRow         = 0;
                 scalar_type* currentValuePointer   = A.matrixValues[currentLocalRow]; // Pointer to current value in current row

@@ -34,7 +34,8 @@
   Communicates data that is at the border of the part of the domain assigned to this processor.
 
   @param[in]    A The known system matrix
-  @param[inout] x On entry: the local vector entries followed by entries to be communicated; on exit: the vector with non-local entries updated by other processors
+  @param[inout] x On entry: the local vector entries followed by entries to be communicated; 
+                  On exit: the vector with non-local entries updated by other processors
  */
 
 
@@ -167,11 +168,17 @@ void ExchangeHalo_ref(const SparseMatrix_type& A, Vector_type& x)
     // copy received data to GPU
     TICK();
 #if defined(HPGMP_WITH_CUDA)
-    if (cudaSuccess != cudaMemcpy(d_xv + localNumberOfRows, &xv[localNumberOfRows], (localNumberOfCols - localNumberOfRows) * sizeof(scalar_type), cudaMemcpyHostToDevice)) {
+    if (cudaSuccess != cudaMemcpy(d_xv + localNumberOfRows,
+                                  &xv[localNumberOfRows],
+                                  (localNumberOfCols - localNumberOfRows) * sizeof(scalar_type),
+                                  cudaMemcpyHostToDevice)) {
         printf(" Failed to memcpy d_y\n");
     }
 #elif defined(HPGMP_WITH_HIP)
-    if (hipSuccess != hipMemcpy(d_xv + localNumberOfRows, &xv[localNumberOfRows], (localNumberOfCols - localNumberOfRows) * sizeof(scalar_type), hipMemcpyHostToDevice)) {
+    if (hipSuccess != hipMemcpy(d_xv + localNumberOfRows,
+                                &xv[localNumberOfRows],
+                                (localNumberOfCols - localNumberOfRows) * sizeof(scalar_type),
+                                hipMemcpyHostToDevice)) {
         printf(" Failed to memcpy d_y\n");
     }
 #endif

@@ -97,10 +97,14 @@ public:
     \param destination_FileName (in, optional) root name of the results file.  A suffix of ".yaml" will be automatically appended.  If no
            file name is specified the filename will be constructed by concatenating the miniAppName + miniAppVersion + ".yaml" strings.
   */
-    YAML_Doc(const std::string& miniApp_Name, const std::string& miniApp_Version, const std::string& destination_Directory = "", const std::string& destination_FileName = "");
+    YAML_Doc(const std::string& miniApp_Name,
+             const std::string& miniApp_Version,
+             const std::string& destination_Directory = "",
+             const std::string& destination_FileName  = "");
     //! Destructor
     ~YAML_Doc();
-    //! Generate YAML results to standard out and to a file using specified directory and filename, using current directory and miniAppName + miniAppVersion + ".yaml" by default
+    //! Generate YAML results to standard out and to a file using specified directory and filename,
+    // using current directory and miniAppName + miniAppVersion + ".yaml" by default
     std::string generateYAML();
 
 protected:

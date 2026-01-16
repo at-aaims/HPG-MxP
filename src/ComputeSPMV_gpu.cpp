@@ -223,7 +223,8 @@ int ComputeSPMV_ref(const SparseMatrix_type& A, Vector_type& x, Vector_type& y)
   ynorm = sqrt(ynorm);
   tnorm = sqrt(tnorm);
   if (A.geom->rank == 0) {
-    HPGMP_fout << A.geom->rank << " : SpMV(" << nrow << " x " << ncol << "): error = " << enorm << " (x=" << xnorm << ", y=" << ynorm << ", t=" << tnorm << ")" << std::endl;
+    HPGMP_fout << A.geom->rank << " : SpMV(" << nrow << " x " << ncol << "): error = " //
+               << enorm << " (x=" << xnorm << ", y=" << ynorm << ", t=" << tnorm << ")" << std::endl;
   }
   free(tv);
 #endif

@@ -147,7 +147,8 @@ void SetupHalo_ref(SparseMatrix_type& A)
             externalToLocalMap[*i] = localNumberOfRows + receiveEntryCount; // The remote columns are indexed at end of internals
         }
         for (set_iter i = sendList[neighborId].begin(); i != sendList[neighborId].end(); ++i, ++sendEntryCount) {
-            //if (geom.rank==1) HPGMP_fout << "*i, globalToLocalMap[*i], sendEntryCount = " << *i << " " << A.globalToLocalMap[*i] << " " << sendEntryCount << endl;
+            //if (geom.rank==1) HPGMP_fout << "*i, globalToLocalMap[*i], sendEntryCount = " << *i
+            //                             << " " << A.globalToLocalMap[*i] << " " << sendEntryCount << endl;
             elementsToSend[sendEntryCount] = A.globalToLocalMap[*i]; // store local ids of entry to send
         }
     }
@@ -188,11 +189,14 @@ void SetupHalo_ref(SparseMatrix_type& A)
     A.sendBuffer             = sendBuffer;
 
 #ifdef HPGMP_DETAILED_DEBUG
-    HPGMP_fout << " For rank " << A.geom->rank << " of " << A.geom->size << ", number of neighbors = " << A.numberOfSendNeighbors << endl;
+    HPGMP_fout << " For rank " << A.geom->rank << " of " << A.geom->size //
+               << ", number of neighbors = " << A.numberOfSendNeighbors << endl;
     for (int i = 0; i < A.numberOfSendNeighbors; i++) {
-        HPGMP_fout << "     rank " << A.geom->rank << " neighbor " << neighbors[i] << " send/recv length = " << sendLength[i] << "/" << receiveLength[i] << endl;
+        HPGMP_fout << "     rank " << A.geom->rank << " neighbor " << neighbors[i] //
+                   << " send/recv length = " << sendLength[i] << "/" << receiveLength[i] << endl;
         for (local_int_t j = 0; j < sendLength[i]; ++j)
-            HPGMP_fout << "       rank " << A.geom->rank << " elementsToSend[" << j << "] = " << elementsToSend[j] << endl;
+            HPGMP_fout << "       rank " << A.geom->rank << " elementsToSend[" << j //
+                       << "] = " << elementsToSend[j] << endl;
     }
 #endif
 

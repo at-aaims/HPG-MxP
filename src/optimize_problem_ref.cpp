@@ -166,17 +166,29 @@ int OptimizeProblem_ref(SparseMatrix_type& A, GMRESData_type& data, Vector_type&
 #endif
 
 
-            if (cudaSuccess != cudaMemcpy(curLevelMatrix->d_row_ptr, h_row_ptr, (nrow + 1) * sizeof(int), cudaMemcpyHostToDevice)) {
+            if (cudaSuccess != cudaMemcpy(curLevelMatrix->d_row_ptr,
+                                          h_row_ptr,
+                                          (nrow + 1) * sizeof(int),
+                                          cudaMemcpyHostToDevice)) {
                 printf(" Failed to memcpy A.d_row_ptr\n");
             }
-            if (cudaSuccess != cudaMemcpy(curLevelMatrix->d_col_idx, h_col_ind, nnz * sizeof(int), cudaMemcpyHostToDevice)) {
+            if (cudaSuccess != cudaMemcpy(curLevelMatrix->d_col_idx,
+                                          h_col_ind,
+                                          nnz * sizeof(int),
+                                          cudaMemcpyHostToDevice)) {
                 printf(" Failed to memcpy A.d_col_idx\n");
             }
-            if (cudaSuccess != cudaMemcpy(curLevelMatrix->d_nzvals, h_nzvals, nnz * sizeof(SC), cudaMemcpyHostToDevice)) {
+            if (cudaSuccess != cudaMemcpy(curLevelMatrix->d_nzvals,
+                                          h_nzvals,
+                                          nnz * sizeof(SC),
+                                          cudaMemcpyHostToDevice)) {
                 printf(" Failed to memcpy A.d_nzvals\n");
             }
 #ifndef HPGMP_NO_MPI
-            if (cudaSuccess != cudaMemcpy(curLevelMatrix->d_elementsToSend, curLevelMatrix->elementsToSend, totalToBeSent * sizeof(local_int_t), cudaMemcpyHostToDevice)) {
+            if (cudaSuccess != cudaMemcpy(curLevelMatrix->d_elementsToSend,
+                                          curLevelMatrix->elementsToSend,
+                                          totalToBeSent * sizeof(local_int_t),
+                                          cudaMemcpyHostToDevice)) {
                 printf(" Failed to memcpy A.d_elementsToSend\n");
             }
 #endif
@@ -203,17 +215,29 @@ int OptimizeProblem_ref(SparseMatrix_type& A, GMRESData_type& data, Vector_type&
             }
 #endif
 
-            if (hipSuccess != hipMemcpy(curLevelMatrix->d_row_ptr, h_row_ptr, (nrow + 1) * sizeof(int), hipMemcpyHostToDevice)) {
+            if (hipSuccess != hipMemcpy(curLevelMatrix->d_row_ptr,
+                                        h_row_ptr,
+                                        (nrow + 1) * sizeof(int),
+                                        hipMemcpyHostToDevice)) {
                 printf(" Failed to memcpy A.d_row_ptr\n");
             }
-            if (hipSuccess != hipMemcpy(curLevelMatrix->d_col_idx, h_col_ind, nnz * sizeof(int), hipMemcpyHostToDevice)) {
+            if (hipSuccess != hipMemcpy(curLevelMatrix->d_col_idx,
+                                        h_col_ind,
+                                        nnz * sizeof(int),
+                                        hipMemcpyHostToDevice)) {
                 printf(" Failed to memcpy A.d_col_idx\n");
             }
-            if (hipSuccess != hipMemcpy(curLevelMatrix->d_nzvals, h_nzvals, nnz * sizeof(SC), hipMemcpyHostToDevice)) {
+            if (hipSuccess != hipMemcpy(curLevelMatrix->d_nzvals,
+                                        h_nzvals,
+                                        nnz * sizeof(SC),
+                                        hipMemcpyHostToDevice)) {
                 printf(" Failed to memcpy A.d_nzvals\n");
             }
 #ifndef HPGMP_NO_MPI
-            if (hipSuccess != hipMemcpy(curLevelMatrix->d_elementsToSend, curLevelMatrix->elementsToSend, totalToBeSent * sizeof(local_int_t), hipMemcpyHostToDevice)) {
+            if (hipSuccess != hipMemcpy(curLevelMatrix->d_elementsToSend,
+                                        curLevelMatrix->elementsToSend,
+                                        totalToBeSent * sizeof(local_int_t),
+                                        hipMemcpyHostToDevice)) {
                 printf(" Failed to memcpy A.d_elementsToSend\n");
             }
 #endif
@@ -271,13 +295,22 @@ int OptimizeProblem_ref(SparseMatrix_type& A, GMRESData_type& data, Vector_type&
                 printf(" Failed to allocate A.d_Lrow_ptr\n");
             }
 
-            if (cudaSuccess != cudaMemcpy(curLevelMatrix->d_Lrow_ptr, h_Lrow_ptr, (nrow + 1) * sizeof(int), cudaMemcpyHostToDevice)) {
+            if (cudaSuccess != cudaMemcpy(curLevelMatrix->d_Lrow_ptr,
+                                          h_Lrow_ptr,
+                                          (nrow + 1) * sizeof(int),
+                                          cudaMemcpyHostToDevice)) {
                 printf(" Failed to memcpy A.d_Lrow_ptr\n");
             }
-            if (cudaSuccess != cudaMemcpy(curLevelMatrix->d_Lcol_idx, h_Lcol_ind, nnzL * sizeof(int), cudaMemcpyHostToDevice)) {
+            if (cudaSuccess != cudaMemcpy(curLevelMatrix->d_Lcol_idx,
+                                          h_Lcol_ind,
+                                          nnzL * sizeof(int),
+                                          cudaMemcpyHostToDevice)) {
                 printf(" Failed to memcpy A.d_Lcol_idx\n");
             }
-            if (cudaSuccess != cudaMemcpy(curLevelMatrix->d_Lnzvals, h_Lnzvals, nnzL * sizeof(SC), cudaMemcpyHostToDevice)) {
+            if (cudaSuccess != cudaMemcpy(curLevelMatrix->d_Lnzvals,
+                                          h_Lnzvals,
+                                          nnzL * sizeof(SC),
+                                          cudaMemcpyHostToDevice)) {
                 printf(" Failed to memcpy A.d_Lrow_ptr\n");
             }
 #elif defined(HPGMP_WITH_HIP)
@@ -291,13 +324,22 @@ int OptimizeProblem_ref(SparseMatrix_type& A, GMRESData_type& data, Vector_type&
                 printf(" Failed to allocate A.d_Lrow_ptr\n");
             }
 
-            if (hipSuccess != hipMemcpy(curLevelMatrix->d_Lrow_ptr, h_Lrow_ptr, (nrow + 1) * sizeof(int), hipMemcpyHostToDevice)) {
+            if (hipSuccess != hipMemcpy(curLevelMatrix->d_Lrow_ptr,
+                                        h_Lrow_ptr,
+                                        (nrow + 1) * sizeof(int),
+                                        hipMemcpyHostToDevice)) {
                 printf(" Failed to memcpy A.d_Lrow_ptr\n");
             }
-            if (hipSuccess != hipMemcpy(curLevelMatrix->d_Lcol_idx, h_Lcol_ind, nnzL * sizeof(int), hipMemcpyHostToDevice)) {
+            if (hipSuccess != hipMemcpy(curLevelMatrix->d_Lcol_idx,
+                                        h_Lcol_ind,
+                                        nnzL * sizeof(int),
+                                        hipMemcpyHostToDevice)) {
                 printf(" Failed to memcpy A.d_Lcol_idx\n");
             }
-            if (hipSuccess != hipMemcpy(curLevelMatrix->d_Lnzvals, h_Lnzvals, nnzL * sizeof(SC), hipMemcpyHostToDevice)) {
+            if (hipSuccess != hipMemcpy(curLevelMatrix->d_Lnzvals,
+                                        h_Lnzvals,
+                                        nnzL * sizeof(SC),
+                                        hipMemcpyHostToDevice)) {
                 printf(" Failed to memcpy A.d_Lrow_ptr\n");
             }
 #endif
@@ -314,13 +356,22 @@ int OptimizeProblem_ref(SparseMatrix_type& A, GMRESData_type& data, Vector_type&
                 printf(" Failed to allocate A.d_Urow_ptr(nnzU=%d)\n", nnzU);
             }
 
-            if (cudaSuccess != cudaMemcpy(curLevelMatrix->d_Urow_ptr, h_Urow_ptr, (nrow + 1) * sizeof(int), cudaMemcpyHostToDevice)) {
+            if (cudaSuccess != cudaMemcpy(curLevelMatrix->d_Urow_ptr,
+                                          h_Urow_ptr,
+                                          (nrow + 1) * sizeof(int),
+                                          cudaMemcpyHostToDevice)) {
                 printf(" Failed to memcpy A.d_Urow_ptr\n");
             }
-            if (cudaSuccess != cudaMemcpy(curLevelMatrix->d_Ucol_idx, h_Ucol_ind, nnzU * sizeof(int), cudaMemcpyHostToDevice)) {
+            if (cudaSuccess != cudaMemcpy(curLevelMatrix->d_Ucol_idx,
+                                          h_Ucol_ind,
+                                          nnzU * sizeof(int),
+                                          cudaMemcpyHostToDevice)) {
                 printf(" Failed to memcpy A.d_Ucol_idx\n");
             }
-            if (cudaSuccess != cudaMemcpy(curLevelMatrix->d_Unzvals, h_Unzvals, nnzU * sizeof(SC), cudaMemcpyHostToDevice)) {
+            if (cudaSuccess != cudaMemcpy(curLevelMatrix->d_Unzvals,
+                                          h_Unzvals,
+                                          nnzU * sizeof(SC),
+                                          cudaMemcpyHostToDevice)) {
                 printf(" Failed to memcpy A.d_Urow_ptr\n");
             }
 #elif defined(HPGMP_WITH_HIP)
@@ -334,13 +385,22 @@ int OptimizeProblem_ref(SparseMatrix_type& A, GMRESData_type& data, Vector_type&
                 printf(" Failed to allocate A.d_Urow_ptr(nnzU=%lld)\n", nnzU);
             }
 
-            if (hipSuccess != hipMemcpy(curLevelMatrix->d_Urow_ptr, h_Urow_ptr, (nrow + 1) * sizeof(int), hipMemcpyHostToDevice)) {
+            if (hipSuccess != hipMemcpy(curLevelMatrix->d_Urow_ptr,
+                                        h_Urow_ptr,
+                                        (nrow + 1) * sizeof(int),
+                                        hipMemcpyHostToDevice)) {
                 printf(" Failed to memcpy A.d_Urow_ptr\n");
             }
-            if (hipSuccess != hipMemcpy(curLevelMatrix->d_Ucol_idx, h_Ucol_ind, nnzU * sizeof(int), hipMemcpyHostToDevice)) {
+            if (hipSuccess != hipMemcpy(curLevelMatrix->d_Ucol_idx,
+                                        h_Ucol_ind,
+                                        nnzU * sizeof(int),
+                                        hipMemcpyHostToDevice)) {
                 printf(" Failed to memcpy A.d_Ucol_idx\n");
             }
-            if (hipSuccess != hipMemcpy(curLevelMatrix->d_Unzvals, h_Unzvals, nnzU * sizeof(SC), hipMemcpyHostToDevice)) {
+            if (hipSuccess != hipMemcpy(curLevelMatrix->d_Unzvals,
+                                        h_Unzvals,
+                                        nnzU * sizeof(SC),
+                                        hipMemcpyHostToDevice)) {
                 printf(" Failed to memcpy A.d_Urow_ptr\n");
             }
 #endif
@@ -380,7 +440,9 @@ int OptimizeProblem_ref(SparseMatrix_type& A, GMRESData_type& data, Vector_type&
             }
             cusparseSpMatDescr_t A_cusparse;
             cusparseCreateCsr(&A_cusparse, nrow, ncol, nnz,
-                              curLevelMatrix->d_row_ptr, curLevelMatrix->d_col_idx, curLevelMatrix->d_nzvals,
+                              curLevelMatrix->d_row_ptr,
+                              curLevelMatrix->d_col_idx,
+                              curLevelMatrix->d_nzvals,
                               CUSPARSE_INDEX_32I, CUSPARSE_INDEX_32I,
                               CUSPARSE_INDEX_BASE_ZERO, computeType);
             // create vectors
@@ -390,8 +452,10 @@ int OptimizeProblem_ref(SparseMatrix_type& A, GMRESData_type& data, Vector_type&
             // allocate buffer
             const SC one(1.0);
             const SC zero(0.0);
-            cusparseSpMV_bufferSize(A.cusparseHandle, CUSPARSE_OPERATION_NON_TRANSPOSE, &one, A_cusparse, vecX, &zero, vecY,
-                                    computeType, CUSPARSE_MV_ALG_DEFAULT, &curLevelMatrix->buffer_size_A);
+            cusparseSpMV_bufferSize(A.cusparseHandle, CUSPARSE_OPERATION_NON_TRANSPOSE,
+                                    &one, A_cusparse, vecX, &zero, vecY,
+                                    computeType, CUSPARSE_MV_ALG_DEFAULT,
+                                    &curLevelMatrix->buffer_size_A);
             cudaMalloc(&curLevelMatrix->buffer_A, curLevelMatrix->buffer_size_A);
 #endif
 
@@ -411,9 +475,12 @@ int OptimizeProblem_ref(SparseMatrix_type& A, GMRESData_type& data, Vector_type&
             if (std::is_same<SC, double>::value) {
 #if CUDA_VERSION >= 11000
                 int pBufferSize;
-                cusparseDcsrsv2_bufferSize(dctx->get_sparse_handle(), CUSPARSE_OPERATION_NON_TRANSPOSE, nrow, nnzL,
+                cusparseDcsrsv2_bufferSize(dctx->get_sparse_handle(),
+                                           CUSPARSE_OPERATION_NON_TRANSPOSE, nrow, nnzL,
                                            curLevelMatrix->descrL,
-                                           (double*)curLevelMatrix->d_Lnzvals, curLevelMatrix->d_Lrow_ptr, curLevelMatrix->d_Lcol_idx,
+                                           (double*)curLevelMatrix->d_Lnzvals,
+                                           curLevelMatrix->d_Lrow_ptr,
+                                           curLevelMatrix->d_Lcol_idx,
                                            curLevelMatrix->infoL,
                                            &pBufferSize);
                 if (cudaSuccess != cudaMalloc(&(curLevelMatrix->buffer_L), pBufferSize)) {
@@ -437,28 +504,43 @@ int OptimizeProblem_ref(SparseMatrix_type& A, GMRESData_type& data, Vector_type&
                 cusparseDcsrsv_analysis(dctx->get_sparse_handle(),
                                         CUSPARSE_OPERATION_NON_TRANSPOSE, nrow, nnzL,
                                         curLevelMatrix->descrL,
-                                        (double*)curLevelMatrix->d_Lnzvals, curLevelMatrix->d_Lrow_ptr, curLevelMatrix->d_Lcol_idx,
+                                        (double*)curLevelMatrix->d_Lnzvals,
+                                        curLevelMatrix->d_Lrow_ptr,
+                                        curLevelMatrix->d_Lcol_idx,
                                         curLevelMatrix->infoL);
 #endif
             } else if (std::is_same<SC, float>::value) {
 #if CUDA_VERSION >= 11000
                 int pBufferSize;
-                cusparseScsrsv2_bufferSize(dctx->get_sparse_handle(), CUSPARSE_OPERATION_NON_TRANSPOSE, nrow, nnzL,
+                cusparseScsrsv2_bufferSize(dctx->get_sparse_handle(),
+                                           CUSPARSE_OPERATION_NON_TRANSPOSE,
+                                           nrow, nnzL,
                                            curLevelMatrix->descrL,
-                                           (float*)curLevelMatrix->d_Lnzvals, curLevelMatrix->d_Lrow_ptr, curLevelMatrix->d_Lcol_idx,
+                                           (float*)curLevelMatrix->d_Lnzvals,
+                                           curLevelMatrix->d_Lrow_ptr,
+                                           curLevelMatrix->d_Lcol_idx,
                                            curLevelMatrix->infoL,
                                            &pBufferSize);
                 if (cudaSuccess != cudaMalloc(&(curLevelMatrix->buffer_L), pBufferSize)) {
                     printf(" Failed cudaMalloc for cusparseDcsrsv2 failed\n");
                 }
-                cusparseScsrsv2_analysis(dctx->get_sparse_handle(), CUSPARSE_OPERATION_NON_TRANSPOSE, nrow, nnzL, curLevelMatrix->descrL,
-                                         (float*)curLevelMatrix->d_Lnzvals, curLevelMatrix->d_Lrow_ptr, curLevelMatrix->d_Lcol_idx,
-                                         curLevelMatrix->infoL, CUSPARSE_SOLVE_POLICY_USE_LEVEL, curLevelMatrix->buffer_L);
+                cusparseScsrsv2_analysis(dctx->get_sparse_handle(),
+                                         CUSPARSE_OPERATION_NON_TRANSPOSE,
+                                         nrow, nnzL, curLevelMatrix->descrL,
+                                         (float*)curLevelMatrix->d_Lnzvals,
+                                         curLevelMatrix->d_Lrow_ptr,
+                                         curLevelMatrix->d_Lcol_idx,
+                                         curLevelMatrix->infoL,
+                                         CUSPARSE_SOLVE_POLICY_USE_LEVEL,
+                                         curLevelMatrix->buffer_L);
 #else
                 cusparseScsrsv_analysis(dctx->get_sparse_handle(),
-                                        CUSPARSE_OPERATION_NON_TRANSPOSE, nrow, nnzL,
+                                        CUSPARSE_OPERATION_NON_TRANSPOSE,
+                                        nrow, nnzL,
                                         curLevelMatrix->descrL,
-                                        (float*)curLevelMatrix->d_Lnzvals, curLevelMatrix->d_Lrow_ptr, curLevelMatrix->d_Lcol_idx,
+                                        (float*)curLevelMatrix->d_Lnzvals,
+                                        curLevelMatrix->d_Lrow_ptr,
+                                        curLevelMatrix->d_Lcol_idx,
                                         curLevelMatrix->infoL);
 #endif
             }
@@ -470,13 +552,18 @@ int OptimizeProblem_ref(SparseMatrix_type& A, GMRESData_type& data, Vector_type&
             cusparseSetMatIndexBase(curLevelMatrix->descrU, CUSPARSE_INDEX_BASE_ZERO);
 #if CUDA_VERSION >= 11000
             cusparseSpMatDescr_t U_cusparse;
-            cusparseCreateCsr(&U_cusparse, nrow, ncol, curLevelMatrix->nnzU,
-                              curLevelMatrix->d_Urow_ptr, curLevelMatrix->d_Ucol_idx, curLevelMatrix->d_Unzvals,
+            cusparseCreateCsr(&U_cusparse, nrow, ncol,
+                              curLevelMatrix->nnzU,
+                              curLevelMatrix->d_Urow_ptr,
+                              curLevelMatrix->d_Ucol_idx, c urLevelMatrix->d_Unzvals,
                               CUSPARSE_INDEX_32I, CUSPARSE_INDEX_32I,
                               CUSPARSE_INDEX_BASE_ZERO, computeType);
             // allocate buffer
-            cusparseSpMV_bufferSize(A.cusparseHandle, CUSPARSE_OPERATION_NON_TRANSPOSE, &one, U_cusparse, vecX, &zero, vecY,
-                                    computeType, CUSPARSE_MV_ALG_DEFAULT, &curLevelMatrix->buffer_size_U);
+            cusparseSpMV_bufferSize(A.cusparseHandle,
+                                    CUSPARSE_OPERATION_NON_TRANSPOSE,
+                                    &one, U_cusparse, vecX, &zero, vecY,
+                                    computeType, CUSPARSE_MV_ALG_DEFAULT,
+                                    &curLevelMatrix->buffer_size_U);
             cudaMalloc(&curLevelMatrix->buffer_U, curLevelMatrix->buffer_size_U);
 #endif
 #elif defined(HPGMP_WITH_HIP)
@@ -491,8 +578,10 @@ int OptimizeProblem_ref(SparseMatrix_type& A, GMRESData_type& data, Vector_type&
                 rocsparse_compute_type = rocsparse_datatype_f32_r;
             }
             rocsparse_create_csr_descr(&(curLevelMatrix->descrA), nrow, ncol, nnz,
-                                       curLevelMatrix->d_row_ptr, curLevelMatrix->d_col_idx, curLevelMatrix->d_nzvals,
-                                       rocsparse_indextype_i32, rocsparse_indextype_i32, rocsparse_index_base_zero, rocsparse_compute_type);
+                                       curLevelMatrix->d_row_ptr, curLevelMatrix->d_col_idx,
+                                       curLevelMatrix->d_nzvals,
+                                       rocsparse_indextype_i32, rocsparse_indextype_i32,
+                                       rocsparse_index_base_zero, rocsparse_compute_type);
             curLevelMatrix->buffer_size_A = 0;
             curLevelMatrix->buffer_A      = nullptr;
             rocsparse_dnvec_descr vecX, vecY;
@@ -515,26 +604,38 @@ int OptimizeProblem_ref(SparseMatrix_type& A, GMRESData_type& data, Vector_type&
             // -------------------------
             // run analysis for triangular solve
             rocsparse_create_csr_descr(&(curLevelMatrix->descrL), nrow, nrow, nnzL,
-                                       curLevelMatrix->d_Lrow_ptr, curLevelMatrix->d_Lcol_idx, curLevelMatrix->d_Lnzvals,
-                                       rocsparse_indextype_i32, rocsparse_indextype_i32, rocsparse_index_base_zero, rocsparse_compute_type);
+                                       curLevelMatrix->d_Lrow_ptr, curLevelMatrix->d_Lcol_idx,
+                                       curLevelMatrix->d_Lnzvals,
+                                       rocsparse_indextype_i32, rocsparse_indextype_i32,
+                                       rocsparse_index_base_zero, rocsparse_compute_type);
             curLevelMatrix->buffer_size_L = 0;
             curLevelMatrix->buffer_L      = nullptr;
             rocsparse_create_dnvec_descr(&vecX, nrow, (void*)curLevelMatrix->workx.d_values(), rocsparse_compute_type);
             rocsparse_create_dnvec_descr(&vecY, nrow, (void*)tempy.d_values(), rocsparse_compute_type);
-            rocsparse_status spsv_stat = rocsparse_spsv(dctx->get_sparse_handle(), rocsparse_operation_none,
-                                                        &one, curLevelMatrix->descrL, vecY, vecY, rocsparse_compute_type,
-                                                        rocsparse_spsv_alg_default, rocsparse_spsv_stage_buffer_size,
-                                                        &curLevelMatrix->buffer_size_L, curLevelMatrix->buffer_L);
+            rocsparse_status spsv_stat = rocsparse_spsv(dctx->get_sparse_handle(),
+                                                        rocsparse_operation_none,
+                                                        &one, curLevelMatrix->descrL,
+                                                        vecY, vecY,
+                                                        rocsparse_compute_type,
+                                                        rocsparse_spsv_alg_default,
+                                                        rocsparse_spsv_stage_buffer_size,
+                                                        &curLevelMatrix->buffer_size_L,
+                                                        curLevelMatrix->buffer_L);
             if (rocsparse_status_success != spsv_stat) {
                 printf(" Failed rocsparse_spsv(buffer size, stat = %d)\n", spsv_stat);
             }
             //if (curLevelMatrix->buffer_size_L <= 0) curLevelMatrix->buffer_size_L = 1;
             //hipMalloc(&curLevelMatrix->buffer_L, curLevelMatrix->buffer_size_L);
             curLevelMatrix->buffer_L = dctx->device_alloc(curLevelMatrix->buffer_size_L);
-            spsv_stat                = rocsparse_spsv(dctx->get_sparse_handle(), rocsparse_operation_none,
-                                                      &one, curLevelMatrix->descrL, vecY, vecY, rocsparse_compute_type,
-                                                      rocsparse_spsv_alg_default, rocsparse_spsv_stage_preprocess,
-                                                      &curLevelMatrix->buffer_size_L, curLevelMatrix->buffer_L);
+            spsv_stat                = rocsparse_spsv(dctx->get_sparse_handle(),
+                                                      rocsparse_operation_none,
+                                                      &one, curLevelMatrix->descrL,
+                                                      vecY, vecY,
+                                                      rocsparse_compute_type,
+                                                      rocsparse_spsv_alg_default,
+                                                      rocsparse_spsv_stage_preprocess,
+                                                      &curLevelMatrix->buffer_size_L,
+                                                      curLevelMatrix->buffer_L);
             if (rocsparse_status_success != spsv_stat) {
                 printf(" Failed rocsparse_spsv(preprocess, stat = %d)\n", spsv_stat);
             }
@@ -544,8 +645,10 @@ int OptimizeProblem_ref(SparseMatrix_type& A, GMRESData_type& data, Vector_type&
             // -------------------------
             // descriptor for U
             rocsparse_create_csr_descr(&(curLevelMatrix->descrU), nrow, ncol, nnzU,
-                                       curLevelMatrix->d_Urow_ptr, curLevelMatrix->d_Ucol_idx, curLevelMatrix->d_Unzvals,
-                                       rocsparse_indextype_i32, rocsparse_indextype_i32, rocsparse_index_base_zero, rocsparse_compute_type);
+                                       curLevelMatrix->d_Urow_ptr, curLevelMatrix->d_Ucol_idx,
+                                       curLevelMatrix->d_Unzvals,
+                                       rocsparse_indextype_i32, rocsparse_indextype_i32,
+                                       rocsparse_index_base_zero, rocsparse_compute_type);
             const SC alpha(-1.0);
             const SC beta(1.0);
             curLevelMatrix->buffer_size_U = 0;
@@ -589,23 +692,29 @@ int OptimizeProblem_ref(SparseMatrix_type& A, GMRESData_type& data, Vector_type&
                 curLevelMatrix->mgData->d_col_idx = (int*)dctx->device_alloc(nc * sizeof(int));
                 curLevelMatrix->mgData->d_nzvals  = (SC*)dctx->device_alloc(nc * sizeof(SC));
 #if defined(HPGMP_WITH_CUDA)
-                if (cudaSuccess != cudaMemcpy(curLevelMatrix->mgData->d_row_ptr, h_row_ptr, (nc + 1) * sizeof(int), cudaMemcpyHostToDevice)) {
+                if (cudaSuccess != cudaMemcpy(curLevelMatrix->mgData->d_row_ptr, h_row_ptr,
+                                              (nc + 1) * sizeof(int), cudaMemcpyHostToDevice)) {
                     printf(" Failed to memcpy A.d_row_ptr\n");
                 }
-                if (cudaSuccess != cudaMemcpy(curLevelMatrix->mgData->d_col_idx, h_col_ind, nc * sizeof(int), cudaMemcpyHostToDevice)) {
+                if (cudaSuccess != cudaMemcpy(curLevelMatrix->mgData->d_col_idx, h_col_ind,
+                                              nc * sizeof(int), cudaMemcpyHostToDevice)) {
                     printf(" Failed to memcpy A.d_col_idx\n");
                 }
-                if (cudaSuccess != cudaMemcpy(curLevelMatrix->mgData->d_nzvals, h_nzvals, nc * sizeof(SC), cudaMemcpyHostToDevice)) {
+                if (cudaSuccess != cudaMemcpy(curLevelMatrix->mgData->d_nzvals, h_nzvals,
+                                              nc * sizeof(SC), cudaMemcpyHostToDevice)) {
                     printf(" Failed to memcpy A.d_nzvals\n");
                 }
 #elif defined(HPGMP_WITH_HIP)
-                if (hipSuccess != hipMemcpy(curLevelMatrix->mgData->d_row_ptr, h_row_ptr, (nc + 1) * sizeof(int), hipMemcpyHostToDevice)) {
+                if (hipSuccess != hipMemcpy(curLevelMatrix->mgData->d_row_ptr, h_row_ptr,
+                                            (nc + 1) * sizeof(int), hipMemcpyHostToDevice)) {
                     printf(" Failed to memcpy A.d_row_ptr\n");
                 }
-                if (hipSuccess != hipMemcpy(curLevelMatrix->mgData->d_col_idx, h_col_ind, nc * sizeof(int), hipMemcpyHostToDevice)) {
+                if (hipSuccess != hipMemcpy(curLevelMatrix->mgData->d_col_idx, h_col_ind,
+                                            nc * sizeof(int), hipMemcpyHostToDevice)) {
                     printf(" Failed to memcpy A.d_col_idx\n");
                 }
-                if (hipSuccess != hipMemcpy(curLevelMatrix->mgData->d_nzvals, h_nzvals, nc * sizeof(SC), hipMemcpyHostToDevice)) {
+                if (hipSuccess != hipMemcpy(curLevelMatrix->mgData->d_nzvals, h_nzvals,
+                                            nc * sizeof(SC), hipMemcpyHostToDevice)) {
                     printf(" Failed to memcpy A.d_nzvals\n");
                 }
 
@@ -634,13 +743,16 @@ int OptimizeProblem_ref(SparseMatrix_type& A, GMRESData_type& data, Vector_type&
                     printf(" Failed to allocate A.d_nzvals(nc=%d)\n", nc);
                 }
 
-                if (hipSuccess != hipMemcpy(curLevelMatrix->mgData->d_tran_row_ptr, h_row_ptr, (nrow + 1) * sizeof(int), hipMemcpyHostToDevice)) {
+                if (hipSuccess != hipMemcpy(curLevelMatrix->mgData->d_tran_row_ptr, h_row_ptr,
+                                            (nrow + 1) * sizeof(int), hipMemcpyHostToDevice)) {
                     printf(" Failed to memcpy A.d_row_ptr\n");
                 }
-                if (hipSuccess != hipMemcpy(curLevelMatrix->mgData->d_tran_col_idx, h_col_ind, nc * sizeof(int), hipMemcpyHostToDevice)) {
+                if (hipSuccess != hipMemcpy(curLevelMatrix->mgData->d_tran_col_idx, h_col_ind,
+                                            nc * sizeof(int), hipMemcpyHostToDevice)) {
                     printf(" Failed to memcpy A.d_col_idx\n");
                 }
-                if (hipSuccess != hipMemcpy(curLevelMatrix->mgData->d_tran_nzvals, h_nzvals, nc * sizeof(SC), hipMemcpyHostToDevice)) {
+                if (hipSuccess != hipMemcpy(curLevelMatrix->mgData->d_tran_nzvals, h_nzvals,
+                                            nc * sizeof(SC), hipMemcpyHostToDevice)) {
                     printf(" Failed to memcpy A.d_nzvals\n");
                 }
 #endif
@@ -655,7 +767,9 @@ int OptimizeProblem_ref(SparseMatrix_type& A, GMRESData_type& data, Vector_type&
                 // create matrix R
                 cusparseSpMatDescr_t R_cusparse;
                 cusparseCreateCsr(&R_cusparse, nc, nrow, nc,
-                                  curLevelMatrix->mgData->d_row_ptr, curLevelMatrix->mgData->d_col_idx, curLevelMatrix->mgData->d_nzvals,
+                                  curLevelMatrix->mgData->d_row_ptr,
+                                  curLevelMatrix->mgData->d_col_idx,
+                                  curLevelMatrix->mgData->d_nzvals,
                                   CUSPARSE_INDEX_32I, CUSPARSE_INDEX_32I,
                                   CUSPARSE_INDEX_BASE_ZERO, computeType);
                 // create vectors
@@ -663,18 +777,25 @@ int OptimizeProblem_ref(SparseMatrix_type& A, GMRESData_type& data, Vector_type&
                 cusparseCreateDnVec(&vecX, nrow, (void*)curLevelMatrix->workx.d_values(), computeType);
                 cusparseCreateDnVec(&vecY, nc, (void*)tempy.d_values(), computeType);
                 // allocate buffer for R
-                cusparseSpMV_bufferSize(A.cusparseHandle, CUSPARSE_OPERATION_NON_TRANSPOSE, &one, R_cusparse, vecX, &one, vecY,
-                                        computeType, CUSPARSE_MV_ALG_DEFAULT, &curLevelMatrix->mgData->buffer_size_R);
+                cusparseSpMV_bufferSize(A.cusparseHandle, CUSPARSE_OPERATION_NON_TRANSPOSE,
+                                        &one, R_cusparse, vecX, &one, vecY,
+                                        computeType, CUSPARSE_MV_ALG_DEFAULT,
+                                        &curLevelMatrix->mgData->buffer_size_R);
                 cudaMalloc(&curLevelMatrix->mgData->buffer_R, curLevelMatrix->mgData->buffer_size_R);
                 // allocate buffer for P
-                cusparseSpMV_bufferSize(A.cusparseHandle, CUSPARSE_OPERATION_TRANSPOSE, &one, R_cusparse, vecY, &one, vecX,
-                                        computeType, CUSPARSE_MV_ALG_DEFAULT, &curLevelMatrix->mgData->buffer_size_P);
+                cusparseSpMV_bufferSize(A.cusparseHandle, CUSPARSE_OPERATION_TRANSPOSE,
+                                        &one, R_cusparse, vecY, &one, vecX,
+                                        computeType, CUSPARSE_MV_ALG_DEFAULT,
+                                        &curLevelMatrix->mgData->buffer_size_P);
 #endif
 #elif defined(HPGMP_WITH_HIP)
                 rocsparse_datatype rocsparse_compute_type = rocsparse_datatype_f64_r;
                 rocsparse_create_csr_descr(&(curLevelMatrix->mgData->descrR), nc, nrow, nc,
-                                           curLevelMatrix->mgData->d_row_ptr, curLevelMatrix->mgData->d_col_idx, curLevelMatrix->mgData->d_nzvals,
-                                           rocsparse_indextype_i32, rocsparse_indextype_i32, rocsparse_index_base_zero, rocsparse_compute_type);
+                                           curLevelMatrix->mgData->d_row_ptr,
+                                           curLevelMatrix->mgData->d_col_idx,
+                                           curLevelMatrix->mgData->d_nzvals,
+                                           rocsparse_indextype_i32, rocsparse_indextype_i32,
+                                           rocsparse_index_base_zero, rocsparse_compute_type);
                 curLevelMatrix->mgData->buffer_size_R = 0;
                 curLevelMatrix->mgData->buffer_R      = nullptr;
                 rocsparse_dnvec_descr vecX, vecY;
@@ -695,8 +816,11 @@ int OptimizeProblem_ref(SparseMatrix_type& A, GMRESData_type& data, Vector_type&
 
                 // Allocate buffer for prolongation
                 rocsparse_create_csr_descr(&(curLevelMatrix->mgData->descrP), nrow, nc, nc,
-                                           curLevelMatrix->mgData->d_tran_row_ptr, curLevelMatrix->mgData->d_tran_col_idx, curLevelMatrix->mgData->d_tran_nzvals,
-                                           rocsparse_indextype_i32, rocsparse_indextype_i32, rocsparse_index_base_zero, rocsparse_compute_type);
+                                           curLevelMatrix->mgData->d_tran_row_ptr,
+                                           curLevelMatrix->mgData->d_tran_col_idx,
+                                           curLevelMatrix->mgData->d_tran_nzvals,
+                                           rocsparse_indextype_i32, rocsparse_indextype_i32,
+                                           rocsparse_index_base_zero, rocsparse_compute_type);
                 curLevelMatrix->mgData->buffer_size_P = 0;
                 curLevelMatrix->mgData->buffer_P      = nullptr;
                 rocsparse_spmv(dctx->get_sparse_handle(), rocsparse_operation_none,
