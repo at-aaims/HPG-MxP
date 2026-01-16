@@ -25,44 +25,17 @@ public:
 
     ~ELLMatrix();
 
-    local_int_t get_ell_width() const
-    {
-        return ell_width_;
-    }
-    const hiscalar* get_values() const
-    {
-        return values_;
-    }
-    const local_int_t* get_col_idxs() const
-    {
-        return col_idxs_;
-    }
+    local_int_t get_ell_width() const { return ell_width_; }
+    const hiscalar* get_values() const { return values_; }
+    const local_int_t* get_col_idxs() const { return col_idxs_; }
 
-    const local_int_t* get_halo_col_idxs() const
-    {
-        return halo_col_idxs_;
-    }
-    const hiscalar* get_halo_values() const
-    {
-        return halo_values_;
-    }
+    const local_int_t* get_halo_col_idxs() const { return halo_col_idxs_; }
+    const hiscalar* get_halo_values() const { return halo_values_; }
 
-    int get_ld_values() const
-    {
-        return ldv_;
-    }
-    int get_ld_indices() const
-    {
-        return ldi_;
-    }
-    int get_halo_ld_values() const
-    {
-        return halo_ldv_;
-    }
-    int get_halo_ld_indices() const
-    {
-        return halo_ldi_;
-    }
+    int get_ld_values() const { return ldv_; }
+    int get_ld_indices() const { return ldi_; }
+    int get_halo_ld_values() const { return halo_ldv_; }
+    int get_halo_ld_indices() const { return halo_ldi_; }
 
     /** @brief Permute rows of the matrix based on a permutation vector.
      *
@@ -70,14 +43,8 @@ public:
      */
     void permute_rows(const local_int_t* perm);
 
-    const hiscalar* get_inverse_diagonal() const
-    {
-        return inv_diag_;
-    }
-    const local_int_t* get_diagonal_indices() const
-    {
-        return diag_idxs_;
-    }
+    const hiscalar* get_inverse_diagonal() const { return inv_diag_; }
+    const local_int_t* get_diagonal_indices() const { return diag_idxs_; }
 
     /** @brief Compute and store indices of diagonal entries in every row and
      *         the inverses of the diagonal entries.

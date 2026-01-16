@@ -78,40 +78,16 @@ public:
     void initialize_view(local_int_t localLength, comm_type comm, DeviceCtx* dev_ctx,
                          SC* values, SC* d_values);
 
-    SC* values()
-    {
-        return values_;
-    }
-    SC* d_values()
-    {
-        return d_values_;
-    }
-    const SC* values() const
-    {
-        return values_;
-    }
-    const SC* d_values() const
-    {
-        return d_values_;
-    }
-    local_int_t local_length() const
-    {
-        return localLength_;
-    }
+    SC* values() { return values_; }
+    SC* d_values() { return d_values_; }
+    const SC* values() const { return values_; }
+    const SC* d_values() const { return d_values_; }
+    local_int_t local_length() const { return localLength_; }
 
-    DeviceCtx* get_device_context() const
-    {
-        return dctx_;
-    }
-    comm_type get_comm() const
-    {
-        return comm_;
-    }
+    DeviceCtx* get_device_context() const { return dctx_; }
+    comm_type get_comm() const { return comm_; }
 
-    dev_blas_ctx get_blas_handle() const
-    {
-        return dctx_->get_blas_handle();
-    }
+    dev_blas_ctx get_blas_handle() const { return dctx_->get_blas_handle(); }
 
     /// Updates the host copy of the vector from device data.
     void update_host_mirror() const;

@@ -37,89 +37,32 @@ public:
 
     virtual ~DistMatrixBase();
 
-    DeviceCtx* get_device_context() const
-    {
-        return dctx_;
-    }
-    comm_type get_comm() const
-    {
-        return comm_;
-    }
-    const Geometry* get_geometry() const
-    {
-        return geom_;
-    }
+    DeviceCtx* get_device_context() const { return dctx_; }
+    comm_type get_comm() const { return comm_; }
+    const Geometry* get_geometry() const { return geom_; }
 
-    local_int_t get_local_num_rows() const
-    {
-        return local_nrows_;
-    }
-    local_int_t get_local_num_cols() const
-    {
-        return local_ncols_;
-    }
+    local_int_t get_local_num_rows() const { return local_nrows_; }
+    local_int_t get_local_num_cols() const { return local_ncols_; }
 
-    local_int_t get_num_halo_rows() const
-    {
-        return n_halo_rows_;
-    }
-    local_int_t get_total_to_be_sent() const
-    {
-        return totalToBeSent_;
-    }
+    local_int_t get_num_halo_rows() const { return n_halo_rows_; }
+    local_int_t get_total_to_be_sent() const { return totalToBeSent_; }
 
-    int get_num_neighbors() const
-    {
-        return numberOfSendNeighbors_;
-    }
+    int get_num_neighbors() const { return numberOfSendNeighbors_; }
 
-    int get_num_independent_sets() const
-    {
-        return n_independent_sets_;
-    }
+    int get_num_independent_sets() const { return n_independent_sets_; }
 
     /// Get list of vector entries to send; residing on device.
-    const local_int_t* get_elements_to_send() const
-    {
-        return elementsToSend_;
-    }
-    const int* get_neighbors() const
-    {
-        return neighbors_;
-    }
-    const local_int_t* get_receive_lengths() const
-    {
-        return receiveLength_;
-    }
-    const local_int_t* get_send_lengths() const
-    {
-        return sendLength_;
-    }
-    const local_int_t* get_halo_row_indices() const
-    {
-        return halo_row_ind_;
-    }
+    const local_int_t* get_elements_to_send() const { return elementsToSend_; }
+    const int* get_neighbors() const { return neighbors_; }
+    const local_int_t* get_receive_lengths() const { return receiveLength_; }
+    const local_int_t* get_send_lengths() const { return sendLength_; }
+    const local_int_t* get_halo_row_indices() const { return halo_row_ind_; }
 
-    void* get_host_send_buffer() const
-    {
-        return sendBuffer_;
-    }
-    void* get_device_send_buffer() const
-    {
-        return d_sendBuffer_;
-    }
-    const local_int_t* get_reordering_permutation() const
-    {
-        return ind_perm_;
-    }
-    const local_int_t* get_independent_set_sizes() const
-    {
-        return ind_sizes_;
-    }
-    const local_int_t* get_independent_set_offsets() const
-    {
-        return ind_offsets_;
-    }
+    void* get_host_send_buffer() const { return sendBuffer_; }
+    void* get_device_send_buffer() const { return d_sendBuffer_; }
+    const local_int_t* get_reordering_permutation() const { return ind_perm_; }
+    const local_int_t* get_independent_set_sizes() const { return ind_sizes_; }
+    const local_int_t* get_independent_set_offsets() const { return ind_offsets_; }
 
 protected:
     comm_type comm_;

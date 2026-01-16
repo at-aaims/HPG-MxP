@@ -61,14 +61,8 @@ public:
         m_ = n_ = 0;
     }
 
-    local_int_t n_rows() const
-    {
-        return m_;
-    }
-    local_int_t n_cols() const
-    {
-        return n_;
-    }
+    local_int_t n_rows() const { return m_; }
+    local_int_t n_cols() const { return n_; }
 
     void reshape(const local_int_t m, const local_int_t n)
     {

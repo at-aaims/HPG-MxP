@@ -42,22 +42,10 @@ public:
     DeviceCtx(int process_rank);
     ~DeviceCtx();
 
-    dev_blas_ctx get_blas_handle()
-    {
-        return blas_handle_;
-    }
-    dev_spblas_ctx get_sparse_handle()
-    {
-        return sparse_handle_;
-    }
-    stream_t get_compute_stream()
-    {
-        return compute_stream_;
-    }
-    stream_t get_halo_stream()
-    {
-        return halo_stream_;
-    }
+    dev_blas_ctx get_blas_handle() { return blas_handle_; }
+    dev_spblas_ctx get_sparse_handle() { return sparse_handle_; }
+    stream_t get_compute_stream() { return compute_stream_; }
+    stream_t get_halo_stream() { return halo_stream_; }
 
     /// Allocate storage on device
     void* device_alloc(size_t bytes);
@@ -110,10 +98,7 @@ public:
     void stream_wait_on_event(stream_t stream, event_t event);
 
     /// Get a pre-allocted workspace on the device
-    void* get_device_workspace() const
-    {
-        return workspace_;
-    }
+    void* get_device_workspace() const { return workspace_; }
 
 private:
     stream_t halo_stream_;
