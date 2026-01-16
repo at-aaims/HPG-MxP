@@ -32,14 +32,12 @@ OutputFile::OutputFile(const string& name_arg, const string& version_arg)
       version(version_arg),
       eol("\n"),
       keySeparator("::")
-{
-}
+{ }
 
 OutputFile::OutputFile(void)
     : eol("\n"),
       keySeparator("::")
-{
-}
+{ }
 
 OutputFile::~OutputFile()
 {

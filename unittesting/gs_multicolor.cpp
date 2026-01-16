@@ -132,9 +132,9 @@ int main(int argc, char* argv[])
     if (ierr)
         return ierr;
 
-    /////////////////////////
-    // Problem setup Phase //
-    /////////////////////////
+        /////////////////////////
+        // Problem setup Phase //
+        /////////////////////////
 
 #ifdef HPGMP_DEBUG
     double t1 = mytimer();

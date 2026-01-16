@@ -29,8 +29,7 @@ public:
         : comm_{comm},
           dctx_{dctx},
           geom_{geom}
-    {
-    }
+    { }
 
     template<typename scalar>
     DistMatrixBase(const SparseMatrix<scalar>& A);
