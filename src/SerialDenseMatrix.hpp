@@ -49,8 +49,7 @@ public:
           d_values_{(scalar_type*)dctx->device_alloc(m_ * n_ * sizeof(scalar_type))},
 #endif
           dctx_{dctx}
-    {
-    }
+    { }
 
     ~SerialDenseMatrix()
     {
