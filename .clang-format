@@ -16,7 +16,7 @@ AllowAllParametersOfDeclarationOnNextLine: false   # set by nkoukpaizan
 AllowShortBlocksOnASingleLine: Never               # Using default value Never
 AllowShortCaseLabelsOnASingleLine: true            # did not affect the output
 AllowShortEnumsOnASingleLine: true                 # did not affect the output
-AllowShortFunctionsOnASingleLine: Empty            # set by nkoukpaizan
+AllowShortFunctionsOnASingleLine: All              # set by nkoukpaizan
 AllowShortIfStatementsOnASingleLine: AllIfsAndElse # edit distance 49606
 AllowShortLambdasOnASingleLine: None               # Using default value None
 AllowShortLoopsOnASingleLine: true                 # edit distance 49246
