@@ -125,8 +125,9 @@ int main(int argc, char* argv[])
     int ierr = 0; // Used to check return codes on function calls
 
     ierr = CheckAspectRatio(0.125, nx, ny, nz, "local problem", rank == 0);
-    if (ierr)
+    if (ierr) {
         return ierr;
+    }
 
     /////////////////////////
     // Problem setup Phase //

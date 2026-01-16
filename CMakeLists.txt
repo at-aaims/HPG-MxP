@@ -324,3 +324,32 @@ if(HPGMP_ENABLE_TESTS)
     enable_testing()
     add_subdirectory(unittesting)
 endif()
+
+# Find all C/C++ source files tracked by git
+find_package(Git QUIET)
+find_program(CLANG_FORMAT_EXECUTABLE NAMES clang-format)
+if(GIT_FOUND AND CLANG_FORMAT_EXECUTABLE)
+    message(STATUS "Found Git and clang-format. Adding formatting targets.")
+    execute_process(
+        COMMAND ${GIT_EXECUTABLE} ls-files *.cpp *.hpp *.c *.h *.cc *.cxx *.hxx
+        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+        OUTPUT_VARIABLE ALL_SOURCE_FILES
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+    )
+    
+    # Convert newline-separated list to CMake list
+    string(REPLACE "\n" ";" ALL_SOURCE_FILES ${ALL_SOURCE_FILES})
+    
+    # Add format target
+    add_custom_target(format
+        COMMAND ${CLANG_FORMAT_EXECUTABLE} -i ${ALL_SOURCE_FILES}
+        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+        COMMENT "Running clang-format on all source files"
+        VERBATIM
+    )
+    add_custom_target(format-check
+        COMMAND ${CLANG_FORMAT_EXECUTABLE} --dry-run --Werror ${ALL_SOURCE_FILES}
+        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+        COMMENT "Checking code formatting"
+    )
+endif()
