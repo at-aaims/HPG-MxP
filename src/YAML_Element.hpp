@@ -49,7 +49,10 @@ public:
     //! Destructor
     ~YAML_Element();
     //! Key accessor method
-    std::string getKey() { return key; }
+    std::string getKey()
+    {
+        return key;
+    }
     //! Add a child element to an element list associated with this element, value of type double
     YAML_Element* add(const std::string& key_arg, double value_arg);
     //! Add a child element to an element list associated with this element, value of type int

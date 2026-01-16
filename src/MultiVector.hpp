@@ -49,9 +49,15 @@ public:
     /// Finalize the multivector automatically after use.
     ~MultiVector();
 
-    comm_type get_comm() const { return comm_; }
+    comm_type get_comm() const
+    {
+        return comm_;
+    }
 
-    dev_blas_ctx get_blas_handle() const { return dctx_->get_blas_handle(); }
+    dev_blas_ctx get_blas_handle() const
+    {
+        return dctx_->get_blas_handle();
+    }
 
     /*!
    * Initializes the vectors.
@@ -77,11 +83,20 @@ public:
    */
     MultiVector<SC> get_multi_vector(local_int_t j1, local_int_t j2);
 
-    const scalar_type* d_values() const { return d_values_; }
+    const scalar_type* d_values() const
+    {
+        return d_values_;
+    }
 
-    scalar_type* d_values() { return d_values_; }
+    scalar_type* d_values()
+    {
+        return d_values_;
+    }
 
-    const scalar_type* values() const { return values_; }
+    const scalar_type* values() const
+    {
+        return values_;
+    }
 
     /// Updates the host copy of the multivector from device data.
     void update_host_mirror() const;
