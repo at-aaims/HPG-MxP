@@ -44,7 +44,7 @@ BraceWrapping:
   BeforeLambdaBody: false                          # inherited from prefix BraceWrapping
   BeforeWhile: false                               # edit distance 48998
   IndentBraces: false                              # edit distance 48998
-  SplitEmptyFunction: true                         # set by nkoukpaizan
+  SplitEmptyFunction: false                        # set by nkoukpaizan
   SplitEmptyRecord: false                          # inherited from prefix BraceWrapping
   SplitEmptyNamespace: false                       # inherited from prefix BraceWrapping
 BreakAfterJavaFieldAnnotations: true               # did not affect the output
