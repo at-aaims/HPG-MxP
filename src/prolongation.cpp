@@ -38,17 +38,17 @@
 
 #include "kernel_helpers.hpp.inc"
 
-template <unsigned int BLOCKSIZE, typename mscalar, typename vscalar>
+template<unsigned int BLOCKSIZE, typename mscalar, typename vscalar>
 __launch_bounds__(BLOCKSIZE)
-__global__ void kernel_prolongation(const local_int_t size,
-                                    const local_int_t* __restrict__ f2cOperator,
-                                    const mscalar* __restrict__ coarse,
-                                    vscalar* __restrict__ fine,
-                                    const local_int_t* __restrict__ perm_fine,
-                                    const local_int_t* __restrict__ perm_coarse)
+    __global__ void kernel_prolongation(const local_int_t size,
+                                        const local_int_t* __restrict__ f2cOperator,
+                                        const mscalar* __restrict__ coarse,
+                                        vscalar* __restrict__ fine,
+                                        const local_int_t* __restrict__ perm_fine,
+                                        const local_int_t* __restrict__ perm_coarse)
 {
     const local_int_t idx_coarse = blockIdx.x * BLOCKSIZE + threadIdx.x;
-    if(idx_coarse >= size) {
+    if (idx_coarse >= size) {
         return;
     }
 
@@ -71,7 +71,7 @@ __global__ void kernel_prolongation(const local_int_t size,
  *
  * @return Returns zero on success and a non-zero value otherwise.
  */
-template <typename mat_scalar, typename vec_scalar>
+template<typename mat_scalar, typename vec_scalar>
 int prolongation(const SparseMatrix<mat_scalar>& Af, Vector<vec_scalar>& xf)
 {
     auto stream_interior = Af.dctx->get_compute_stream();
@@ -90,8 +90,6 @@ int prolongation(const SparseMatrix<mat_scalar>& Af, Vector<vec_scalar>& xf)
     return 0;
 }
 
-template
-int prolongation(const SparseMatrix<double>& Af, Vector<double>& xf);
-template
-int prolongation(const SparseMatrix<float>& Af, Vector<float>& xf);
+template int prolongation(const SparseMatrix<double>& Af, Vector<double>& xf);
 
+template int prolongation(const SparseMatrix<float>& Af, Vector<float>& xf);

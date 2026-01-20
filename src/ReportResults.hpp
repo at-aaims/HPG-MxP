@@ -20,7 +20,7 @@
 #include "TestGMRES.hpp"
 
 template<class SparseMatrix_type>
-void ReportResults(const SparseMatrix_type & A, int numberOfMgLevels,
+void ReportResults(const SparseMatrix_type& A, int numberOfMgLevels,
                    const TestGMRESData& testcg_data, int global_failure,
                    const HPGMP_gen_opts& gopts);
 

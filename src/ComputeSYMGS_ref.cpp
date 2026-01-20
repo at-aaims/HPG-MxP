@@ -54,56 +54,56 @@
   @see ComputeSYMGS
 */
 template<class SparseMatrix_type, class Vector_type>
-int ComputeSYMGS_ref(const SparseMatrix_type & A, const Vector_type & r, Vector_type & x) {
+int ComputeSYMGS_ref(const SparseMatrix_type& A, const Vector_type& r, Vector_type& x)
+{
 
-  assert(x.local_length()==A.localNumberOfColumns); // Make sure x contain space for halo values
+    assert(x.local_length() == A.localNumberOfColumns); // Make sure x contain space for halo values
 
-  typedef typename SparseMatrix_type::scalar_type scalar_type;
+    typedef typename SparseMatrix_type::scalar_type scalar_type;
 #ifndef HPGMP_NO_MPI
-  ExchangeHalo(A,x);
+    ExchangeHalo(A, x);
 #endif
 
-  const local_int_t nrow = A.localNumberOfRows;
-  scalar_type ** matrixDiagonal = A.matrixDiagonal;  // An array of pointers to the diagonal entries A.matrixValues
-  const scalar_type * const rv = r.values();
-  scalar_type * const xv = x.values();
+    const local_int_t nrow       = A.localNumberOfRows;
+    scalar_type** matrixDiagonal = A.matrixDiagonal; // An array of pointers to the diagonal entries A.matrixValues
+    const scalar_type* const rv  = r.values();
+    scalar_type* const xv        = x.values();
 
-  for (local_int_t i=0; i< nrow; i++) {
-    const scalar_type * const currentValues = A.matrixValues[i];
-    const local_int_t * const currentColIndices = A.mtxIndL[i];
-    const int currentNumberOfNonzeros = A.nonzerosInRow[i];
-    const scalar_type currentDiagonal = matrixDiagonal[i][0]; // Current diagonal value
-    scalar_type sum = rv[i]; // RHS value
+    for (local_int_t i = 0; i < nrow; i++) {
+        const scalar_type* const currentValues     = A.matrixValues[i];
+        const local_int_t* const currentColIndices = A.mtxIndL[i];
+        const int currentNumberOfNonzeros          = A.nonzerosInRow[i];
+        const scalar_type currentDiagonal          = matrixDiagonal[i][0]; // Current diagonal value
+        scalar_type sum                            = rv[i]; // RHS value
 
-    for (int j=0; j< currentNumberOfNonzeros; j++) {
-      local_int_t curCol = currentColIndices[j];
-      sum -= currentValues[j] * xv[curCol];
+        for (int j = 0; j < currentNumberOfNonzeros; j++) {
+            local_int_t curCol = currentColIndices[j];
+            sum -= currentValues[j] * xv[curCol];
+        }
+        sum += xv[i] * currentDiagonal; // Remove diagonal contribution from previous loop
+
+        xv[i] = sum / currentDiagonal;
     }
-    sum += xv[i]*currentDiagonal; // Remove diagonal contribution from previous loop
 
-    xv[i] = sum/currentDiagonal;
+    // Now the back sweep.
 
-  }
+    for (local_int_t i = nrow - 1; i >= 0; i--) {
+        const scalar_type* const currentValues     = A.matrixValues[i];
+        const local_int_t* const currentColIndices = A.mtxIndL[i];
+        const int currentNumberOfNonzeros          = A.nonzerosInRow[i];
+        const scalar_type currentDiagonal          = matrixDiagonal[i][0]; // Current diagonal value
+        scalar_type sum                            = rv[i]; // RHS value
 
-  // Now the back sweep.
+        for (int j = 0; j < currentNumberOfNonzeros; j++) {
+            local_int_t curCol = currentColIndices[j];
+            sum -= currentValues[j] * xv[curCol];
+        }
+        sum += xv[i] * currentDiagonal; // Remove diagonal contribution from previous loop
 
-  for (local_int_t i=nrow-1; i>=0; i--) {
-    const scalar_type * const currentValues = A.matrixValues[i];
-    const local_int_t * const currentColIndices = A.mtxIndL[i];
-    const int currentNumberOfNonzeros = A.nonzerosInRow[i];
-    const scalar_type currentDiagonal = matrixDiagonal[i][0]; // Current diagonal value
-    scalar_type sum = rv[i]; // RHS value
-
-    for (int j = 0; j< currentNumberOfNonzeros; j++) {
-      local_int_t curCol = currentColIndices[j];
-      sum -= currentValues[j]*xv[curCol];
+        xv[i] = sum / currentDiagonal;
     }
-    sum += xv[i]*currentDiagonal; // Remove diagonal contribution from previous loop
 
-    xv[i] = sum/currentDiagonal;
-  }
-
-  return 0;
+    return 0;
 }
 
 
@@ -111,9 +111,8 @@ int ComputeSYMGS_ref(const SparseMatrix_type & A, const Vector_type & r, Vector_
  * specializations *
  * --------------- */
 
-template
-int ComputeSYMGS_ref< SparseMatrix<double>, Vector<double> >(SparseMatrix<double> const&, Vector<double> const&, Vector<double>&);
+template int ComputeSYMGS_ref< SparseMatrix<double>, Vector<double> >(
+    SparseMatrix<double> const&, Vector<double> const&, Vector<double>&);
 
-template
-int ComputeSYMGS_ref< SparseMatrix<float>, Vector<float> >(SparseMatrix<float> const&, Vector<float> const&, Vector<float>&);
-
+template int ComputeSYMGS_ref< SparseMatrix<float>, Vector<float> >(
+    SparseMatrix<float> const&, Vector<float> const&, Vector<float>&);

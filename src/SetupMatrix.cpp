@@ -36,56 +36,57 @@
 */
 
 template<class SparseMatrix_type, class GMRESData_type, class Vector_type>
-void SetupMatrix(DeviceCtx *const dctx, int numberOfMgLevels, SparseMatrix_type & A, Geometry * geom, GMRESData_type & data,
-                 Vector_type * b, Vector_type * x, Vector_type * xexact, bool init_vect, comm_type comm) {
+void SetupMatrix(DeviceCtx* const dctx, int numberOfMgLevels, SparseMatrix_type& A, Geometry* geom, GMRESData_type& data,
+                 Vector_type* b, Vector_type* x, Vector_type* xexact, bool init_vect, comm_type comm)
+{
 
-  A.initialize(geom, comm, dctx);
+    A.initialize(geom, comm, dctx);
 
-  GenerateNonsymProblem(dctx, A, b, x, xexact, init_vect);
+    GenerateNonsymProblem(dctx, A, b, x, xexact, init_vect);
 #ifdef HPGMP_VERBOSE
-  if(geom->rank == 0) {
-      std::cout << "Completed generating nonsym problem." << std::endl;
-  }
+    if (geom->rank == 0) {
+        std::cout << "Completed generating nonsym problem." << std::endl;
+    }
 #endif
-  SetupHalo(A);
+    SetupHalo(A);
 #ifdef HPGMP_VERBOSE
-  if(geom->rank == 0) {
-      std::cout << "Completed setting up halos." << std::endl;
-  }
+    if (geom->rank == 0) {
+        std::cout << "Completed setting up halos." << std::endl;
+    }
 #endif
 
-  A.localNumberOfMGNonzeros = A.localNumberOfNonzeros;
-  A.totalNumberOfMGNonzeros = A.totalNumberOfNonzeros;
+    A.localNumberOfMGNonzeros = A.localNumberOfNonzeros;
+    A.totalNumberOfMGNonzeros = A.totalNumberOfNonzeros;
 
-  SparseMatrix_type * curLevelMatrix = &A;
-  for (int level = 1; level< numberOfMgLevels; ++level) {
-    GenerateNonsymCoarseProblem(dctx, *curLevelMatrix);
+    SparseMatrix_type* curLevelMatrix = &A;
+    for (int level = 1; level < numberOfMgLevels; ++level) {
+        GenerateNonsymCoarseProblem(dctx, *curLevelMatrix);
 #ifdef HPGMP_VERBOSE
-  if(geom->rank == 0) {
-      std::cout << "Completed generating coarse nonsym problem, level " << level << "." << std::endl;
-  }
+        if (geom->rank == 0) {
+            std::cout << "Completed generating coarse nonsym problem, level " << level << "." << std::endl;
+        }
 #endif
-    A.localNumberOfMGNonzeros += curLevelMatrix->Ac->localNumberOfNonzeros;
-    A.totalNumberOfMGNonzeros += curLevelMatrix->Ac->totalNumberOfNonzeros;
-    curLevelMatrix = curLevelMatrix->Ac; // Make the just-constructed coarse grid the next level
-  }
+        A.localNumberOfMGNonzeros += curLevelMatrix->Ac->localNumberOfNonzeros;
+        A.totalNumberOfMGNonzeros += curLevelMatrix->Ac->totalNumberOfNonzeros;
+        curLevelMatrix = curLevelMatrix->Ac; // Make the just-constructed coarse grid the next level
+    }
 
-//TODO: Reinstate "CheckProblem" for nonsymm version. 
-/*  #ifndef NONSYMM_PROBLEM
-  curLevelMatrix = &A;
-  Vector_type * curb = b;
-  Vector_type * curx = x;
-  Vector_type * curxexact = xexact;
-  for (int level = 0; level< numberOfMgLevels; ++level) {
-     CheckProblem(*curLevelMatrix, curb, curx, curxexact);
-     curLevelMatrix = curLevelMatrix->Ac; // Make the nextcoarse grid the next level
-     curb = 0; // No vectors after the top level
-     curx = 0;
-     curxexact = 0;
-  }
-  #endif */
+    //TODO: Reinstate "CheckProblem" for nonsymm version.
+    /*  #ifndef NONSYMM_PROBLEM
+    curLevelMatrix = &A;
+    Vector_type * curb = b;
+    Vector_type * curx = x;
+    Vector_type * curxexact = xexact;
+    for (int level = 0; level< numberOfMgLevels; ++level) {
+       CheckProblem(*curLevelMatrix, curb, curx, curxexact);
+       curLevelMatrix = curLevelMatrix->Ac; // Make the nextcoarse grid the next level
+       curb = 0; // No vectors after the top level
+       curx = 0;
+       curxexact = 0;
+    }
+    #endif */
 
-  data.initialize(A, dctx);
+    data.initialize(A, dctx);
 }
 
 /* --------------- *
@@ -93,20 +94,19 @@ void SetupMatrix(DeviceCtx *const dctx, int numberOfMgLevels, SparseMatrix_type 
  * --------------- */
 
 // uniform
-template
-void SetupMatrix< SparseMatrix<double>, GMRESData<double>, class Vector<double> >
- (DeviceCtx* dctx, int numberOfMgLevels, SparseMatrix<double> & A, Geometry * geom, GMRESData<double> & data, Vector<double> * b, Vector<double> * x, Vector<double> * xexact,
-  bool init_vect, comm_type comm);
+template void SetupMatrix< SparseMatrix<double>, GMRESData<double>, class Vector<double> >(
+    DeviceCtx* dctx, int numberOfMgLevels, SparseMatrix<double>& A, Geometry* geom,
+    GMRESData<double>& data, Vector<double>* b, Vector<double>* x, Vector<double>* xexact,
+    bool init_vect, comm_type comm);
 
-template
-void SetupMatrix< SparseMatrix<float>, GMRESData<float>, class Vector<float> >
- (DeviceCtx* dctx, int numberOfMgLevels, SparseMatrix<float> & A, Geometry * geom, GMRESData<float> & data, Vector<float> * b, Vector<float> * x, Vector<float> * xexact,
-  bool init_vect, comm_type comm);
+template void SetupMatrix< SparseMatrix<float>, GMRESData<float>, class Vector<float> >(
+    DeviceCtx* dctx, int numberOfMgLevels, SparseMatrix<float>& A, Geometry* geom,
+    GMRESData<float>& data, Vector<float>* b, Vector<float>* x, Vector<float>* xexact,
+    bool init_vect, comm_type comm);
 
 
 // mixed
-template
-void SetupMatrix< SparseMatrix<float>, GMRESData<float>, class Vector<double> >
- (DeviceCtx* dctx, int numberOfMgLevels, SparseMatrix<float> & A, Geometry * geom, GMRESData<float> & data, Vector<double> * b, Vector<double> * x, Vector<double> * xexact,
-  bool init_vect, comm_type comm);
-
+template void SetupMatrix< SparseMatrix<float>, GMRESData<float>, class Vector<double> >(
+    DeviceCtx* dctx, int numberOfMgLevels, SparseMatrix<float>& A, Geometry* geom,
+    GMRESData<float>& data, Vector<double>* b, Vector<double>* x, Vector<double>* xexact,
+    bool init_vect, comm_type comm);

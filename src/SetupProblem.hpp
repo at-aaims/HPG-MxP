@@ -28,8 +28,8 @@
 #include "GMRESData.hpp"
 
 template<class SparseMatrix_type, class SparseMatrix_type2, class GMRESData_type, class GMRESData_type2, class Vector_type>
-void SetupProblem(const char *title, int argc, char **argv, comm_type comm, DeviceCtx *dctx, int numberOfMgLevels, bool verbose, Geometry * geom,
-                  SparseMatrix_type & A, GMRESData_type & data, SparseMatrix_type2 & A2, GMRESData_type2 & data2,
-                  Vector_type & b, Vector_type & x, TestGMRESData& test_data);
+void SetupProblem(const char* title, int argc, char** argv, comm_type comm, DeviceCtx* dctx, int numberOfMgLevels, bool verbose, Geometry* geom,
+                  SparseMatrix_type& A, GMRESData_type& data, SparseMatrix_type2& A2, GMRESData_type2& data2,
+                  Vector_type& b, Vector_type& x, TestGMRESData& test_data);
 
 #endif

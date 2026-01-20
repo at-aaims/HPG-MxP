@@ -28,100 +28,101 @@
 #include "SparseMatrix.hpp"
 #include "perf_counter.hpp"
 
-template <class SC, class PSC = SC>
-class GMRESData {
+template<class SC, class PSC = SC>
+class GMRESData
+{
 public:
-  using scalar_type  = SC;
-  using project_type = PSC;
+    using scalar_type  = SC;
+    using project_type = PSC;
 
-  /*!
+    /*!
    * Constructor for the data structure of GMRES vectors.
    *
    * @param[in]  A    the data structure that describes the problem matrix and its structure
    */
-  GMRESData(SparseMatrix<SC>& A, DeviceCtx *const dctx)
-      : r(A.localNumberOfRows, A.comm, dctx),
-      z(A.localNumberOfColumns, A.comm, dctx),
-      p(A.localNumberOfColumns, A.comm, dctx),
-      w(A.localNumberOfRows, A.comm, dctx),
-      Ap(A.localNumberOfRows, A.comm, dctx)
+    GMRESData(SparseMatrix<SC>& A, DeviceCtx* const dctx)
+        : r(A.localNumberOfRows, A.comm, dctx),
+          z(A.localNumberOfColumns, A.comm, dctx),
+          p(A.localNumberOfColumns, A.comm, dctx),
+          w(A.localNumberOfRows, A.comm, dctx),
+          Ap(A.localNumberOfRows, A.comm, dctx)
     { }
 
-  GMRESData() { }
+    GMRESData() { }
 
-  void initialize(SparseMatrix<SC>& A, DeviceCtx *const dctx)
-  {
-      r.initialize(A.localNumberOfRows, A.comm, dctx);
-      z.initialize(A.localNumberOfColumns, A.comm, dctx);
-      p.initialize(A.localNumberOfColumns, A.comm, dctx);
-      w.initialize(A.localNumberOfRows, A.comm, dctx);
-      Ap.initialize(A.localNumberOfRows, A.comm, dctx);
-  }
+    void initialize(SparseMatrix<SC>& A, DeviceCtx* const dctx)
+    {
+        r.initialize(A.localNumberOfRows, A.comm, dctx);
+        z.initialize(A.localNumberOfColumns, A.comm, dctx);
+        p.initialize(A.localNumberOfColumns, A.comm, dctx);
+        w.initialize(A.localNumberOfRows, A.comm, dctx);
+        Ap.initialize(A.localNumberOfRows, A.comm, dctx);
+    }
 
-  Vector<SC> r; //!< pointer to residual vector
-  Vector<SC> z; //!< pointer to preconditioned residual vector
-  Vector<SC> p; //!< pointer to direction vector
-  Vector<SC> w; //!< pointer to workspace
-  Vector<SC> Ap; //!< pointer to Krylov vector
+    Vector<SC> r; //!< pointer to residual vector
+    Vector<SC> z; //!< pointer to preconditioned residual vector
+    Vector<SC> p; //!< pointer to direction vector
+    Vector<SC> w; //!< pointer to workspace
+    Vector<SC> Ap; //!< pointer to Krylov vector
 };
 
 
-class TestGMRESData {
+class TestGMRESData
+{
 public:
-  static constexpr int n_fl_ops = 4;     ///< Number of numerical operations for which flops are counted in GMRES
-  static constexpr int n_timed_ops = 12; ///< Number of operations which are timed in GMRES
+    static constexpr int n_fl_ops    = 4; ///< Number of numerical operations for which flops are counted in GMRES
+    static constexpr int n_timed_ops = 12; ///< Number of operations which are timed in GMRES
 
-  int restart_length;     //!< restart length
-  double tolerance;           //!< tolerance = reference residual norm 
-  double runningTime;     //!<
-  double minOfficialTime; //!<
+    int restart_length; //!< restart length
+    double tolerance; //!< tolerance = reference residual norm
+    double runningTime; //!<
+    double minOfficialTime; //!<
 
-  // from validation step
-  int refNumIters;       //!< number of reference iterations
-  int optNumIters;       //!< number of optimized iterations
-  int validation_nprocs; //!<
-  double refResNorm0;
-  double refResNorm;
-  double optResNorm0;
-  double optResNorm;
+    // from validation step
+    int refNumIters; //!< number of reference iterations
+    int optNumIters; //!< number of optimized iterations
+    int validation_nprocs; //!<
+    double refResNorm0;
+    double refResNorm;
+    double optResNorm0;
+    double optResNorm;
 
-  // setup time
-  double SetupTime;
-  double OptimizeTime;
-  double SpmvMgTime;
+    // setup time
+    double SetupTime;
+    double OptimizeTime;
+    double SpmvMgTime;
 
-  // from benchmark step
-  int numOfCalls;       //!< number of calls
-  int maxNumIters;      //!< 
-  int numOfMGCalls;     //!< number of MG calls
-  int numOfSPCalls;     //!< number of SpMV calls
-  int optNumOfMGCalls;  //!< number of MG calls   (opt)
-  int optNumOfSPCalls;  //!< number of SpMV calls (opt)
-  int refNumOfMGCalls;  //!< number of MG calls   (ref)
-  int refNumOfSPCalls;  //!< number of SpMV calls (ref)
-  double refTotalFlops; //
-  double refTotalTime;  //
-  double optTotalFlops; //
-  double optTotalTime;  //
-  
-  perf_counters ctrs_ref;   ///< Counting for flops and memory traffic
-  perf_counters ctrs_bench; ///< Counting for flops and memory traffic of different precisions
+    // from benchmark step
+    int numOfCalls; //!< number of calls
+    int maxNumIters; //!<
+    int numOfMGCalls; //!< number of MG calls
+    int numOfSPCalls; //!< number of SpMV calls
+    int optNumOfMGCalls; //!< number of MG calls   (opt)
+    int optNumOfSPCalls; //!< number of SpMV calls (opt)
+    int refNumOfMGCalls; //!< number of MG calls   (ref)
+    int refNumOfSPCalls; //!< number of SpMV calls (ref)
+    double refTotalFlops; //
+    double refTotalTime; //
+    double optTotalFlops; //
+    double optTotalTime; //
 
-  //! flop counts and time for total, dot, axpy, ortho, spmv, reduce, precond
-  std::array<double,n_fl_ops> flops;        //!< accumulated in GMRES, temporary workspace
-  std::array<double,n_timed_ops> times;        //!< accumulated in GMRES, temporary workspace
-  std::array<double,n_timed_ops> times_comp;   //!< accumulated in GMRES, temporary workspace
-  std::array<double,n_timed_ops> times_comm;   //!< accumulated in GMRES, temporary workspace
+    perf_counters ctrs_ref; ///< Counting for flops and memory traffic
+    perf_counters ctrs_bench; ///< Counting for flops and memory traffic of different precisions
 
-  std::array<double,n_fl_ops> ref_flops;    //!< record from output of reference GMRES
-  std::array<double,n_timed_ops> ref_times;    //!< record from output of reference GMRES
-  std::array<double,n_fl_ops> opt_flops;    //!< record from output of optimized GMRES
-  std::array<double,n_timed_ops> opt_times;    //!< record from output of optimized GMRES
-  std::array<double,n_timed_ops> ref_times_comp; //!< record from output of reference GMRES
-  std::array<double,n_timed_ops> ref_times_comm; //!< record from output of reference GMRES
-  std::array<double,n_timed_ops> opt_times_comp; //!< record from output of optimized GMRES
-  std::array<double,n_timed_ops> opt_times_comm; //!< record from output of optimized GMRES
+    //! flop counts and time for total, dot, axpy, ortho, spmv, reduce, precond
+    std::array<double, n_fl_ops> flops; //!< accumulated in GMRES, temporary workspace
+    std::array<double, n_timed_ops> times; //!< accumulated in GMRES, temporary workspace
+    std::array<double, n_timed_ops> times_comp; //!< accumulated in GMRES, temporary workspace
+    std::array<double, n_timed_ops> times_comm; //!< accumulated in GMRES, temporary workspace
+
+    std::array<double, n_fl_ops> ref_flops; //!< record from output of reference GMRES
+    std::array<double, n_timed_ops> ref_times; //!< record from output of reference GMRES
+    std::array<double, n_fl_ops> opt_flops; //!< record from output of optimized GMRES
+    std::array<double, n_timed_ops> opt_times; //!< record from output of optimized GMRES
+    std::array<double, n_timed_ops> ref_times_comp; //!< record from output of reference GMRES
+    std::array<double, n_timed_ops> ref_times_comm; //!< record from output of reference GMRES
+    std::array<double, n_timed_ops> opt_times_comp; //!< record from output of optimized GMRES
+    std::array<double, n_timed_ops> opt_times_comm; //!< record from output of optimized GMRES
 };
 
 #endif // CGDATA_HPP
-

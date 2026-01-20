@@ -8,7 +8,7 @@
  * Computes a permutation vector perm of mesh points, such that
  * point_new_index = A.perm[point_old_index].
  */
-template <typename scalar>
+template<typename scalar>
 void multicolor_JPL(SparseMatrix<scalar>& A);
 
 /** @brief Sequential greedy independent set algorithm on CPU.
@@ -16,7 +16,7 @@ void multicolor_JPL(SparseMatrix<scalar>& A);
  * Computes a permutation vector perm of mesh points, such that
  * point_new_index = A.perm[point_old_index].
  */
-template <typename scalar>
+template<typename scalar>
 void multicolor_ref(SparseMatrix<scalar>& A);
 
 #endif

@@ -1,12 +1,13 @@
 #
 # HPGMP Benchmark CMake configuration
 #
-cmake_minimum_required( VERSION 3.10 FATAL_ERROR )
+cmake_minimum_required(VERSION 3.10 FATAL_ERROR)
 
-project( hpgmp
+project(
+    hpgmp
     VERSION 3.1
     LANGUAGES CXX
-    DESCRIPTION "High Performance Conjugate Gradient Benchmark (HPGMP) " )
+    DESCRIPTION "High Performance Conjugate Gradient Benchmark (HPGMP) ")
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_EXTENSIONS OFF)
@@ -32,21 +33,18 @@ option(HPGMP_ENABLE_ASAN "Build address sanitizer" OFF)
 option(HPGMP_ENABLE_PROFILING "Enable profiling" OFF)
 option(CMAKE_DEBUG "Enable CMake script debugging" OFF)
 
-#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-unused-result")
+# set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-unused-result")
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -ggdb")
 if(HPGMP_ENABLE_ASAN)
     set(CMAKE_BUILD_TYPE RelWithDebInfo)
-    set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} -ggdb -fsanitize=address -fno-omit-frame-pointer")
+    set(CMAKE_CXX_FLAGS_RELWITHDEBINFO
+        "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} -ggdb -fsanitize=address -fno-omit-frame-pointer")
 endif()
 
-if (HPGMP_ENABLE_HIP)
+if(HPGMP_ENABLE_HIP)
     enable_language(HIP)
-    #message(STATUS "ROCm path is ${ROCM_PATH}")
-    # CMake modules
-    list(APPEND CMAKE_MODULE_PATH
-         ${CMAKE_CURRENT_SOURCE_DIR}/cmake
-         ${ROCM_PATH}/lib/cmake/hip
-         ${ROCM_PATH}/hip/cmake)
+    # message(STATUS "ROCm path is ${ROCM_PATH}") CMake modules
+    list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake ${ROCM_PATH}/lib/cmake/hip ${ROCM_PATH}/hip/cmake)
 
     list(APPEND CMAKE_PREFIX_PATH ${ROCM_PATH} ${ROCM_PATH}/hip)
 
@@ -60,13 +58,17 @@ if (HPGMP_ENABLE_HIP)
     find_package(rocprim REQUIRED)
 
     if(CMAKE_DEBUG)
-        get_property(importTargetsAfterHip DIRECTORY "${CMAKE_SOURCE_DIR}" PROPERTY IMPORTED_TARGETS)
+        get_property(
+            importTargetsAfterHip
+            DIRECTORY "${CMAKE_SOURCE_DIR}"
+            PROPERTY IMPORTED_TARGETS)
         message(STATUS "Imported targets: ${importTargetsAfterHip}")
     endif()
 
     set(CMAKE_HIP_FLAGS_DEBUG "${CMAKE_HIP_FLAGS_DEBUG} -O0 -ggdb")
     if(HPGMP_ENABLE_ASAN)
-        set(CMAKE_HIP_FLAGS_RELWITHDEBINFO "${CMAKE_HIP_FLAGS_RELWITHDEBINFO} -ggdb -fsanitize=address -fno-omit-frame-pointer")
+        set(CMAKE_HIP_FLAGS_RELWITHDEBINFO
+            "${CMAKE_HIP_FLAGS_RELWITHDEBINFO} -ggdb -fsanitize=address -fno-omit-frame-pointer")
     endif()
 elseif(HPGMP_ENABLE_CUDA)
     enable_language(CUDA)
@@ -75,16 +77,21 @@ elseif(HPGMP_ENABLE_CUDA)
     set(CMAKE_CUDA_FLAGS_DEBUG "${CMAKE_CUDA_FLAGS_DEBUG} -G")
 endif()
 
-set(device_sources
-    src/Vector.dev.cpp src/ComputeWAXPBY_opt.dev.cpp
-)
+set(device_sources # cmake-format: sort
+                   src/ComputeWAXPBY_opt.dev.cpp src/Vector.dev.cpp)
 if(HPGMP_REFERENCE)
-    set(device_sources ${device_sources} src/ExchangeHalo_gpu.cpp)
+    set(device_sources ${device_sources} # cmake-format: sort
+                       src/ExchangeHalo_gpu.cpp)
 else()
-    set(device_sources ${device_sources}
-        src/ell_matrix.cpp src/multicoloring.dev.cpp src/permute.dev.cpp
-        src/ell_multicolor_gs.cpp src/restriction.cpp src/prolongation.cpp
-    )
+    set(device_sources
+        ${device_sources}
+        # cmake-format: sort
+        src/ell_matrix.cpp
+        src/multicoloring.dev.cpp
+        src/permute.dev.cpp
+        src/ell_multicolor_gs.cpp
+        src/restriction.cpp
+        src/prolongation.cpp)
 endif()
 
 # Flag source files as device source files
@@ -93,7 +100,7 @@ if(HPGMP_ENABLE_HIP)
         set_source_files_properties(${i} PROPERTIES LANGUAGE HIP)
         set_source_files_properties(${i} PROPERTIES HIP_SOURCE_PROPERTY_FORMAT TRUE)
     endforeach()
-    #hip_add_library(hpgmp_device ${device_sources})
+    # hip_add_library(hpgmp_device ${device_sources})
     add_library(hpgmp_device ${device_sources})
     target_link_libraries(hpgmp_device PRIVATE hip::device)
 elseif(HPGMP_ENABLE_CUDA)
@@ -107,47 +114,86 @@ else()
     add_library(hpgmp_device ${device_sources})
 endif()
 
-
 set(host_sources
-    src/device_ctx.cpp src/MultiVector.cpp src/SparseMatrix.cpp
-    src/GMRES.cpp src/GMRES_IR.cpp src/TestGMRES.cpp src/estimate_run_time.cpp
-    src/ComputeResidual.cpp src/GenerateGeometry.cpp
-    src/GenerateNonsymProblem.cpp src/GenerateNonsymProblem_v1_ref.cpp src/CheckProblem.cpp
-    src/OptimizeProblem.cpp src/ReadHpgmpDat.cpp src/ReportResults.cpp
-    src/SetupHalo.cpp src/SetupHalo_ref.cpp
-    src/SetupMatrix.cpp src/SetupProblem.cpp
-    src/ValidGMRES.cpp src/BenchGMRES.cpp
+    # cmake-format: sort
+    src/device_ctx.cpp
+    src/MultiVector.cpp
+    src/SparseMatrix.cpp
+    src/GMRES.cpp
+    src/GMRES_IR.cpp
+    src/TestGMRES.cpp
+    src/estimate_run_time.cpp
+    src/ComputeResidual.cpp
+    src/GenerateGeometry.cpp
+    src/GenerateNonsymProblem.cpp
+    src/GenerateNonsymProblem_v1_ref.cpp
+    src/CheckProblem.cpp
+    src/OptimizeProblem.cpp
+    src/ReadHpgmpDat.cpp
+    src/ReportResults.cpp
+    src/SetupHalo.cpp
+    src/SetupHalo_ref.cpp
+    src/SetupMatrix.cpp
+    src/SetupProblem.cpp
+    src/ValidGMRES.cpp
+    src/BenchGMRES.cpp
     src/WriteProblem.cpp
-    src/YAML_Doc.cpp src/YAML_Element.cpp src/options_strings.cpp
-    src/ComputeSPMV.cpp 
-    src/ComputeDotProduct.cpp src/ComputeDotProduct_ref.cpp src/ComputeDotProduct_gpu.cpp src/ComputeDotProduct_blas.cpp
+    src/YAML_Doc.cpp
+    src/YAML_Element.cpp
+    src/options_strings.cpp
+    src/ComputeSPMV.cpp
+    src/ComputeDotProduct.cpp
+    src/ComputeDotProduct_ref.cpp
+    src/ComputeDotProduct_gpu.cpp
+    src/ComputeDotProduct_blas.cpp
     src/ComputeTRSM.cpp
-    src/ComputeGEMV.cpp src/ComputeGEMV_ref.cpp src/ComputeGEMV_blas.cpp src/ComputeGEMV_gpu.cpp
-    src/ComputeGEMVT.cpp src/ComputeGEMVT_ref.cpp src/ComputeGEMVT_blas.cpp src/ComputeGEMVT_gpu.cpp
-    src/ComputeGEMMT.cpp src/ComputeGEMMT_ref.cpp src/ComputeGEMMT_gpu.cpp
-    src/finalize.cpp src/init.cpp src/mytimer.cpp
-    src/ComputeWAXPBY.cpp src/ComputeWAXPBY_ref.cpp src/ComputeWAXPBY_gpu.cpp
+    src/ComputeGEMV.cpp
+    src/ComputeGEMV_ref.cpp
+    src/ComputeGEMV_blas.cpp
+    src/ComputeGEMV_gpu.cpp
+    src/ComputeGEMVT.cpp
+    src/ComputeGEMVT_ref.cpp
+    src/ComputeGEMVT_blas.cpp
+    src/ComputeGEMVT_gpu.cpp
+    src/ComputeGEMMT.cpp
+    src/ComputeGEMMT_ref.cpp
+    src/ComputeGEMMT_gpu.cpp
+    src/finalize.cpp
+    src/init.cpp
+    src/mytimer.cpp
+    src/ComputeWAXPBY.cpp
+    src/ComputeWAXPBY_ref.cpp
+    src/ComputeWAXPBY_gpu.cpp
     src/ComputeMG.cpp
     src/GenerateNonsymCoarseProblem.cpp
-    src/ComputeOptimalShapeXYZ.cpp src/MixedBaseCounter.cpp
-    src/CheckAspectRatio.cpp src/OutputFile.cpp src/matrix_base.cpp
-)
+    src/ComputeOptimalShapeXYZ.cpp
+    src/MixedBaseCounter.cpp
+    src/CheckAspectRatio.cpp
+    src/OutputFile.cpp
+    src/matrix_base.cpp)
 
 if(HPGMP_REFERENCE)
-    set(host_sources ${host_sources}
-        src/ExchangeHalo.cpp src/ExchangeHalo_ref.cpp
-        src/ComputeSYMGS.cpp src/ComputeSYMGS_ref.cpp
-        src/ComputeSPMV_ref.cpp src/ComputeSPMV_gpu.cpp
-        src/ComputeGS_Forward.cpp src/ComputeGS_Forward_ref.cpp src/ComputeGS_Forward_gpu.cpp
+    set(host_sources
+        ${host_sources}
+        # cmake-format: sort
+        src/ExchangeHalo.cpp
+        src/ExchangeHalo_ref.cpp
+        src/ComputeSYMGS.cpp
+        src/ComputeSYMGS_ref.cpp
+        src/ComputeSPMV_ref.cpp
+        src/ComputeSPMV_gpu.cpp
+        src/ComputeGS_Forward.cpp
+        src/ComputeGS_Forward_ref.cpp
+        src/ComputeGS_Forward_gpu.cpp
         src/ComputeMG_ref.cpp
-        src/ComputeProlongation_ref.cpp src/ComputeRestriction_ref.cpp
-        src/ComputeProlongation_gpu.cpp src/ComputeRestriction_gpu.cpp
-        src/optimize_problem_ref.cpp
-    )
+        src/ComputeProlongation_ref.cpp
+        src/ComputeRestriction_ref.cpp
+        src/ComputeProlongation_gpu.cpp
+        src/ComputeRestriction_gpu.cpp
+        src/optimize_problem_ref.cpp)
 else()
-    set(host_sources ${host_sources}
-        src/optimize_problem_ell_rb.cpp
-    )
+    set(host_sources ${host_sources} # cmake-format: sort
+                     src/optimize_problem_ell_rb.cpp)
 endif()
 
 add_library(hpgmp ${host_sources})
@@ -160,44 +206,44 @@ if(HPGMP_BUILD_REFERENCE)
     target_compile_definitions(hpgmp_device PRIVATE HPGMP_REFERENCE)
 endif()
 
-if (HPGMP_ENABLE_CONTIGUOUS_ARRAYS)
+if(HPGMP_ENABLE_CONTIGUOUS_ARRAYS)
     target_compile_definitions(hpgmp PUBLIC HPGMP_CONTIGUOUS_ARRAYS)
 else()
     message(SEND_ERROR "Optimized HPGMP currently only works for contiguous sparse matrix arrays!")
-endif ()
+endif()
 
-if (HPGMP_ENABLE_CUBIC_RADICAL_SEARCH)
+if(HPGMP_ENABLE_CUBIC_RADICAL_SEARCH)
     target_compile_definitions(hpgmp PUBLIC HPGMP_CUBIC_RADICAL_SEARCH)
-endif ()
+endif()
 
-if (HPGMP_ENABLE_DETAILED_DEBUG)
+if(HPGMP_ENABLE_DETAILED_DEBUG)
     message(WARNING "HPGMP detailed debug mode is enabled!")
     set(HPGMP_ENABLE_DEBUG ON)
     target_compile_definitions(hpgmp PUBLIC HPGMP_DETAILED_DEBUG)
-endif ()
+endif()
 
-if (HPGMP_ENABLE_DEBUG)
+if(HPGMP_ENABLE_DEBUG)
     message(WARNING "HPGMP debug mode is enabled.")
     set(HPGMP_VERBOSE ON)
     target_compile_definitions(hpgmp PUBLIC HPGMP_DEBUG)
-endif ()
+endif()
 
-if (HPGMP_VERBOSE)
+if(HPGMP_VERBOSE)
     message(STATUS "HPGMP verbose mode is enabled.")
     target_compile_definitions(hpgmp PUBLIC HPGMP_VERBOSE)
-endif ()
+endif()
 
-if (HPGMP_ENABLE_MPI)
+if(HPGMP_ENABLE_MPI)
     find_package(MPI REQUIRED)
-    if (HPGMP_GPU_AWARE_MPI)
-      string(SUBSTRING $ENV{PE_MPICH_GTL_DIR_amd_gfx90a} 2 -1 GTL_DIR)
-      find_library(GTL_LIB mpi_gtl_hsa PATHS ${GTL_DIR})
-      if(${GTL_LIB} STREQUAL "GTL_LIB-NOTFOUND")
-        message(SEND_ERROR "MPI and GPU-aware MPI were requested but GTL was not found!")
-      endif()
-      message(STATUS "GTL library found: ${GTL_LIB}")
-      target_compile_definitions(hpgmp PUBLIC HPGMP_USE_GPU_AWARE_MPI)
-      target_compile_definitions(hpgmp_device PUBLIC HPGMP_USE_GPU_AWARE_MPI)
+    if(HPGMP_GPU_AWARE_MPI)
+        string(SUBSTRING $ENV{PE_MPICH_GTL_DIR_amd_gfx90a} 2 -1 GTL_DIR)
+        find_library(GTL_LIB mpi_gtl_hsa PATHS ${GTL_DIR})
+        if(${GTL_LIB} STREQUAL "GTL_LIB-NOTFOUND")
+            message(SEND_ERROR "MPI and GPU-aware MPI were requested but GTL was not found!")
+        endif()
+        message(STATUS "GTL library found: ${GTL_LIB}")
+        target_compile_definitions(hpgmp PUBLIC HPGMP_USE_GPU_AWARE_MPI)
+        target_compile_definitions(hpgmp_device PUBLIC HPGMP_USE_GPU_AWARE_MPI)
     endif()
     message(STATUS "MPI found. Include directories: ${MPI_CXX_INCLUDE_DIRS}")
     target_link_libraries(hpgmp PUBLIC MPI::MPI_CXX ${GTL_LIB})
@@ -207,36 +253,35 @@ if (HPGMP_ENABLE_MPI)
         target_compile_definitions(hpgmp PRIVATE HPGMP_ONLY_BLOCKING_COMMS)
         target_compile_definitions(hpgmp_device PRIVATE HPGMP_ONLY_BLOCKING_COMMS)
     endif()
-else ()
+else()
     target_compile_definitions(hpgmp PUBLIC HPGMP_NO_MPI)
     target_compile_definitions(hpgmp_device PUBLIC HPGMP_NO_MPI)
-endif ()
+endif()
 
-if (NOT HPGMP_ENABLE_LONG_LONG)
+if(NOT HPGMP_ENABLE_LONG_LONG)
     target_compile_definitions(hpgmp PUBLIC HPGMP_NO_LONG_LONG)
-endif ()
+endif()
 
-if (HPGMP_ENABLE_OPENMP)
+if(HPGMP_ENABLE_OPENMP)
     find_package(OpenMP REQUIRED)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
     target_link_libraries(hpgmp PUBLIC ${OpenMP_CXX_LIBRARIES})
-else ()
+else()
     target_compile_definitions(hpgmp PUBLIC HPGMP_NO_OPENMP)
-endif ()
+endif()
 
-if (HPGMP_ENABLE_CUDA)
+if(HPGMP_ENABLE_CUDA)
     find_package(CUDA REQUIRED)
     target_compile_definitions(hpgmp PUBLIC HPGMP_WITH_CUDA)
     target_compile_definitions(hpgmp_device PUBLIC HPGMP_WITH_CUDA)
     target_compile_definitions(hpgmp PUBLIC HPGMP_USE_FENCE)
     target_link_libraries(hpgmp_device PUBLIC CUDA::cublas CUDA::cusparse CUDA::curand)
-    target_link_libraries(hpgmp PUBLIC
-                          CUDA::cublas CUDA::cusparse CUDA::curand)
-else ()
+    target_link_libraries(hpgmp PUBLIC CUDA::cublas CUDA::cusparse CUDA::curand)
+else()
     target_compile_definitions(hpgmp PUBLIC HPGMP_NO_CUDA)
-endif ()
+endif()
 
-if (HPGMP_ENABLE_HIP)
+if(HPGMP_ENABLE_HIP)
     message(STATUS "HIP libraries are ${HIP_LIBRARIES}")
     target_compile_definitions(hpgmp PUBLIC HPGMP_WITH_HIP)
     target_compile_definitions(hpgmp_device PUBLIC HPGMP_WITH_HIP)
@@ -244,39 +289,35 @@ if (HPGMP_ENABLE_HIP)
     target_link_libraries(hpgmp_device PRIVATE roc::rocprim)
     target_link_libraries(hpgmp PUBLIC hip::host roc::rocrand)
     target_link_libraries(hpgmp PUBLIC roc::rocblas roc::rocsparse)
-else ()
+else()
     target_compile_definitions(hpgmp PUBLIC HPGMP_NO_HIP)
-endif ()
+endif()
 
 if(HPGMP_ENABLE_PROFILING)
     target_compile_definitions(hpgmp PUBLIC HPGMP_WITH_PROFILING)
 
-    if (HPGMP_ENABLE_CUDA)
+    if(HPGMP_ENABLE_CUDA)
         target_compile_definitions(hpgmp_device PUBLIC HPGMP_WITH_PROFILING)
-        target_link_libraries(hpgmp_device PUBLIC
-          CUDA::nvToolsExt
-        )
+        target_link_libraries(hpgmp_device PUBLIC CUDA::nvToolsExt)
     endif()
 
-    if (HPGMP_ENABLE_HIP)
+    if(HPGMP_ENABLE_HIP)
         target_compile_definitions(hpgmp_device PUBLIC HPGMP_WITH_PROFILING)
-        target_link_libraries(hpgmp_device PUBLIC
-          "-L${ROCM_PATH}/lib -lroctx64 -lroctracer64" 
-        )
+        target_link_libraries(hpgmp_device PUBLIC "-L${ROCM_PATH}/lib -lroctx64 -lroctracer64")
     endif()
 endif()
 
-if (HPGMP_ENABLE_BLAS)
+if(HPGMP_ENABLE_BLAS)
     target_compile_definitions(hpgmp PUBLIC HPGMP_WITH_BLAS)
     message(WARNING "CPU BLAS is enabled")
-endif ()
+endif()
 
-add_executable( xhpgmp src/main_hpgmp.cpp )
+add_executable(xhpgmp src/main_hpgmp.cpp)
 target_link_libraries(xhpgmp PRIVATE hpgmp hpgmp_device)
 
-add_executable( xhpgmp_time src/main_time.cpp )
+add_executable(xhpgmp_time src/main_time.cpp)
 target_link_libraries(xhpgmp_time PRIVATE hpgmp hpgmp_device)
-    
+
 install(TARGETS xhpgmp xhpgmp_time)
 
 if(HPGMP_ENABLE_TESTS)
@@ -284,3 +325,30 @@ if(HPGMP_ENABLE_TESTS)
     add_subdirectory(unittesting)
 endif()
 
+# Find all C/C++ source files tracked by git
+find_package(Git QUIET)
+find_program(CLANG_FORMAT_EXECUTABLE NAMES clang-format)
+if(GIT_FOUND AND CLANG_FORMAT_EXECUTABLE)
+    message(STATUS "Found Git and clang-format. Adding formatting targets.")
+    execute_process(
+        COMMAND ${GIT_EXECUTABLE} ls-files *.cpp *.hpp *.c *.h *.cc *.cxx *.hxx
+        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+        OUTPUT_VARIABLE ALL_SOURCE_FILES
+        OUTPUT_STRIP_TRAILING_WHITESPACE)
+
+    # Convert newline-separated list to CMake list
+    string(REPLACE "\n" ";" ALL_SOURCE_FILES ${ALL_SOURCE_FILES})
+
+    # Add format target
+    add_custom_target(
+        format
+        COMMAND ${CLANG_FORMAT_EXECUTABLE} -i ${ALL_SOURCE_FILES}
+        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+        COMMENT "Running clang-format on all source files"
+        VERBATIM)
+    add_custom_target(
+        format-check
+        COMMAND ${CLANG_FORMAT_EXECUTABLE} --dry-run --Werror ${ALL_SOURCE_FILES}
+        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+        COMMENT "Checking code formatting")
+endif()

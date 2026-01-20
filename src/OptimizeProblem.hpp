@@ -32,6 +32,6 @@ int OptimizeProblem(SparseMatrix_type& A, GMRESData_type& data, Vector_type& b, 
  */
 
 template<class SparseMatrix_type>
-double OptimizeProblemMemoryUse(const SparseMatrix_type & A);
+double OptimizeProblemMemoryUse(const SparseMatrix_type& A);
 
-#endif  // OPTIMIZEPROBLEM_HPP
+#endif // OPTIMIZEPROBLEM_HPP

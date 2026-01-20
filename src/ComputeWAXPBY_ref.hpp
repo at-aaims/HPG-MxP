@@ -21,9 +21,9 @@
 template<class VectorX_type, class VectorY_type, class VectorW_type>
 int ComputeWAXPBY_ref(const local_int_t n,
                       const typename VectorX_type::scalar_type alpha,
-                      const VectorX_type & x,
+                      const VectorX_type& x,
                       const typename VectorY_type::scalar_type beta,
-                      const VectorY_type & y,
-                            VectorW_type & w);
+                      const VectorY_type& y,
+                      VectorW_type& w);
 
 #endif // COMPUTEWAXPBY_REF_HPP

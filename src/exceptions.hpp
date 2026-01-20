@@ -16,7 +16,7 @@ class HostDeviceCopyFailedError : public std::runtime_error
 {
 public:
     HostDeviceCopyFailedError(const std::string& msg)
-        :std::runtime_error("! Error: could not copy " + msg)
+        : std::runtime_error("! Error: could not copy " + msg)
     { }
 };
 

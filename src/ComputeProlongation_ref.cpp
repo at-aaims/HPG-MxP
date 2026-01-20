@@ -39,22 +39,25 @@
   @return Returns zero on success and a non-zero value otherwise.
 */
 template<class SparseMatrix_type, class Vector_type>
-int ComputeProlongation_ref(const SparseMatrix_type & Af, Vector_type & xf) {
+int ComputeProlongation_ref(const SparseMatrix_type& Af, Vector_type& xf)
+{
 
-  typedef typename SparseMatrix_type::scalar_type scalar_type;
+    typedef typename SparseMatrix_type::scalar_type scalar_type;
 
-  scalar_type * xfv = xf.values;
-  scalar_type * xcv = Af.mgData->xc->values;
-  local_int_t * f2c = Af.mgData->f2cOperator;
-  local_int_t nc = Af.mgData->rc->localLength;
+    scalar_type* xfv = xf.values;
+    scalar_type* xcv = Af.mgData->xc->values;
+    local_int_t* f2c = Af.mgData->f2cOperator;
+    local_int_t nc   = Af.mgData->rc->localLength;
 
-  #ifndef HPGMP_NO_OPENMP
-  #pragma omp parallel for
-  #endif
-  // TODO: Somehow note that this loop can be safely vectorized since f2c has no repeated indices
-  for (local_int_t i=0; i<nc; ++i) xfv[f2c[i]] += xcv[i]; // This loop is safe to vectorize
+#ifndef HPGMP_NO_OPENMP
+    // clang-format off
+    #pragma omp parallel for
+    // clang-format on
+#endif
+    // TODO: Somehow note that this loop can be safely vectorized since f2c has no repeated indices
+    for (local_int_t i = 0; i < nc; ++i) xfv[f2c[i]] += xcv[i]; // This loop is safe to vectorize
 
-  return 0;
+    return 0;
 }
 
 
@@ -62,10 +65,10 @@ int ComputeProlongation_ref(const SparseMatrix_type & Af, Vector_type & xf) {
  * specializations *
  * --------------- */
 
-template
-int ComputeProlongation_ref< SparseMatrix<double>, Vector<double> >(SparseMatrix<double> const&, Vector<double>&);
+template int ComputeProlongation_ref< SparseMatrix<double>, Vector<double> >(
+    SparseMatrix<double> const&, Vector<double>&);
 
-template
-int ComputeProlongation_ref< SparseMatrix<float>, Vector<float> >(SparseMatrix<float> const&, Vector<float>&);
+template int ComputeProlongation_ref< SparseMatrix<float>, Vector<float> >(
+    SparseMatrix<float> const&, Vector<float>&);
 
 #endif

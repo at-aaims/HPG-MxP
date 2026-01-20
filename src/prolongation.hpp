@@ -4,7 +4,7 @@
 #include "Vector.hpp"
 #include "SparseMatrix.hpp"
 
-template <typename mat_scalar, typename vec_scalar>
+template<typename mat_scalar, typename vec_scalar>
 int prolongation(const SparseMatrix<mat_scalar>& Af, Vector<vec_scalar>& xf);
 
 #endif

@@ -17,13 +17,15 @@ using dev_spblas_ctx = cusparseHandle_t;
 
 #ifdef HPGMP_WITH_HIP
 using stream_t = hipStream_t;
-using event_t = hipEvent_t;
+using event_t  = hipEvent_t;
 #elif defined HPGMP_WITH_CUDA
 using stream_t = cudaStream_t;
-using event_t = cudaEvent_t;
+using event_t  = cudaEvent_t;
 #else
-struct stream_t {};
-struct event_t {};
+struct stream_t
+{ };
+struct event_t
+{ };
 #endif
 
 /**
@@ -39,7 +41,7 @@ class DeviceCtx
 public:
     DeviceCtx(int process_rank);
     ~DeviceCtx();
-  
+
     dev_blas_ctx get_blas_handle() { return blas_handle_; }
     dev_spblas_ctx get_sparse_handle() { return sparse_handle_; }
     stream_t get_compute_stream() { return compute_stream_; }
@@ -58,19 +60,19 @@ public:
     void pinned_host_free(void* ptr);
 
     /// Sync copy to device
-    void copy_host_to_device_sync(void *d_ptr, const void *h_ptr, size_t nbytes);
-    
+    void copy_host_to_device_sync(void* d_ptr, const void* h_ptr, size_t nbytes);
+
     /// Sync copy to host
-    void copy_device_to_host_sync(void *h_ptr, const void *d_ptr, size_t nbytes);
+    void copy_device_to_host_sync(void* h_ptr, const void* d_ptr, size_t nbytes);
 
     /// Sync copy from one device buffer to another.
-    void copy_device_to_device_sync(void *dst_ptr, const void *src_ptr, size_t nbytes);
+    void copy_device_to_device_sync(void* dst_ptr, const void* src_ptr, size_t nbytes);
 
     /// Asynchronous copy to device
-    void copy_host_to_device_async(void *d_ptr, const void *h_ptr, size_t nbytes, stream_t stream);
-    
+    void copy_host_to_device_async(void* d_ptr, const void* h_ptr, size_t nbytes, stream_t stream);
+
     /// Asynchronous copy to host
-    void copy_device_to_host_async(void *h_ptr, const void *d_ptr, size_t nbytes, stream_t stream);
+    void copy_device_to_host_async(void* h_ptr, const void* d_ptr, size_t nbytes, stream_t stream);
 
     /// Synchronize compute stream with host
     void synchronize_compute_stream();
@@ -82,11 +84,11 @@ public:
     void synchronize_device();
 
     /// Set memory to repeated constant integer value
-    void device_memset(void *d_ptr, int value, size_t nbytes);
-    
+    void device_memset(void* d_ptr, int value, size_t nbytes);
+
     /// Create default-type event
     event_t create_event();
-    
+
     void destroy_event(event_t event);
 
     /// Create event which "happens" when all previous commands are complete.
@@ -96,7 +98,7 @@ public:
     void stream_wait_on_event(stream_t stream, event_t event);
 
     /// Get a pre-allocted workspace on the device
-    void *get_device_workspace() const { return workspace_; }
+    void* get_device_workspace() const { return workspace_; }
 
 private:
     stream_t halo_stream_;
@@ -104,14 +106,15 @@ private:
     dev_blas_ctx blas_handle_;
     dev_spblas_ctx sparse_handle_;
     const int rank_;
-    void *workspace_ = nullptr;
+    void* workspace_ = nullptr;
     /// Keep track of whether an object has already been created.
     static bool is_instantiated;
 };
 
 /// Padding multiple for GPU allocation of multi-vectors.
-template <typename T>
-struct padding_multiple {
+template<typename T>
+struct padding_multiple
+{
     static constexpr int value = static_cast<int>(128 / sizeof(T));
     //static constexpr int value = 128;
 };

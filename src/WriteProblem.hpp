@@ -20,6 +20,6 @@
 #include "SparseMatrix.hpp"
 
 template<class SparseMatrix_type, class Vector_type>
-int WriteProblem(const Geometry & geom, const SparseMatrix_type & A, const Vector_type b, const Vector_type x, const Vector_type xexact);
+int WriteProblem(const Geometry& geom, const SparseMatrix_type& A, const Vector_type b, const Vector_type x, const Vector_type xexact);
 
 #endif // WRITEPROBLEM_HPP

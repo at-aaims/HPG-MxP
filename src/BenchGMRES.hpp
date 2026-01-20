@@ -30,9 +30,8 @@
 #include "GMRESData.hpp"
 
 template<class scalar_type, class scalar_type2, class project_type = scalar_type2>
-int BenchGMRES(int argc, char **argv, comm_type comm, DeviceCtx *dctx, int numberOfMgLevels,
+int BenchGMRES(int argc, char** argv, comm_type comm, DeviceCtx* dctx, int numberOfMgLevels,
                bool verbose, bool validation_failure, const HPGMP_gen_opts& gopts,
                TestGMRESData& testcg_data);
 
-#endif  // BENCHGMRES_HPP
-
+#endif // BENCHGMRES_HPP

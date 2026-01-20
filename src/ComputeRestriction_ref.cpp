@@ -40,22 +40,25 @@
   @return Returns zero on success and a non-zero value otherwise.
 */
 template<class SparseMatrix_type, class Vector_type>
-int ComputeRestriction_ref(const SparseMatrix_type & A, const Vector_type & rf) {
+int ComputeRestriction_ref(const SparseMatrix_type& A, const Vector_type& rf)
+{
 
-  typedef typename SparseMatrix_type::scalar_type scalar_type;
+    typedef typename SparseMatrix_type::scalar_type scalar_type;
 
-  scalar_type * Axfv = A.mgData->Axf->values;
-  scalar_type * rfv = rf.values;
-  scalar_type * rcv = A.mgData->rc->values;
-  local_int_t * f2c = A.mgData->f2cOperator;
-  local_int_t nc = A.mgData->rc->localLength;
+    scalar_type* Axfv = A.mgData->Axf->values;
+    scalar_type* rfv  = rf.values;
+    scalar_type* rcv  = A.mgData->rc->values;
+    local_int_t* f2c  = A.mgData->f2cOperator;
+    local_int_t nc    = A.mgData->rc->localLength;
 
-  #ifndef HPGMP_NO_OPENMP
-  #pragma omp parallel for
-  #endif
-  for (local_int_t i=0; i<nc; ++i) rcv[i] = rfv[f2c[i]] - Axfv[f2c[i]];
+#ifndef HPGMP_NO_OPENMP
+    // clang-format off
+    #pragma omp parallel for
+    // clang-format on
+#endif
+    for (local_int_t i = 0; i < nc; ++i) rcv[i] = rfv[f2c[i]] - Axfv[f2c[i]];
 
-  return 0;
+    return 0;
 }
 
 
@@ -63,10 +66,10 @@ int ComputeRestriction_ref(const SparseMatrix_type & A, const Vector_type & rf) 
  * specializations *
  * --------------- */
 
-template
-int ComputeRestriction_ref< SparseMatrix<double>, Vector<double> >(SparseMatrix<double> const&, Vector<double> const&);
+template int ComputeRestriction_ref< SparseMatrix<double>, Vector<double> >(
+    SparseMatrix<double> const&, Vector<double> const&);
 
-template
-int ComputeRestriction_ref< SparseMatrix<float>, Vector<float> >(SparseMatrix<float> const&, Vector<float> const&);
+template int ComputeRestriction_ref< SparseMatrix<float>, Vector<float> >(
+    SparseMatrix<float> const&, Vector<float> const&);
 
 #endif

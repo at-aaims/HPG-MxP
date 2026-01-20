@@ -49,18 +49,18 @@
             A.d_matrixValues);                                         \
     }
 
-template <typename scalar>
+template<typename scalar>
 __device__ void swap(local_int_t& key, scalar& val, int mask, int dir)
 {
 #ifdef HPGMP_WITH_HIP
     const local_int_t key1 = __shfl_xor(key, mask);
-    const scalar val1 = __shfl_xor(val, mask);
+    const scalar val1      = __shfl_xor(val, mask);
 #elif HPGMP_WITH_CUDA
     const local_int_t key1 = __shfl_xor_sync(0xffffffff, key, mask);
-    const scalar val1 = __shfl_xor_sync(0xffffffff, val, mask);
+    const scalar val1      = __shfl_xor_sync(0xffffffff, val, mask);
 #endif
 
-    if(key < key1 == dir)
+    if (key < key1 == dir)
     {
         key = key1;
         val = val1;
@@ -72,30 +72,29 @@ __device__ int get_bit(int x, int i)
     return (x >> i) & 1;
 }
 
-template <unsigned int BLOCKSIZEX, unsigned int BLOCKSIZEY, typename scalar>
-__launch_bounds__(BLOCKSIZEX * BLOCKSIZEY)
-__global__ void kernel_perm_cols(const local_int_t m,
-                                 const local_int_t n,
-                                 const local_int_t nonzerosPerRow,
-                                 const local_int_t* __restrict__ perm,
-                                 local_int_t* __restrict__ mtxIndL,
-                                 scalar* __restrict__ matrixValues)
+template<unsigned int BLOCKSIZEX, unsigned int BLOCKSIZEY, typename scalar>
+__launch_bounds__(BLOCKSIZEX* BLOCKSIZEY)
+    __global__ void kernel_perm_cols(const local_int_t m,
+                                     const local_int_t n,
+                                     const local_int_t nonzerosPerRow,
+                                     const local_int_t* __restrict__ perm,
+                                     local_int_t* __restrict__ mtxIndL,
+                                     scalar* __restrict__ matrixValues)
 {
     const local_int_t row = blockIdx.x * BLOCKSIZEY + threadIdx.y;
     const local_int_t idx = row * nonzerosPerRow + threadIdx.x;
-    local_int_t key = n;
-    scalar val = 0.0;
+    local_int_t key       = n;
+    scalar val            = 0.0;
 
-    if(threadIdx.x < nonzerosPerRow && row < m)
+    if (threadIdx.x < nonzerosPerRow && row < m)
     {
         local_int_t col = mtxIndL[idx];
-        val = matrixValues[idx];
+        val             = matrixValues[idx];
 
-        if(col >= 0 && col < m)
+        if (col >= 0 && col < m)
         {
             key = perm[col];
-        }
-        else if(col >= m && col < n)
+        } else if (col >= m && col < n)
         {
             key = col;
         }
@@ -116,19 +115,19 @@ __global__ void kernel_perm_cols(const local_int_t m,
     swap(key, val, 1, get_bit(threadIdx.x, 4) ^ get_bit(threadIdx.x, 0));
 
     swap(key, val, 16, get_bit(threadIdx.x, 4));
-    swap(key, val,  8, get_bit(threadIdx.x, 3));
-    swap(key, val,  4, get_bit(threadIdx.x, 2));
-    swap(key, val,  2, get_bit(threadIdx.x, 1));
-    swap(key, val,  1, get_bit(threadIdx.x, 0));
+    swap(key, val, 8, get_bit(threadIdx.x, 3));
+    swap(key, val, 4, get_bit(threadIdx.x, 2));
+    swap(key, val, 2, get_bit(threadIdx.x, 1));
+    swap(key, val, 1, get_bit(threadIdx.x, 0));
 
-    if(threadIdx.x < nonzerosPerRow && row < m)
+    if (threadIdx.x < nonzerosPerRow && row < m)
     {
-        mtxIndL[idx] = (key == n) ? -1 : key;
+        mtxIndL[idx]      = (key == n) ? -1 : key;
         matrixValues[idx] = val;
     }
 }
 
-template <typename scalar>
+template<typename scalar>
 void permute_columns(SparseMatrix<scalar>& A)
 {
     // Determine blocksize in x direction
@@ -154,17 +153,16 @@ void permute_columns(SparseMatrix<scalar>& A)
     ++dim_y;
 
     // Shift right until we obtain a valid blocksize
-    while(dim_x * dim_y > 512)
+    while (dim_x * dim_y > 512)
     {
         dim_y >>= 1;
     }
 
-    if     (dim_y == 32) LAUNCH_PERM_COLS(32, 32)
-    else if(dim_y == 16) LAUNCH_PERM_COLS(32, 16)
-    else if(dim_y ==  8) LAUNCH_PERM_COLS(32,  8)
-    else                 LAUNCH_PERM_COLS(32,  4)
+    if (dim_y == 32) LAUNCH_PERM_COLS(32, 32)
+    else if (dim_y == 16) LAUNCH_PERM_COLS(32, 16)
+    else if (dim_y == 8) LAUNCH_PERM_COLS(32, 8)
+    else LAUNCH_PERM_COLS(32, 4)
 }
 
 template void permute_columns(SparseMatrix<float>& A);
 template void permute_columns(SparseMatrix<double>& A);
-

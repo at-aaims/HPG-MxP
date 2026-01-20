@@ -64,13 +64,13 @@
             A.perm);                                                   \
     }
 
-template <unsigned int BLOCKSIZE>
+template<unsigned int BLOCKSIZE>
 __launch_bounds__(BLOCKSIZE)
-__global__ void kernel_identity(local_int_t size, local_int_t* __restrict__ data)
+    __global__ void kernel_identity(local_int_t size, local_int_t* __restrict__ data)
 {
     local_int_t gid = blockIdx.x * BLOCKSIZE + threadIdx.x;
 
-    if(gid >= size)
+    if (gid >= size)
     {
         return;
     }
@@ -78,15 +78,15 @@ __global__ void kernel_identity(local_int_t size, local_int_t* __restrict__ data
     data[gid] = gid;
 }
 
-template <unsigned int BLOCKSIZE>
+template<unsigned int BLOCKSIZE>
 __launch_bounds__(BLOCKSIZE)
-__global__ void kernel_create_perm(local_int_t size,
-                                   const local_int_t* __restrict__ in,
-                                   local_int_t* __restrict__ out)
+    __global__ void kernel_create_perm(local_int_t size,
+                                       const local_int_t* __restrict__ in,
+                                       local_int_t* __restrict__ out)
 {
     local_int_t gid = blockIdx.x * BLOCKSIZE + threadIdx.x;
 
-    if(gid >= size)
+    if (gid >= size)
     {
         return;
     }
@@ -94,55 +94,79 @@ __global__ void kernel_create_perm(local_int_t size,
     out[in[gid]] = gid;
 }
 
-template <unsigned int BLOCKSIZE>
+template<unsigned int BLOCKSIZE>
 __device__ void reduce_sum(local_int_t tid, local_int_t* data)
 {
     __syncthreads();
 
-    if(BLOCKSIZE > 512) {
-        if(tid < 512 && tid + 512 < BLOCKSIZE) {
+    if (BLOCKSIZE > 512) {
+        if (tid < 512 && tid + 512 < BLOCKSIZE) {
             data[tid] += data[tid + 512];
         }
         __syncthreads();
     }
-    if(BLOCKSIZE > 256) {
-        if(tid < 256 && tid + 256 < BLOCKSIZE) {
+    if (BLOCKSIZE > 256) {
+        if (tid < 256 && tid + 256 < BLOCKSIZE) {
             data[tid] += data[tid + 256];
         }
         __syncthreads();
     }
-    if(BLOCKSIZE > 128) { if(tid < 128 && tid + 128 < BLOCKSIZE) { data[tid] += data[tid + 128]; }
+    if (BLOCKSIZE > 128) {
+        if (tid < 128 && tid + 128 < BLOCKSIZE) {
+            data[tid] += data[tid + 128];
+        }
         __syncthreads();
     }
-    if(BLOCKSIZE >  64) { if(tid <  64 && tid +  64 < BLOCKSIZE) { data[tid] += data[tid +  64]; }
+    if (BLOCKSIZE > 64) {
+        if (tid < 64 && tid + 64 < BLOCKSIZE) {
+            data[tid] += data[tid + 64];
+        }
         __syncthreads();
     }
-    if(BLOCKSIZE >  32) { if(tid <  32 && tid +  32 < BLOCKSIZE) { data[tid] += data[tid +  32]; }
+    if (BLOCKSIZE > 32) {
+        if (tid < 32 && tid + 32 < BLOCKSIZE) {
+            data[tid] += data[tid + 32];
+        }
         __syncthreads();
     }
-    if(BLOCKSIZE >  16) { if(tid <  16 && tid +  16 < BLOCKSIZE) { data[tid] += data[tid +  16]; }
+    if (BLOCKSIZE > 16) {
+        if (tid < 16 && tid + 16 < BLOCKSIZE) {
+            data[tid] += data[tid + 16];
+        }
         __syncthreads();
     }
-    if(BLOCKSIZE >   8) { if(tid <   8 && tid +   8 < BLOCKSIZE) { data[tid] += data[tid +   8]; }
+    if (BLOCKSIZE > 8) {
+        if (tid < 8 && tid + 8 < BLOCKSIZE) {
+            data[tid] += data[tid + 8];
+        }
         __syncthreads();
     }
-    if(BLOCKSIZE >   4) { if(tid <   4 && tid +   4 < BLOCKSIZE) { data[tid] += data[tid +   4]; }
+    if (BLOCKSIZE > 4) {
+        if (tid < 4 && tid + 4 < BLOCKSIZE) {
+            data[tid] += data[tid + 4];
+        }
         __syncthreads();
     }
-    if(BLOCKSIZE >   2) { if(tid <   2 && tid +   2 < BLOCKSIZE) { data[tid] += data[tid +   2]; }
+    if (BLOCKSIZE > 2) {
+        if (tid < 2 && tid + 2 < BLOCKSIZE) {
+            data[tid] += data[tid + 2];
+        }
         __syncthreads();
     }
-    if(BLOCKSIZE >   1) { if(tid <   1 && tid +   1 < BLOCKSIZE) { data[tid] += data[tid +   1]; }
+    if (BLOCKSIZE > 1) {
+        if (tid < 1 && tid + 1 < BLOCKSIZE) {
+            data[tid] += data[tid + 1];
+        }
         __syncthreads();
     }
 }
 
-template <unsigned int BLOCKSIZE>
+template<unsigned int BLOCKSIZE>
 __launch_bounds__(BLOCKSIZE)
-__global__ void kernel_count_color_part1(local_int_t size,
-                                         local_int_t color,
-                                         const local_int_t* __restrict__ colors,
-                                         local_int_t* __restrict__ workspace)
+    __global__ void kernel_count_color_part1(local_int_t size,
+                                             local_int_t color,
+                                             const local_int_t* __restrict__ colors,
+                                             local_int_t* __restrict__ workspace)
 {
     local_int_t tid = threadIdx.x;
     local_int_t gid = blockIdx.x * BLOCKSIZE + tid;
@@ -151,9 +175,9 @@ __global__ void kernel_count_color_part1(local_int_t size,
     __shared__ local_int_t sdata[BLOCKSIZE];
 
     local_int_t sum = 0;
-    for(local_int_t idx = gid; idx < size; idx += inc)
+    for (local_int_t idx = gid; idx < size; idx += inc)
     {
-        if(colors[idx] == color)
+        if (colors[idx] == color)
         {
             ++sum;
         }
@@ -163,36 +187,36 @@ __global__ void kernel_count_color_part1(local_int_t size,
 
     reduce_sum<BLOCKSIZE>(tid, sdata);
 
-    if(tid == 0)
+    if (tid == 0)
     {
         workspace[blockIdx.x] = sdata[0];
     }
 }
 
-template <unsigned int BLOCKSIZE>
+template<unsigned int BLOCKSIZE>
 __launch_bounds__(BLOCKSIZE)
-__global__ void kernel_count_color_part2(local_int_t* workspace)
+    __global__ void kernel_count_color_part2(local_int_t* workspace)
 {
     __shared__ local_int_t sdata[BLOCKSIZE];
     sdata[threadIdx.x] = workspace[threadIdx.x];
 
     reduce_sum<BLOCKSIZE>(threadIdx.x, sdata);
 
-    if(threadIdx.x == 0)
+    if (threadIdx.x == 0)
     {
         workspace[0] = sdata[0];
     }
 }
 
-template <unsigned int BLOCKSIZEX, unsigned int BLOCKSIZEY>
-__launch_bounds__(BLOCKSIZEX * BLOCKSIZEY)
-__global__ void kernel_jpl(const local_int_t m,
-                           const local_int_t* __restrict__ hash,
-                           const int color1,
-                           const int color2,
-                           //const char* __restrict__ nonzerosInRow,
-                           const local_int_t* __restrict__ mtxIndL,
-                           local_int_t* __restrict__ colors)
+template<unsigned int BLOCKSIZEX, unsigned int BLOCKSIZEY>
+__launch_bounds__(BLOCKSIZEX* BLOCKSIZEY)
+    __global__ void kernel_jpl(const local_int_t m,
+                               const local_int_t* __restrict__ hash,
+                               const int color1,
+                               const int color2,
+                               //const char* __restrict__ nonzerosInRow,
+                               const local_int_t* __restrict__ mtxIndL,
+                               local_int_t* __restrict__ colors)
 {
     const local_int_t row = blockIdx.x * BLOCKSIZEY + threadIdx.y;
 
@@ -201,7 +225,7 @@ __global__ void kernel_jpl(const local_int_t m,
     bool* max = &sdata[BLOCKSIZEY];
 
     // Assume current vertex is maximum
-    if(threadIdx.x == 0)
+    if (threadIdx.x == 0)
     {
         min[threadIdx.y] = true;
         max[threadIdx.y] = true;
@@ -209,13 +233,13 @@ __global__ void kernel_jpl(const local_int_t m,
 
     __syncthreads();
 
-    if(row >= m)
+    if (row >= m)
     {
         return;
     }
 
     // Do not process already colored vertices
-    if(colors[row] != -1)
+    if (colors[row] != -1)
     {
         return;
     }
@@ -226,28 +250,28 @@ __global__ void kernel_jpl(const local_int_t m,
     const local_int_t idx = row * BLOCKSIZEX + threadIdx.x;
     const local_int_t col = __ldcg(mtxIndL + idx);
 
-    if(col >= 0 && col < m)
+    if (col >= 0 && col < m)
     {
         // Skip diagonal
-        if(col != row)
+        if (col != row)
         {
             // Get neighbors color
             const int color_nb = __ldg(colors + col);
 
             // Compare only with uncolored neighbors
-            if(color_nb == -1 || color_nb == color1 || color_nb == color2)
+            if (color_nb == -1 || color_nb == color1 || color_nb == color2)
             {
                 // Get column hash value
                 local_int_t col_hash = hash[col];
 
                 // If neighbor has larger weight, vertex is not a maximum
-                if(col_hash >= row_hash)
+                if (col_hash >= row_hash)
                 {
                     max[threadIdx.y] = false;
                 }
 
                 // If neighbor has lesser weight, vertex is not a minimum
-                if(col_hash <= row_hash)
+                if (col_hash <= row_hash)
                 {
                     min[threadIdx.y] = false;
                 }
@@ -258,33 +282,32 @@ __global__ void kernel_jpl(const local_int_t m,
     __syncthreads();
 
     // If vertex is a maximum, color it
-    if(threadIdx.x == 0)
+    if (threadIdx.x == 0)
     {
-        if(max[threadIdx.y] == true)
+        if (max[threadIdx.y] == true)
         {
-           colors[row] = color1;
-        }
-        else if(min[threadIdx.y] == true)
+            colors[row] = color1;
+        } else if (min[threadIdx.y] == true)
         {
             colors[row] = color2;
         }
     }
 }
 
-constexpr int RNG_SEED = 0x586744;
+constexpr int RNG_SEED   = 0x586744;
 constexpr int MAX_COLORS = 128;
 
-template <typename scalar>
+template<typename scalar>
 void multicolor_JPL(SparseMatrix<scalar>& A)
 {
     const local_int_t m = A.localNumberOfRows;
-    
+
     A.d_rowHash = reinterpret_cast<local_int_t*>(A.dctx->device_alloc(m * sizeof(local_int_t)));
-    A.dctx->copy_host_to_device_sync(A.d_rowHash, A.rowHash, m*sizeof(local_int_t));
-    delete [] A.rowHash;
+    A.dctx->copy_host_to_device_sync(A.d_rowHash, A.rowHash, m * sizeof(local_int_t));
+    delete[] A.rowHash;
 
     A.perm = reinterpret_cast<local_int_t*>(A.dctx->device_alloc(m * sizeof(local_int_t)));
-    A.dctx->device_memset(A.perm, -1, sizeof(local_int_t)*m);
+    A.dctx->device_memset(A.perm, -1, sizeof(local_int_t) * m);
 
     A.nblocks = 0;
 
@@ -292,7 +315,7 @@ void multicolor_JPL(SparseMatrix<scalar>& A)
     srand(RNG_SEED);
 
     // Temporary workspace
-    local_int_t *const tmp = reinterpret_cast<local_int_t*>(A.dctx->get_device_workspace());
+    local_int_t* const tmp = reinterpret_cast<local_int_t*>(A.dctx->get_device_workspace());
 
     // Counter for uncolored vertices
     local_int_t colored = 0;
@@ -301,7 +324,7 @@ void multicolor_JPL(SparseMatrix<scalar>& A)
     A.sizes = new local_int_t[MAX_COLORS];
 
     // Offset into blocks
-    A.offsets = new local_int_t[MAX_COLORS];
+    A.offsets    = new local_int_t[MAX_COLORS];
     A.offsets[0] = 0;
 
     // Determine blocksize
@@ -316,22 +339,22 @@ void multicolor_JPL(SparseMatrix<scalar>& A)
     ++blocksize;
 
     // Shift right until we obtain a valid blocksize
-    while(blocksize * A.max_nnz_per_row > 512)
+    while (blocksize * A.max_nnz_per_row > 512)
     {
         blocksize >>= 1;
     }
 
     // Run Jones-Plassmann Luby algorithm until all vertices have been colored
-    while(colored != m)
+    while (colored != m)
     {
         // The first 8 colors are selected by RNG, afterwards we just count upwards
         const int color1 = (A.nblocks < 8) ? rand() % 8 : A.nblocks;
         const int color2 = (A.nblocks < 8) ? rand() % 8 : A.nblocks + 1;
 
-        if     (blocksize == 32) LAUNCH_JPL(27, 32)
-        else if(blocksize == 16) LAUNCH_JPL(27, 16)
-        else if(blocksize ==  8) LAUNCH_JPL(27,  8)
-        else                     LAUNCH_JPL(27,  4)
+        if (blocksize == 32) LAUNCH_JPL(27, 32)
+        else if (blocksize == 16) LAUNCH_JPL(27, 16)
+        else if (blocksize == 8) LAUNCH_JPL(27, 8)
+        else LAUNCH_JPL(27, 4)
 
         // Count colored vertices
         kernel_count_color_part1<256><<<256, 256>>>(m, color1, A.perm, tmp);
@@ -344,7 +367,7 @@ void multicolor_JPL(SparseMatrix<scalar>& A)
         kernel_count_color_part2<256><<<1, 256>>>(tmp);
 
         // Copy colored min vertices for current iteration to host
-        A.dctx->copy_device_to_host_sync(&A.sizes[A.nblocks+1], tmp, sizeof(local_int_t));
+        A.dctx->copy_device_to_host_sync(&A.sizes[A.nblocks + 1], tmp, sizeof(local_int_t));
 
         // Total number of colored vertices after max
         colored += A.sizes[A.nblocks];
@@ -361,21 +384,21 @@ void multicolor_JPL(SparseMatrix<scalar>& A)
 
     A.dctx->device_free(A.d_rowHash);
 
-    auto tmp_color = reinterpret_cast<local_int_t*>(A.dctx->device_alloc(m*sizeof(local_int_t)));
-    auto tmp_perm = reinterpret_cast<local_int_t*>(A.dctx->device_alloc(m*sizeof(local_int_t)));
-    auto perm = reinterpret_cast<local_int_t*>(A.dctx->device_alloc(m*sizeof(local_int_t)));
+    auto tmp_color = reinterpret_cast<local_int_t*>(A.dctx->device_alloc(m * sizeof(local_int_t)));
+    auto tmp_perm  = reinterpret_cast<local_int_t*>(A.dctx->device_alloc(m * sizeof(local_int_t)));
+    auto perm      = reinterpret_cast<local_int_t*>(A.dctx->device_alloc(m * sizeof(local_int_t)));
 
     kernel_identity<1024><<<(m - 1) / 1024 + 1, 1024>>>(m, perm);
 
     const int startbit = 0;
-    const int endbit = 32 - __builtin_clz(A.nblocks);
+    const int endbit   = 32 - __builtin_clz(A.nblocks);
     size_t size;
 
-#ifdef HPGMP_WITH_HIP    
+#ifdef HPGMP_WITH_HIP
     rocprim::double_buffer<local_int_t> keys(A.perm, tmp_color);
     rocprim::double_buffer<local_int_t> vals(perm, tmp_perm);
 
-    if(rocprim::radix_sort_pairs(nullptr, size, keys, vals, m, startbit, endbit) != hipSuccess) {
+    if (rocprim::radix_sort_pairs(nullptr, size, keys, vals, m, startbit, endbit) != hipSuccess) {
         throw DeviceAPIError(" JPL multicoloring: rocprim buffer size estimation failed!");
     }
 #elif HPGMP_WITH_CUDA
@@ -383,21 +406,21 @@ void multicolor_JPL(SparseMatrix<scalar>& A)
     cub::DoubleBuffer<local_int_t> vals(perm, tmp_perm);
     auto ierr = cub::DeviceRadixSort::SortPairs(
         nullptr, size, keys, vals, m, startbit, endbit);
-    if(ierr != cudaSuccess) {
+    if (ierr != cudaSuccess) {
         throw DeviceAPIError(" JPL multicoloring: cub buffer size estimation failed!");
     }
 #else
 #error "Not implemented on host!"
 #endif
     auto buf = A.dctx->device_alloc(size);
-#ifdef HPGMP_WITH_HIP    
-    if(rocprim::radix_sort_pairs(buf, size, keys, vals, m, startbit, endbit) != hipSuccess) {
+#ifdef HPGMP_WITH_HIP
+    if (rocprim::radix_sort_pairs(buf, size, keys, vals, m, startbit, endbit) != hipSuccess) {
         throw DeviceAPIError(" JPL multicoloring: rocprim radix sort failed!");
     }
     auto cur_vals = vals.current();
 #elif HPGMP_WITH_CUDA
     ierr = cub::DeviceRadixSort::SortPairs(buf, size, keys, vals, m, startbit, endbit);
-    if(ierr != cudaSuccess) {
+    if (ierr != cudaSuccess) {
         throw DeviceAPIError(" JPL multicoloring: cub radix sort failed!");
     }
     auto cur_vals = vals.Current();
@@ -418,20 +441,20 @@ void multicolor_JPL(SparseMatrix<scalar>& A)
 template void multicolor_JPL(SparseMatrix<double>&);
 template void multicolor_JPL(SparseMatrix<float>&);
 
-template <typename scalar>
+template<typename scalar>
 void multicolor_ref(SparseMatrix<scalar>& A)
 {
     const auto local_nrows = A.localNumberOfRows;
 
     std::vector<int> color(local_nrows, -1);
 
-    for(int i = 0; i < local_nrows; i++) {
-        int mycolor = -1;
+    for (int i = 0; i < local_nrows; i++) {
+        int mycolor  = -1;
         bool overlap = true;
-        while(overlap) {
+        while (overlap) {
             mycolor++;
             overlap = false;
-            for(int jz = 0; jz < A.nonzerosInRow[i]; jz++) {
+            for (int jz = 0; jz < A.nonzerosInRow[i]; jz++) {
                 const int j = A.mtxIndL[i][jz];
                 if (i != j && mycolor == color[j]) {
                     overlap = true;
@@ -444,32 +467,31 @@ void multicolor_ref(SparseMatrix<scalar>& A)
     std::map<int, std::vector<local_int_t>> color_points;
 
     // color_points stores old indices of points in each color group.
-    for(local_int_t i = 0; i < local_nrows; i++) {
+    for (local_int_t i = 0; i < local_nrows; i++) {
         // add point to the corresponding color group.
         assert(color[i] >= 0 && color[i] < A.max_nnz_per_row);
         color_points[color[i]].push_back(i);
     }
     const int num_colors = static_cast<int>(color_points.size());
-    A.nblocks = num_colors;
-    A.sizes = new local_int_t[num_colors];
-    A.offsets = new local_int_t[num_colors+1];
-    A.offsets[0] = 0;
-    A.perm = reinterpret_cast<local_int_t*>(A.dctx->device_alloc(local_nrows * sizeof(local_int_t)));
-    std::vector<local_int_t> host_perm (local_nrows);
+    A.nblocks            = num_colors;
+    A.sizes              = new local_int_t[num_colors];
+    A.offsets            = new local_int_t[num_colors + 1];
+    A.offsets[0]         = 0;
+    A.perm               = reinterpret_cast<local_int_t*>(A.dctx->device_alloc(local_nrows * sizeof(local_int_t)));
+    std::vector<local_int_t> host_perm(local_nrows);
 
-    for(int ic = 0; ic < num_colors; ic++) {
+    for (int ic = 0; ic < num_colors; ic++) {
         // map is sorted, so this should be stable.
         A.sizes[ic] = static_cast<int>(color_points[ic].size());
-        for(int i = 0; i < A.sizes[ic]; i++) {
+        for (int i = 0; i < A.sizes[ic]; i++) {
             host_perm[color_points[ic][i]] = A.offsets[ic] + i;
         }
-        A.offsets[ic+1] = A.offsets[ic] + A.sizes[ic];
+        A.offsets[ic + 1] = A.offsets[ic] + A.sizes[ic];
     }
     assert(host_perm.end() == host_perm.begin() + A.offsets[num_colors]);
 
-    A.dctx->copy_host_to_device_sync(A.perm, host_perm.data(), local_nrows*sizeof(local_int_t));
+    A.dctx->copy_host_to_device_sync(A.perm, host_perm.data(), local_nrows * sizeof(local_int_t));
 }
 
 template void multicolor_ref(SparseMatrix<double>&);
 template void multicolor_ref(SparseMatrix<float>&);
-

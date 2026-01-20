@@ -20,6 +20,6 @@
 #include "Vector.hpp"
 
 template<class SparseMatrix_type, class Vector_type>
-void ExchangeHalo_ref(const SparseMatrix_type & A, Vector_type & x);
+void ExchangeHalo_ref(const SparseMatrix_type& A, Vector_type& x);
 
 #endif // EXCHANGEHALO_REF_HPP

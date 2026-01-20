@@ -19,6 +19,6 @@
 #include "SparseMatrix.hpp"
 
 template<class SparseMatrix_type>
-void SetupHalo_ref(SparseMatrix_type & A);
+void SetupHalo_ref(SparseMatrix_type& A);
 
 #endif // SETUPHALO_REF_HPP

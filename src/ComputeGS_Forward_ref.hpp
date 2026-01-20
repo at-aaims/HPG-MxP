@@ -20,6 +20,6 @@
 #include "Vector.hpp"
 
 template<class SparseMatrix_type, class Vector_type>
-int ComputeGS_Forward_ref(const SparseMatrix_type & A, const Vector_type & r, Vector_type & x);
+int ComputeGS_Forward_ref(const SparseMatrix_type& A, const Vector_type& r, Vector_type& x);
 
 #endif // COMPUTESYMGS_FORWARD_REF_HPP

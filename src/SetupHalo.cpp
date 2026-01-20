@@ -42,22 +42,20 @@
   @see ExchangeHalo
 */
 template<class SparseMatrix_type>
-void SetupHalo(SparseMatrix_type & A) {
+void SetupHalo(SparseMatrix_type& A)
+{
 
-  // The call to this reference version of SetupHalo can be replaced with custom code.
-  // However, any code must work for general unstructured sparse matrices.  Special knowledge about the
-  // specific nature of the sparsity pattern may not be explicitly used.
+    // The call to this reference version of SetupHalo can be replaced with custom code.
+    // However, any code must work for general unstructured sparse matrices.  Special knowledge about the
+    // specific nature of the sparsity pattern may not be explicitly used.
 
-  return(SetupHalo_ref(A));
+    return (SetupHalo_ref(A));
 }
 
 /* --------------- *
  * specializations *
  * --------------- */
 
-template
-void SetupHalo< SparseMatrix<double> >(SparseMatrix<double>&);
+template void SetupHalo< SparseMatrix<double> >(SparseMatrix<double>&);
 
-template
-void SetupHalo< SparseMatrix<float> >(SparseMatrix<float>&);
-
+template void SetupHalo< SparseMatrix<float> >(SparseMatrix<float>&);

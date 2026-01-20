@@ -30,8 +30,8 @@
 
 template<class MultiVector_type, class SerialDenseMatrix_type>
 int ComputeGEMMT(const local_int_t m, const local_int_t n, const local_int_t k,
-                 const typename MultiVector_type::scalar_type alpha, const MultiVector_type & A, const MultiVector_type & B,
-                 const typename SerialDenseMatrix_type::scalar_type beta, SerialDenseMatrix_type & C,
-                 bool & isOptimized);
+                 const typename MultiVector_type::scalar_type alpha, const MultiVector_type& A, const MultiVector_type& B,
+                 const typename SerialDenseMatrix_type::scalar_type beta, SerialDenseMatrix_type& C,
+                 bool& isOptimized);
 
 #endif // COMPUTE_GEMMT

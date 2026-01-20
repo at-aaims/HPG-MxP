@@ -47,38 +47,38 @@ typedef GMRESData<scalar_type2, project_type> GMRESData_type2;
 local_int_t simulate_halos(SparseMatrix<scalar_type>& A)
 {
     const int max_nnz_per_row = 27;
-    const local_int_t nrows = A.localNumberOfRows;
-    A.numberOfSendNeighbors = 1;
-    A.totalToBeSent = 8;
-    auto oldmtxIndL = A.mtxIndL[0];
-    auto nnz_row = A.nonzerosInRow;
-    auto nonzerosInRow = A.nonzerosInRow;
-    const Geometry *const g = A.geom;
-    const std::array<int,3> ln{g->nz, g->ny, g->nx};
-    local_int_t ihalo = nrows;
+    const local_int_t nrows   = A.localNumberOfRows;
+    A.numberOfSendNeighbors   = 1;
+    A.totalToBeSent           = 8;
+    auto oldmtxIndL           = A.mtxIndL[0];
+    auto nnz_row              = A.nonzerosInRow;
+    auto nonzerosInRow        = A.nonzerosInRow;
+    const Geometry* const g   = A.geom;
+    const std::array<int, 3> ln{g->nz, g->ny, g->nx};
+    local_int_t ihalo         = nrows;
     local_int_t num_halo_rows = 0;
-    for (local_int_t i=0; i < nrows; i++) {
+    for (local_int_t i = 0; i < nrows; i++) {
         const auto cur_nnz = static_cast<local_int_t>(nonzerosInRow[i]);
-        const auto p = get_local_3d_from_flattened(i, ln);
+        const auto p       = get_local_3d_from_flattened(i, ln);
         // Add one ghost cell per halo cell
-        if(p[0] == 0 || p[1] ==0 || p[2] == 0 ||
-                p[0] == g->nz-1 || p[1] == g->ny-1 || p[2] == g->nx-1)
+        if (p[0] == 0 || p[1] == 0 || p[2] == 0 ||
+            p[0] == g->nz - 1 || p[1] == g->ny - 1 || p[2] == g->nx - 1)
         {
             assert(cur_nnz < max_nnz_per_row);
             A.mtxIndL[i][cur_nnz] = ihalo++;
             num_halo_rows++;
         }
         bool corner = true;
-        for(int idir = 0; idir < 3; idir++) {
-            if(p[idir] != 0 && p[idir] != ln[idir]-1) {
+        for (int idir = 0; idir < 3; idir++) {
+            if (p[idir] != 0 && p[idir] != ln[idir] - 1) {
                 corner = false;
             }
         }
         // Add 19 extra at corners
         const int nhalocorners = 19;
-        if(corner) {
+        if (corner) {
             assert(cur_nnz + nhalocorners <= max_nnz_per_row);
-            for(int ic = 0; ic < nhalocorners; ic++) {
+            for (int ic = 0; ic < nhalocorners; ic++) {
                 A.mtxIndL[i][cur_nnz + ic] = ihalo++;
             }
         }
@@ -86,8 +86,8 @@ local_int_t simulate_halos(SparseMatrix<scalar_type>& A)
     }
     const local_int_t num_external_nz = ihalo - nrows;
     A.numberOfExternalValues = A.totalToBeSent = num_external_nz;
-    const int num_external_dofs = 2*(ln[0]*ln[1] + ln[1]*ln[2] + ln[2]*ln[0]) + 8*4;
-    A.localNumberOfColumns = nrows + num_external_dofs;
+    const int num_external_dofs                = 2 * (ln[0] * ln[1] + ln[1] * ln[2] + ln[2] * ln[0]) + 8 * 4;
+    A.localNumberOfColumns                     = nrows + num_external_dofs;
     printf("simulate_halos: Added %d halo DOFs and %d halo dependencies.\n", num_external_dofs,
            num_external_nz);
     return num_halo_rows;
@@ -102,7 +102,7 @@ local_int_t simulate_halos(SparseMatrix<scalar_type>& A)
   @return Returns zero on success and a non-zero value otherwise.
 
 */
-int main(int argc, char * argv[])
+int main(int argc, char* argv[])
 {
 #ifndef HPGMP_NO_MPI
     MPI_Init(&argc, &argv);
@@ -118,17 +118,18 @@ int main(int argc, char * argv[])
     HPGMP_Init_Params(&argc, &argv, params, bench_comm);
     params.numThreads = 1;
     const int size = params.comm_size, rank = params.comm_rank; // Number of MPI processes, My process ID
-    
+
     auto dctx = std::make_unique<DeviceCtx>(rank);
 
     const local_int_t nx = 16;
     const local_int_t ny = 16;
     const local_int_t nz = 16;
-    int ierr = 0;  // Used to check return codes on function calls
+    int ierr             = 0; // Used to check return codes on function calls
 
-    ierr = CheckAspectRatio(0.125, nx, ny, nz, "local problem", rank==0);
-    if (ierr)
-      return ierr;
+    ierr = CheckAspectRatio(0.125, nx, ny, nz, "local problem", rank == 0);
+    if (ierr) {
+        return ierr;
+    }
 
     /////////////////////////
     // Problem setup Phase //
@@ -139,15 +140,16 @@ int main(int argc, char * argv[])
 #endif
 
     // Construct the geometry and linear system
-    Geometry * geom = new Geometry;
+    Geometry* geom = new Geometry;
     GenerateGeometry(size, rank, params.numThreads, params.pz, params.zl, params.zu, nx, ny, nz, params.npx, params.npy, params.npz, geom);
 
-    ierr = CheckAspectRatio(0.125, geom->npx, geom->npy, geom->npz, "process grid", rank==0);
-    if (ierr)
-      return ierr;
+    ierr = CheckAspectRatio(0.125, geom->npx, geom->npy, geom->npz, "process grid", rank == 0);
+    if (ierr) {
+        return ierr;
+    }
 
     // Use this array for collecting timing information
-    std::vector<double> times(10,0.0);
+    std::vector<double> times(10, 0.0);
 
     double setup_time = mytimer();
 
@@ -162,7 +164,7 @@ int main(int argc, char * argv[])
     SetupMatrix(dctx.get(), numberOfMgLevels, A, geom, data, &b, &x, &xexact, init_vect, bench_comm);
 
     setup_time = mytimer() - setup_time; // Capture total time of setup
-    times[9] = setup_time; // Save it for reporting
+    times[9]   = setup_time; // Save it for reporting
 
     // Simulate halos
     const local_int_t nhalos = simulate_halos(A);
@@ -170,10 +172,10 @@ int main(int argc, char * argv[])
     // Call user-tunable set up function.
     double t7 = mytimer();
     OptimizeProblem(A, data, b, x, xexact);
-    t7 = mytimer() - t7;
+    t7       = mytimer() - t7;
     times[7] = t7;
 
-    if (A.geom->rank==0) {
+    if (A.geom->rank == 0) {
         std::cout << " Setup    Time     " << setup_time << " seconds." << std::endl;
         std::cout << " Optimize Time     " << t7 << " seconds." << std::endl;
     }

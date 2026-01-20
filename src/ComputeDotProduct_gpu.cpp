@@ -22,14 +22,14 @@
 #if defined(HPGMP_WITH_CUDA) | defined(HPGMP_WITH_HIP)
 
 #ifndef HPGMP_NO_OPENMP
- #include <omp.h>
+#include <omp.h>
 #endif
 #include <cassert>
 
 #include "mytimer.hpp"
 #ifndef HPGMP_NO_MPI
- #include <mpi.h>
- #include "Utils_MPI.hpp"
+#include <mpi.h>
+#include "Utils_MPI.hpp"
 #endif
 
 #include "ComputeDotProduct_ref.hpp"
@@ -53,102 +53,103 @@
   @see ComputeDotProduct
 */
 template<class Vector_type, class output_scalar_type>
-int ComputeDotProduct_ref(const local_int_t n, const Vector_type & x, const Vector_type & y,
-                          output_scalar_type & result, double & time_allreduce) {
+int ComputeDotProduct_ref(const local_int_t n, const Vector_type& x, const Vector_type& y,
+                          output_scalar_type& result, double& time_allreduce)
+{
 
-  HPGMP_RANGE_PUSH(__FUNCTION__);
+    HPGMP_RANGE_PUSH(__FUNCTION__);
 
-  assert(x.local_length()>=n); // Test vector lengths
-  assert(y.local_length()>=n);
+    assert(x.local_length() >= n); // Test vector lengths
+    assert(y.local_length() >= n);
 
-  output_scalar_type local_result (0.0);
+    output_scalar_type local_result(0.0);
 
 #if defined(HPGMP_DEBUG)
-  using input_scalar_type = typename Vector_type::scalar_type;
-  const input_scalar_type * xv = x.values();
-  const input_scalar_type * yv = y.values();
-  if (yv==xv) {
-    for (local_int_t i=0; i<n; i++) local_result += xv[i]*xv[i];
-  } else {
-    for (local_int_t i=0; i<n; i++) local_result += xv[i]*yv[i];
-  }
+    using input_scalar_type     = typename Vector_type::scalar_type;
+    const input_scalar_type* xv = x.values();
+    const input_scalar_type* yv = y.values();
+    if (yv == xv) {
+        for (local_int_t i = 0; i < n; i++) local_result += xv[i] * xv[i];
+    } else {
+        for (local_int_t i = 0; i < n; i++) local_result += xv[i] * yv[i];
+    }
 #endif
 
-  using input_scalar_type = typename Vector_type::scalar_type; 
-  const input_scalar_type* d_x = x.d_values();
-  const input_scalar_type* d_y = y.d_values();
+    using input_scalar_type      = typename Vector_type::scalar_type;
+    const input_scalar_type* d_x = x.d_values();
+    const input_scalar_type* d_y = y.d_values();
 
 #ifdef HPGMP_DEBUG
-  output_scalar_type local_tmp = local_result;
+    output_scalar_type local_tmp = local_result;
 #endif
-  
-  auto handle = x.get_blas_handle();
 
-  #if defined(HPGMP_WITH_CUDA)
-  // Compute dot on Nvidia GPU
-  if (std::is_same<input_scalar_type, double>::value) {
-    double double_result;
-    if (CUBLAS_STATUS_SUCCESS != cublasDdot (handle, n, (double*)d_x, 1, (double*)d_y, 1, (double*)&double_result)) {
-      printf( " Failed cublasDdot\n" );
+    auto handle = x.get_blas_handle();
+
+#if defined(HPGMP_WITH_CUDA)
+    // Compute dot on Nvidia GPU
+    if (std::is_same<input_scalar_type, double>::value) {
+        double double_result;
+        if (CUBLAS_STATUS_SUCCESS != cublasDdot(handle, n, (double*)d_x, 1, (double*)d_y, 1, (double*)&double_result)) {
+            printf(" Failed cublasDdot\n");
+        }
+        local_result = double_result;
+    } else if (std::is_same<input_scalar_type, float>::value) {
+        float float_result;
+        if (CUBLAS_STATUS_SUCCESS != cublasSdot(handle, n, (float*)d_x, 1, (float*)d_y, 1, (float*)&float_result)) {
+            printf(" Failed cublasSdot\n");
+        }
+        local_result = float_result;
     }
-    local_result = double_result;
-  } else if (std::is_same<input_scalar_type, float>::value) {
-    float float_result;
-    if (CUBLAS_STATUS_SUCCESS != cublasSdot (handle, n, (float*)d_x, 1,  (float*)d_y, 1,  (float*)&float_result)) {
-      printf( " Failed cublasSdot\n" );
+#elif defined(HPGMP_WITH_HIP)
+    // Compute dot on AMD GPU
+    if (std::is_same<input_scalar_type, double>::value) {
+        double double_result;
+        if (rocblas_status_success != rocblas_ddot(handle, n, (double*)d_x, 1, (double*)d_y, 1, (double*)&double_result)) {
+            printf(" Failed rocblas_ddot\n");
+        }
+        local_result = double_result;
+    } else if (std::is_same<input_scalar_type, float>::value) {
+        float float_result;
+        if (rocblas_status_success != rocblas_sdot(handle, n, (float*)d_x, 1, (float*)d_y, 1, (float*)&float_result)) {
+            printf(" Failed rocblas_sdot\n");
+        }
+        local_result = float_result;
     }
-    local_result = float_result;
-  }
-  #elif defined(HPGMP_WITH_HIP)
-  // Compute dot on AMD GPU
-  if (std::is_same<input_scalar_type, double>::value) {
-    double double_result;
-    if (rocblas_status_success != rocblas_ddot (handle, n, (double*)d_x, 1, (double*)d_y, 1, (double*)&double_result)) {
-      printf( " Failed rocblas_ddot\n" );
-    }
-    local_result = double_result;
-  } else if (std::is_same<input_scalar_type, float>::value) {
-    float float_result;
-    if (rocblas_status_success != rocblas_sdot (handle, n, (float*)d_x, 1,  (float*)d_y, 1,  (float*)&float_result)) {
-      printf( " Failed rocblas_sdot\n" );
-    }
-    local_result = float_result;
-  }
-  #endif
+#endif
 
 #ifndef HPGMP_NO_MPI
-  // Use MPI's reduce function to collect all partial sums
-  int size; // Number of MPI processes
-  MPI_Comm_size(x.get_comm(), &size);
-  double t0 = mytimer();
-  if (size > 1) {
-      MPI_Datatype MPI_SCALAR_TYPE = MpiTypeTraits<output_scalar_type>::getType ();
-      MPI_Op MPI_SCALAR_SUM = MpiTypeTraits<output_scalar_type>::getSumOp ();
-      output_scalar_type global_result (0.0);
-      MPI_Allreduce(&local_result, &global_result, 1, MPI_SCALAR_TYPE, MPI_SCALAR_SUM, x.get_comm());
-      result = global_result;
-  } else {
-      result = local_result;
-  }
-  time_allreduce += mytimer() - t0;
+    // Use MPI's reduce function to collect all partial sums
+    int size; // Number of MPI processes
+    MPI_Comm_size(x.get_comm(), &size);
+    double t0 = mytimer();
+    if (size > 1) {
+        MPI_Datatype MPI_SCALAR_TYPE = MpiTypeTraits<output_scalar_type>::getType();
+        MPI_Op MPI_SCALAR_SUM        = MpiTypeTraits<output_scalar_type>::getSumOp();
+        output_scalar_type global_result(0.0);
+        MPI_Allreduce(&local_result, &global_result, 1, MPI_SCALAR_TYPE, MPI_SCALAR_SUM, x.get_comm());
+        result = global_result;
+    } else {
+        result = local_result;
+    }
+    time_allreduce += mytimer() - t0;
 
-  #if defined(HPGMP_DEBUG) && defined(HPGMP_WITH_CUDA)
-  output_scalar_type global_tmp (0.0);
-  MPI_Allreduce(&local_tmp, &global_tmp, 1, MPI_SCALAR_TYPE, MPI_SUM, x.comm);
-  int rank = 0;
-  MPI_Comm_rank(x.comm, &rank);
-  if (rank == 0) {
-    HPGMP_fout << rank << " : DotProduct(" << n << "): error = " << global_tmp-global_result << " (dot=" << global_result << ")" << std::endl;
-  }
-  #endif
+#if defined(HPGMP_DEBUG) && defined(HPGMP_WITH_CUDA)
+    output_scalar_type global_tmp(0.0);
+    MPI_Allreduce(&local_tmp, &global_tmp, 1, MPI_SCALAR_TYPE, MPI_SUM, x.comm);
+    int rank = 0;
+    MPI_Comm_rank(x.comm, &rank);
+    if (rank == 0) {
+        HPGMP_fout << rank << " : DotProduct(" << n << "): error = " << global_tmp - global_result << " (dot=" << global_result << ")" << std::endl;
+    }
+#endif
 #else
-  time_allreduce += 0.0;
-  result = local_result;
+    time_allreduce += 0.0;
+    result = local_result;
 #endif
 
-  HPGMP_RANGE_POP(__FUNCTION__);
+    HPGMP_RANGE_POP(__FUNCTION__);
 
-  return 0;
+    return 0;
 }
 
 
@@ -156,10 +157,10 @@ int ComputeDotProduct_ref(const local_int_t n, const Vector_type & x, const Vect
  * specializations *
  * --------------- */
 
-template
-int ComputeDotProduct_ref<Vector<double> >(int, Vector<double> const&, Vector<double> const&, double&, double&);
+template int ComputeDotProduct_ref<Vector<double> >(
+    int, Vector<double> const&, Vector<double> const&, double&, double&);
 
-template
-int ComputeDotProduct_ref<Vector<float> >(int, Vector<float> const&, Vector<float> const&, float&, double&);
+template int ComputeDotProduct_ref<Vector<float> >(
+    int, Vector<float> const&, Vector<float> const&, float&, double&);
 
 #endif

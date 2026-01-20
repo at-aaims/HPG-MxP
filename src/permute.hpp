@@ -4,7 +4,7 @@
 #include "SparseMatrix.hpp"
 #include "ell_matrix.hpp"
 
-template <typename scalar>
+template<typename scalar>
 void permute_columns(SparseMatrix<scalar>& A);
 
 #endif
