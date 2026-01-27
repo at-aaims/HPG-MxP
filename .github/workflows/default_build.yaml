@@ -8,6 +8,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+      - name: Install MPI library
+        run: sudo apt-get update && sudo apt-get install -y mpich
       - name: Configure CMake project
         run: cmake -DHPGMP_ENABLE_MPI=On -DHPGMP_BUILD_REFERENCE=On -B ${{github.workspace}}/build
       - name: Build project
