@@ -316,7 +316,7 @@ install(TARGETS xhpgmp xhpgmp_time)
 
 if(HPGMP_ENABLE_TESTS)
     enable_testing()
-    add_test(NAME xhpgmp_default_run COMMAND xhpgmp)
+    add_test(NAME xhpgmp_default_run COMMAND xhpgmp --rt=10)
     add_subdirectory(unittesting)
 endif()
 
