@@ -550,26 +550,26 @@ int OptimizeProblem_ref(SparseMatrix_type& A, GMRESData_type& data, Vector_type&
             cusparseSetMatIndexBase(curLevelMatrix->descrU, CUSPARSE_INDEX_BASE_ZERO);
 #if CUDA_VERSION >= 11000
             cusparseSpMatDescr_t U_cusparse;
-            cusparseCreateCsr(&U_cusparse, 
-                              nrow, 
+            cusparseCreateCsr(&U_cusparse,
+                              nrow,
                               ncol,
                               curLevelMatrix->nnzU,
                               curLevelMatrix->d_Urow_ptr,
-                              curLevelMatrix->d_Ucol_idx, 
+                              curLevelMatrix->d_Ucol_idx,
                               curLevelMatrix->d_Unzvals,
-                              CUSPARSE_INDEX_32I, 
                               CUSPARSE_INDEX_32I,
-                              CUSPARSE_INDEX_BASE_ZERO, 
+                              CUSPARSE_INDEX_32I,
+                              CUSPARSE_INDEX_BASE_ZERO,
                               computeType);
             // allocate buffer
             cusparseSpMV_bufferSize(dctx->get_sparse_handle(),
                                     CUSPARSE_OPERATION_NON_TRANSPOSE,
-                                    &one, 
-                                    U_cusparse, 
-                                    vecX, 
-                                    &zero, 
+                                    &one,
+                                    U_cusparse,
+                                    vecX,
+                                    &zero,
                                     vecY,
-                                    computeType, 
+                                    computeType,
                                     CUSPARSE_MV_ALG_DEFAULT,
                                     &curLevelMatrix->buffer_size_U);
             cudaMalloc(&curLevelMatrix->buffer_U, curLevelMatrix->buffer_size_U);
