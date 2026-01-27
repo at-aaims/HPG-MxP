@@ -43,13 +43,10 @@ endif()
 
 if(HPGMP_ENABLE_HIP)
     enable_language(HIP)
-    # message(STATUS "ROCm path is ${ROCM_PATH}") 
+    # message(STATUS "ROCm path is ${ROCM_PATH}")
 
     # CMake modules
-    list(APPEND CMAKE_MODULE_PATH
-         ${CMAKE_CURRENT_SOURCE_DIR}/cmake
-         ${ROCM_PATH}/lib/cmake/hip
-         ${ROCM_PATH}/hip/cmake)
+    list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake ${ROCM_PATH}/lib/cmake/hip ${ROCM_PATH}/hip/cmake)
 
     list(APPEND CMAKE_PREFIX_PATH ${ROCM_PATH} ${ROCM_PATH}/hip)
 
@@ -85,26 +82,19 @@ endif()
 set(device_sources src/Vector.cpp)
 
 if(HPGMP_ENABLE_HIP OR HPGMP_ENABLE_CUDA)
-    set(device_sources ${device_sources}
-        src/ComputeDotProduct_gpu.cpp 
-        src/ComputeGEMMT_gpu.cpp
-        src/ComputeGEMVT_gpu.cpp 
-        src/ComputeGEMV_gpu.cpp
-        src/ComputeWAXPBY_gpu.cpp)
+    set(device_sources ${device_sources} src/ComputeDotProduct_gpu.cpp src/ComputeGEMMT_gpu.cpp
+                       src/ComputeGEMVT_gpu.cpp src/ComputeGEMV_gpu.cpp src/ComputeWAXPBY_gpu.cpp)
 
     if(HPGMP_BUILD_REFERENCE)
-        set(device_sources ${device_sources} 
-            src/ComputeGS_Forward_gpu.cpp
-            src/ComputeProlongation_gpu.cpp 
-            src/ComputeRestriction_gpu.cpp
-            src/ComputeSPMV_gpu.cpp 
-            src/ExchangeHalo_gpu.cpp)
+        set(device_sources ${device_sources} src/ComputeGS_Forward_gpu.cpp src/ComputeProlongation_gpu.cpp
+                           src/ComputeRestriction_gpu.cpp src/ComputeSPMV_gpu.cpp src/ExchangeHalo_gpu.cpp)
     else()
-        set(device_sources ${device_sources}
+        set(device_sources
+            ${device_sources}
             src/ComputeWAXPBY_opt.dev.cpp
-            src/ell_matrix.cpp 
-            src/ell_multicolor_gs.cpp 
-            src/multicoloring.dev.cpp 
+            src/ell_matrix.cpp
+            src/ell_multicolor_gs.cpp
+            src/multicoloring.dev.cpp
             src/permute.dev.cpp
             src/prolongation.cpp
             src/restriction.cpp)
@@ -137,16 +127,16 @@ set(host_sources
     src/CheckProblem.cpp
     src/ComputeDotProduct.cpp
     src/ComputeDotProduct_blas.cpp
-    src/ComputeGEMMT.cpp  
-    src/ComputeGEMV.cpp  
-    src/ComputeGEMVT.cpp  
+    src/ComputeGEMMT.cpp
+    src/ComputeGEMV.cpp
+    src/ComputeGEMVT.cpp
     src/ComputeGEMVT_blas.cpp
-    src/ComputeGEMV_blas.cpp 
-    src/ComputeGS_Forward.cpp 
-    src/ComputeOptimalShapeXYZ.cpp 
-    src/ComputeResidual.cpp 
-    src/ComputeSPMV.cpp 
-    src/ComputeSYMGS.cpp 
+    src/ComputeGEMV_blas.cpp
+    src/ComputeGS_Forward.cpp
+    src/ComputeOptimalShapeXYZ.cpp
+    src/ComputeResidual.cpp
+    src/ComputeSPMV.cpp
+    src/ComputeSYMGS.cpp
     src/ComputeTRSM.cpp
     src/ComputeWAXPBY.cpp
     src/GMRES.cpp
@@ -186,20 +176,18 @@ if(HPGMP_BUILD_REFERENCE)
         src/ComputeGEMMT_ref.cpp
         src/ComputeGEMVT_ref.cpp
         src/ComputeGEMV_ref.cpp
-        src/ComputeGS_Forward_ref.cpp 
+        src/ComputeGS_Forward_ref.cpp
         src/ComputeMG_ref.cpp
-        src/ComputeProlongation_ref.cpp 
+        src/ComputeProlongation_ref.cpp
         src/ComputeRestriction_ref.cpp
-        src/ComputeSPMV_ref.cpp 
+        src/ComputeSPMV_ref.cpp
         src/ComputeSYMGS_ref.cpp
         src/ComputeWAXPBY_ref.cpp
-        src/ExchangeHalo.cpp 
+        src/ExchangeHalo.cpp
         src/ExchangeHalo_ref.cpp
         src/optimize_problem_ref.cpp)
 else()
-    set(host_sources ${host_sources}
-        src/ComputeMG.cpp
-        src/optimize_problem_ell_rb.cpp)
+    set(host_sources ${host_sources} src/ComputeMG.cpp src/optimize_problem_ell_rb.cpp)
 endif()
 
 add_library(hpgmp ${host_sources})
