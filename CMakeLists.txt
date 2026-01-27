@@ -1,5 +1,5 @@
 #
-# HPGMP Benchmark CMake configuration
+# HPGMxP Benchmark CMake configuration
 #
 cmake_minimum_required(VERSION 3.10 FATAL_ERROR)
 
@@ -7,7 +7,7 @@ project(
     hpgmp
     VERSION 3.1
     LANGUAGES CXX
-    DESCRIPTION "High Performance Conjugate Gradient Benchmark (HPGMP) ")
+    DESCRIPTION "High Performance Generalized minimal residual Mixed-Precision Benchmark (HPG-MxP) ")
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_EXTENSIONS OFF)
