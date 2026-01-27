@@ -122,7 +122,7 @@ int ComputeProlongation_ref(const SparseMatrix_type& Af, Vector_type& xf)
 #endif
                        &buffer_size, Af.mgData->buffer_P))
     {
-        printf(" Failed rocsparse_spmv(%dx%d)\n", nc, n);
+        printf(" Failed rocsparse_spmv(%dx%d) for Prolongation\n", nc, n);
     }
 #endif
 

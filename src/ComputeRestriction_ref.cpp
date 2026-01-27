@@ -45,11 +45,11 @@ int ComputeRestriction_ref(const SparseMatrix_type& A, const Vector_type& rf)
 
     typedef typename SparseMatrix_type::scalar_type scalar_type;
 
-    scalar_type* Axfv = A.mgData->Axf->values;
-    scalar_type* rfv  = rf.values;
-    scalar_type* rcv  = A.mgData->rc->values;
-    local_int_t* f2c  = A.mgData->f2cOperator;
-    local_int_t nc    = A.mgData->rc->localLength;
+    const scalar_type* Axfv = A.mgData->Axf->values();
+    const scalar_type* rfv  = rf.values();
+    scalar_type* rcv        = A.mgData->rc->values();
+    local_int_t* f2c        = A.mgData->f2cOperator;
+    local_int_t nc          = A.mgData->rc->local_length();
 
 #ifndef HPGMP_NO_OPENMP
     // clang-format off

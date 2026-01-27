@@ -44,10 +44,10 @@ int ComputeProlongation_ref(const SparseMatrix_type& Af, Vector_type& xf)
 
     typedef typename SparseMatrix_type::scalar_type scalar_type;
 
-    scalar_type* xfv = xf.values;
-    scalar_type* xcv = Af.mgData->xc->values;
-    local_int_t* f2c = Af.mgData->f2cOperator;
-    local_int_t nc   = Af.mgData->rc->localLength;
+    scalar_type* xfv       = xf.values();
+    const scalar_type* xcv = Af.mgData->xc->values();
+    local_int_t* f2c       = Af.mgData->f2cOperator;
+    local_int_t nc         = Af.mgData->rc->local_length();
 
 #ifndef HPGMP_NO_OPENMP
     // clang-format off

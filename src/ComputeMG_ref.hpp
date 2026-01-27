@@ -18,8 +18,9 @@
 #define COMPUTEMG_REF_HPP
 #include "SparseMatrix.hpp"
 #include "Vector.hpp"
+#include "perf_counter.hpp"
 
 template<class SparseMatrix_type, class Vector_type>
-int ComputeMG_ref(const SparseMatrix_type& A, const Vector_type& r, Vector_type& x, bool symmetric = true);
+int ComputeMG_ref(const SparseMatrix_type& A, const Vector_type& r, Vector_type& x, bool symmetric, perf_counters& ft);
 
 #endif // COMPUTEMG_REF_HPP

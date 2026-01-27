@@ -141,11 +141,13 @@ void GenerateNonsymProblem_v1_ref(DeviceCtx* const dctx, SparseMatrix_type& A, V
     }
 #endif
 
+#ifndef HPGMP_REFERENCE
     A.rowHash = new local_int_t[localNumberOfRows];
+#endif
 
     local_int_t localNumberOfNonzeros = 0;
-//printf( "A=[\n" );
-// TODO:  This triply nested loop could be flattened or use nested parallelism
+    //printf( "A=[\n" );
+    // TODO:  This triply nested loop could be flattened or use nested parallelism
 #ifndef HPGMP_NO_OPENMP
     // clang-format off
     #pragma omp parallel for
@@ -226,10 +228,12 @@ void GenerateNonsymProblem_v1_ref(DeviceCtx* const dctx, SparseMatrix_type& A, V
                     xexactv[currentLocalRow] = 1.0;
                 }
 
+#ifndef HPGMP_REFERENCE
                 // Compute a row hash
                 const local_int_t crd      = iz * nx * ny + iy * (nx << 1) + (ix << 2);
                 const local_int_t hash     = get_hash(ix, iy, iz) * nx * ny * nz + crd;
                 A.rowHash[currentLocalRow] = hash;
+#endif
             } // end ix loop
         } // end iy loop
     } // end iz loop

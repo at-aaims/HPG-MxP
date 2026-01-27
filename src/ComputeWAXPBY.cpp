@@ -21,7 +21,11 @@
  */
 
 #include "ComputeWAXPBY.hpp"
+#ifdef HPGMP_REFERENCE
 #include "ComputeWAXPBY_ref.hpp"
+#else
+#include "ComputeWAXPBY_opt.hpp"
+#endif
 
 /*!
   Routine to compute the update of a vector with the sum of two
@@ -52,8 +56,13 @@ int ComputeWAXPBY(const local_int_t n,
 {
 
     // This line and the next two lines should be removed and your version of ComputeWAXPBY should be used.
+#ifdef HPGMP_REFERENCE
     isOptimized = false;
     return ComputeWAXPBY_ref(n, alpha, x, beta, y, w);
+#else
+    isOptimized = true;
+    return ComputeWAXPBY_opt(n, alpha, x, beta, y, w);
+#endif
 }
 
 

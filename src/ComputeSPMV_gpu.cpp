@@ -174,7 +174,7 @@ int ComputeSPMV_ref(const SparseMatrix_type& A, Vector_type& x, Vector_type& y)
 #endif
                        &buffer_size, A.buffer_A))
     {
-        printf(" Failed rocsparse_spmv\n");
+        printf(" Failed rocsparse_spmv for SpMV\n");
     }
     rocsparse_destroy_dnvec_descr(vecX);
     rocsparse_destroy_dnvec_descr(vecY);

@@ -58,8 +58,8 @@ int ComputeWAXPBY_ref(const local_int_t n,
 
     HPGMP_RANGE_PUSH(__FUNCTION__);
 
-    assert(x.localLength >= n); // Test vector lengths
-    assert(y.localLength >= n);
+    assert(x.local_length() >= n); // Test vector lengths
+    assert(y.local_length() >= n);
 
     // quick return
     if (n <= 0) {
@@ -71,9 +71,9 @@ int ComputeWAXPBY_ref(const local_int_t n,
     typedef typename VectorY_type::scalar_type scalarY_type;
     typedef typename VectorW_type::scalar_type scalarW_type;
 
-    scalarX_type* const xv = x.values;
-    scalarY_type* const yv = y.values;
-    scalarW_type* const wv = w.values;
+    const scalarX_type* const xv = x.values();
+    const scalarY_type* const yv = y.values();
+    scalarW_type* const wv       = w.values();
 
     if (alpha == 1.0) {
 #ifndef HPGMP_NO_OPENMP

@@ -450,8 +450,6 @@ int OptimizeProblem_ref(SparseMatrix_type& A, GMRESData_type& data, Vector_type&
             cusparseCreateDnVec(&vecX, ncol, (void*)curLevelMatrix->workx.d_values(), computeType);
             cusparseCreateDnVec(&vecY, nrow, (void*)tempy.d_values(), computeType);
             // allocate buffer
-            const SC one(1.0);
-            const SC zero(0.0);
             cusparseSpMV_bufferSize(A.cusparseHandle, CUSPARSE_OPERATION_NON_TRANSPOSE,
                                     &one, A_cusparse, vecX, &zero, vecY,
                                     computeType, CUSPARSE_MV_ALG_DEFAULT,

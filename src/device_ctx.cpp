@@ -302,7 +302,7 @@ void DeviceCtx::record_event(event_t event, stream_t stream)
         throw DeviceAPIError("Could not record event!");
     }
 #else
-#error "Events not supported on host yet!"
+#warning "Events not supported on host yet!"
 #endif
 }
 
@@ -317,7 +317,7 @@ void DeviceCtx::stream_wait_on_event(stream_t stream, event_t event)
         throw DeviceAPIError("Could not record event!");
     }
 #else
-#error "Events not supported on host yet!"
+#warning "Events not supported on host yet!"
 #endif
 }
 

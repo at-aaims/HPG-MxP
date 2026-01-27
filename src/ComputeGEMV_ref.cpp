@@ -40,15 +40,15 @@ int ComputeGEMV_ref(const local_int_t m, const local_int_t n,
     const scalarA_type one(1.0);
     const scalarA_type zero(0.0);
 
-    assert(x.m >= n); // Test vector lengths
-    assert(x.n == 1);
-    assert(y.localLength >= m);
+    assert(x.n_rows() >= n); // Test vector lengths
+    assert(x.n_cols() == 1);
+    assert(y.local_length() >= m);
 
     // Input serial dense vector
-    const scalarX_type* const xv = x.values;
+    const scalarX_type* const xv = x.values();
 
-    scalarA_type* const Av = A.values;
-    scalarY_type* const yv = y.values;
+    const scalarA_type* const Av = A.values();
+    scalarY_type* const yv       = y.values();
 
     // GEMV on HOST CPU
     if (beta == zero) {
@@ -81,14 +81,14 @@ int ComputeGEMV_ref(const local_int_t m, const local_int_t n,
 
 // uniform
 template int ComputeGEMV_ref< MultiVector<double>, Vector<double>, SerialDenseMatrix<double> >(
-    int, int, double, MultiVector<double> const&, SerialDenseMatrix<double> const&, double, Vector<double> const&);
+    const int, const int, const double, const MultiVector<double>&, const SerialDenseMatrix<double>&, const double, Vector<double>&);
 
 template int ComputeGEMV_ref< MultiVector<float>, Vector<float>, SerialDenseMatrix<float> >(
-    int, int, float, MultiVector<float> const&, SerialDenseMatrix<float> const&, float, Vector<float> const&);
+    const int, const int, const float, const MultiVector<float>&, const SerialDenseMatrix<float>&, const float, Vector<float>&);
 
 
 // mixed
 template int ComputeGEMV_ref< MultiVector<float>, Vector<double>, SerialDenseMatrix<float> >(
-    int, int, float, MultiVector<float> const&, SerialDenseMatrix<float> const&, double, Vector<double> const&);
+    const int, const int, const float, const MultiVector<float>&, const SerialDenseMatrix<float>&, const double, Vector<double>&);
 
 #endif

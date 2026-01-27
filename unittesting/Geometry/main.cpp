@@ -19,19 +19,19 @@
 int main(int argc, char* argv[])
 {
     /*
-  HPCG_Params params;
+    HPCG_Params params;
 
-  HPCG_Init(&argc, &argv, params);
-
-  int size = params.comm_size, rank = params.comm_rank; // Number of MPI processes, My process ID
-
-
-  local_int_t nx,ny,nz;
-  nx = (local_int_t)params.nx;
-  ny = (local_int_t)params.ny;
-  nz = (local_int_t)params.nz;
-  int ierr = 0;  // Used to check return codes on function calls
-*/
+    HPCG_Init(&argc, &argv, params);
+  
+    int size = params.comm_size, rank = params.comm_rank; // Number of MPI processes, My process ID
+  
+  
+    local_int_t nx,ny,nz;
+    nx = (local_int_t)params.nx;
+    ny = (local_int_t)params.ny;
+    nz = (local_int_t)params.nz;
+    int ierr = 0;  // Used to check return codes on function calls
+    */
 
     // Construct the geometry and linear system
     Geometry geom;

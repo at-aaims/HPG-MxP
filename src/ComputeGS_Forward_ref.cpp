@@ -57,13 +57,13 @@ int ComputeGS_Forward_ref(const SparseMatrix_type& A, const Vector_type& r, Vect
 
     HPGMP_RANGE_PUSH(__FUNCTION__);
 
-    assert(x.localLength == A.localNumberOfColumns); // Make sure x contain space for halo values
+    assert(x.local_length() == A.localNumberOfColumns); // Make sure x contain space for halo values
 
     typedef typename SparseMatrix_type::scalar_type scalar_type;
     const local_int_t nrow = A.localNumberOfRows;
 
-    const scalar_type* const rv = r.values;
-    scalar_type* const xv       = x.values;
+    const scalar_type* const rv = r.values();
+    scalar_type* const xv       = x.values();
 
     double t0 = 0.0;
 #ifndef HPGMP_NO_MPI
@@ -89,7 +89,7 @@ int ComputeGS_Forward_ref(const SparseMatrix_type& A, const Vector_type& r, Vect
 
         xv[i] = sum / currentDiagonal;
     }
-    TOCK(x.time2);
+    TOCK(x.time2_);
 
     HPGMP_RANGE_POP(__FUNCTION__);
 

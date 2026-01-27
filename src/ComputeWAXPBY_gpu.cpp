@@ -214,7 +214,7 @@ int ComputeWAXPBY_ref(const local_int_t n,
 #endif
     } else {
         HPGMP_vout << " Mixed-precision WAXPBY on host, since not supported on device" << std::endl;
-        throw std::runtime_error(" Mixed-precision WAXPBY on host, since not supported on device");
+        //throw std::runtime_error(" Mixed-precision WAXPBY on host, since not supported on device"); // NKK -- commented out, as this should not be a deal breaker
 
         const scalarX_type* const xv = x.values();
         const scalarY_type* const yv = y.values();

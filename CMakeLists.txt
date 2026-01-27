@@ -43,8 +43,13 @@ endif()
 
 if(HPGMP_ENABLE_HIP)
     enable_language(HIP)
-    # message(STATUS "ROCm path is ${ROCM_PATH}") CMake modules
-    list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake ${ROCM_PATH}/lib/cmake/hip ${ROCM_PATH}/hip/cmake)
+    # message(STATUS "ROCm path is ${ROCM_PATH}") 
+
+    # CMake modules
+    list(APPEND CMAKE_MODULE_PATH
+         ${CMAKE_CURRENT_SOURCE_DIR}/cmake
+         ${ROCM_PATH}/lib/cmake/hip
+         ${ROCM_PATH}/hip/cmake)
 
     list(APPEND CMAKE_PREFIX_PATH ${ROCM_PATH} ${ROCM_PATH}/hip)
 
@@ -77,21 +82,33 @@ elseif(HPGMP_ENABLE_CUDA)
     set(CMAKE_CUDA_FLAGS_DEBUG "${CMAKE_CUDA_FLAGS_DEBUG} -G")
 endif()
 
-set(device_sources # cmake-format: sort
-                   src/ComputeWAXPBY_opt.dev.cpp src/Vector.dev.cpp)
-if(HPGMP_REFERENCE)
-    set(device_sources ${device_sources} # cmake-format: sort
-                       src/ExchangeHalo_gpu.cpp)
-else()
-    set(device_sources
-        ${device_sources}
-        # cmake-format: sort
-        src/ell_matrix.cpp
-        src/multicoloring.dev.cpp
-        src/permute.dev.cpp
-        src/ell_multicolor_gs.cpp
-        src/restriction.cpp
-        src/prolongation.cpp)
+set(device_sources src/Vector.cpp)
+
+if(HPGMP_ENABLE_HIP OR HPGMP_ENABLE_CUDA)
+    set(device_sources ${device_sources}
+        src/ComputeDotProduct_gpu.cpp 
+        src/ComputeGEMMT_gpu.cpp
+        src/ComputeGEMVT_gpu.cpp 
+        src/ComputeGEMV_gpu.cpp
+        src/ComputeWAXPBY_gpu.cpp)
+
+    if(HPGMP_BUILD_REFERENCE)
+        set(device_sources ${device_sources} 
+            src/ComputeGS_Forward_gpu.cpp
+            src/ComputeProlongation_gpu.cpp 
+            src/ComputeRestriction_gpu.cpp
+            src/ComputeSPMV_gpu.cpp 
+            src/ExchangeHalo_gpu.cpp)
+    else()
+        set(device_sources ${device_sources}
+            src/ComputeWAXPBY_opt.dev.cpp
+            src/ell_matrix.cpp 
+            src/ell_multicolor_gs.cpp 
+            src/multicoloring.dev.cpp 
+            src/permute.dev.cpp
+            src/prolongation.cpp
+            src/restriction.cpp)
+    endif()
 endif()
 
 # Flag source files as device source files
@@ -115,85 +132,74 @@ else()
 endif()
 
 set(host_sources
-    # cmake-format: sort
-    src/device_ctx.cpp
-    src/MultiVector.cpp
-    src/SparseMatrix.cpp
+    src/BenchGMRES.cpp
+    src/CheckAspectRatio.cpp
+    src/CheckProblem.cpp
+    src/ComputeDotProduct.cpp
+    src/ComputeDotProduct_blas.cpp
+    src/ComputeGEMMT.cpp  
+    src/ComputeGEMV.cpp  
+    src/ComputeGEMVT.cpp  
+    src/ComputeGEMVT_blas.cpp
+    src/ComputeGEMV_blas.cpp 
+    src/ComputeGS_Forward.cpp 
+    src/ComputeOptimalShapeXYZ.cpp 
+    src/ComputeResidual.cpp 
+    src/ComputeSPMV.cpp 
+    src/ComputeSYMGS.cpp 
+    src/ComputeTRSM.cpp
+    src/ComputeWAXPBY.cpp
     src/GMRES.cpp
     src/GMRES_IR.cpp
-    src/TestGMRES.cpp
-    src/estimate_run_time.cpp
-    src/ComputeResidual.cpp
     src/GenerateGeometry.cpp
+    src/GenerateNonsymCoarseProblem.cpp
     src/GenerateNonsymProblem.cpp
     src/GenerateNonsymProblem_v1_ref.cpp
-    src/CheckProblem.cpp
+    src/MixedBaseCounter.cpp
+    src/MultiVector.cpp
     src/OptimizeProblem.cpp
+    src/OutputFile.cpp
     src/ReadHpgmpDat.cpp
     src/ReportResults.cpp
     src/SetupHalo.cpp
     src/SetupHalo_ref.cpp
     src/SetupMatrix.cpp
     src/SetupProblem.cpp
+    src/SparseMatrix.cpp
+    src/TestGMRES.cpp
     src/ValidGMRES.cpp
-    src/BenchGMRES.cpp
     src/WriteProblem.cpp
     src/YAML_Doc.cpp
     src/YAML_Element.cpp
-    src/options_strings.cpp
-    src/ComputeSPMV.cpp
-    src/ComputeDotProduct.cpp
-    src/ComputeDotProduct_ref.cpp
-    src/ComputeDotProduct_gpu.cpp
-    src/ComputeDotProduct_blas.cpp
-    src/ComputeTRSM.cpp
-    src/ComputeGEMV.cpp
-    src/ComputeGEMV_ref.cpp
-    src/ComputeGEMV_blas.cpp
-    src/ComputeGEMV_gpu.cpp
-    src/ComputeGEMVT.cpp
-    src/ComputeGEMVT_ref.cpp
-    src/ComputeGEMVT_blas.cpp
-    src/ComputeGEMVT_gpu.cpp
-    src/ComputeGEMMT.cpp
-    src/ComputeGEMMT_ref.cpp
-    src/ComputeGEMMT_gpu.cpp
+    src/device_ctx.cpp
+    src/estimate_run_time.cpp
     src/finalize.cpp
     src/init.cpp
+    src/matrix_base.cpp
     src/mytimer.cpp
-    src/ComputeWAXPBY.cpp
-    src/ComputeWAXPBY_ref.cpp
-    src/ComputeWAXPBY_gpu.cpp
-    src/ComputeMG.cpp
-    src/GenerateNonsymCoarseProblem.cpp
-    src/ComputeOptimalShapeXYZ.cpp
-    src/MixedBaseCounter.cpp
-    src/CheckAspectRatio.cpp
-    src/OutputFile.cpp
-    src/matrix_base.cpp)
+    src/options_strings.cpp)
 
-if(HPGMP_REFERENCE)
+if(HPGMP_BUILD_REFERENCE)
     set(host_sources
         ${host_sources}
-        # cmake-format: sort
-        src/ExchangeHalo.cpp
-        src/ExchangeHalo_ref.cpp
-        src/ComputeSYMGS.cpp
-        src/ComputeSYMGS_ref.cpp
-        src/ComputeSPMV_ref.cpp
-        src/ComputeSPMV_gpu.cpp
-        src/ComputeGS_Forward.cpp
-        src/ComputeGS_Forward_ref.cpp
-        src/ComputeGS_Forward_gpu.cpp
+        src/ComputeDotProduct_ref.cpp
+        src/ComputeGEMMT_ref.cpp
+        src/ComputeGEMVT_ref.cpp
+        src/ComputeGEMV_ref.cpp
+        src/ComputeGS_Forward_ref.cpp 
         src/ComputeMG_ref.cpp
-        src/ComputeProlongation_ref.cpp
+        src/ComputeProlongation_ref.cpp 
         src/ComputeRestriction_ref.cpp
-        src/ComputeProlongation_gpu.cpp
-        src/ComputeRestriction_gpu.cpp
+        src/ComputeSPMV_ref.cpp 
+        src/ComputeSYMGS_ref.cpp
+        src/ComputeWAXPBY_ref.cpp
+        src/ExchangeHalo.cpp 
+        src/ExchangeHalo_ref.cpp
         src/optimize_problem_ref.cpp)
 else()
-    set(host_sources ${host_sources} # cmake-format: sort
-                     src/optimize_problem_ell_rb.cpp)
+    set(host_sources ${host_sources}
+        src/ComputeMG.cpp
+        src/optimize_problem_ell_rb.cpp)
 endif()
 
 add_library(hpgmp ${host_sources})
@@ -322,6 +328,7 @@ install(TARGETS xhpgmp xhpgmp_time)
 
 if(HPGMP_ENABLE_TESTS)
     enable_testing()
+    add_test(NAME xhpgmp_default_run COMMAND xhpgmp)
     add_subdirectory(unittesting)
 endif()
 

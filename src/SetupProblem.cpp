@@ -113,7 +113,9 @@ void SetupProblem(const char* title, int argc, char** argv, comm_type comm, Devi
     }
 #endif
 
+#if defined(HPGMP_WITH_CUDA) || defined(HPGMP_WITH_HIP)
     A.delete_host_data();
+#endif
 
     // Call user-tunable set up function for A2
     OptimizeProblem(A2, data, b, x, xexact);
@@ -125,7 +127,9 @@ void SetupProblem(const char* title, int argc, char** argv, comm_type comm, Devi
     }
 #endif
 
+#if defined(HPGMP_WITH_CUDA) || defined(HPGMP_WITH_HIP)
     A2.delete_host_data();
+#endif
 
     //times[7] = opt_time;
     test_data.OptimizeTime = opt_time;

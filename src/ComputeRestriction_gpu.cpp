@@ -76,9 +76,9 @@ int ComputeRestriction_ref(const SparseMatrix_type& A, const Vector_type& rf)
                       CUSPARSE_INDEX_BASE_ZERO, computeType);
     // create vectors
     cusparseDnVecDescr_t vecAF, vecF, vecC;
-    cusparseCreateDnVec(&vecAF, n, d_Axfv, computeType);
-    cusparseCreateDnVec(&vecF, n, d_rfv, computeType);
-    cusparseCreateDnVec(&vecC, nc, d_rcv, computeType);
+    cusparseCreateDnVec(&vecAF, n, (void*)d_Axfv, computeType);
+    cusparseCreateDnVec(&vecF, n, (void*)d_rfv, computeType);
+    cusparseCreateDnVec(&vecC, nc, (void*)d_rcv, computeType);
     // SpMV
     status = cusparseSpMV(sphandle, CUSPARSE_OPERATION_NON_TRANSPOSE,
                           &one, Ac_cusparse,
@@ -153,7 +153,7 @@ int ComputeRestriction_ref(const SparseMatrix_type& A, const Vector_type& rf)
 #endif
                        &buffer_size, A.mgData->buffer_R))
     {
-        printf(" Failed rocsparse_spmv\n");
+        printf(" Failed rocsparse_spmv for Restriction\n");
     }
     rocsparse_create_dnvec_descr(&vecX, n, (void*)d_Axfv, rocsparse_compute_type);
     if (rocsparse_status_success !=
@@ -165,7 +165,7 @@ int ComputeRestriction_ref(const SparseMatrix_type& A, const Vector_type& rf)
 #endif
                        &buffer_size, A.mgData->buffer_R))
     {
-        printf(" Failed rocsparse_spmv\n");
+        printf(" Failed rocsparse_spmv for Restriction\n");
     }
 #endif
 
