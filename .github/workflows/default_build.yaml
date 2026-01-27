@@ -8,3 +8,9 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+      - name: Configure CMake project
+        run: cmake -DHPGMP_ENABLE_MPI=On -DHPGMP_BUILD_REFERENCE=On -B ${{github.workspace}}/build
+      - name: Build project
+        run: cmake --build ${{github.workspace}}/build
+      - name: Run tests with CTest
+        run: ctest --test-dir ${{github.workspace}}/build --output-on-failure
