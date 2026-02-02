@@ -81,14 +81,14 @@ int ComputeGEMV_ref(const local_int_t m, const local_int_t n,
 
 // uniform
 template int ComputeGEMV_ref< MultiVector<double>, Vector<double>, SerialDenseMatrix<double> >(
-    const int, const int, const double, const MultiVector<double>&, const SerialDenseMatrix<double>&, const double, Vector<double>&);
+    int, int, double, const MultiVector<double>&, const SerialDenseMatrix<double>&, const double, Vector<double>&);
 
 template int ComputeGEMV_ref< MultiVector<float>, Vector<float>, SerialDenseMatrix<float> >(
-    const int, const int, const float, const MultiVector<float>&, const SerialDenseMatrix<float>&, const float, Vector<float>&);
+    int, int, float, const MultiVector<float>&, const SerialDenseMatrix<float>&, const float, Vector<float>&);
 
 
 // mixed
 template int ComputeGEMV_ref< MultiVector<float>, Vector<double>, SerialDenseMatrix<float> >(
-    const int, const int, const float, const MultiVector<float>&, const SerialDenseMatrix<float>&, const double, Vector<double>&);
+    int, int, float, const MultiVector<float>&, const SerialDenseMatrix<float>&, const double, Vector<double>&);
 
 #endif
