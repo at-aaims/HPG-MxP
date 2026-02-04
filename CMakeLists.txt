@@ -79,9 +79,8 @@ elseif(HPGMP_ENABLE_CUDA)
     set(CMAKE_CUDA_FLAGS_DEBUG "${CMAKE_CUDA_FLAGS_DEBUG} -G")
 endif()
 
-# List device source files. Therse are files that contain __global__,
-# threadIdx.x, etc., such that we need to specify the language as CUDA or HIP 
-# when compiling for GPUs
+# List device source files. Therse are files that contain __global__, threadIdx.x, etc., such that we need to specify
+# the language as CUDA or HIP when compiling for GPUs
 set(device_sources src/Vector.dev.cpp)
 if(HPGMP_ENABLE_HIP OR HPGMP_ENABLE_CUDA)
     if(HPGMP_BUILD_REFERENCE)
@@ -169,13 +168,8 @@ set(host_sources
     src/options_strings.cpp)
 
 if(HPGMP_ENABLE_HIP OR HPGMP_ENABLE_CUDA)
-    set(host_sources 
-        ${host_sources} 
-        src/ComputeDotProduct_gpu.cpp 
-        src/ComputeGEMMT_gpu.cpp
-        src/ComputeGEMVT_gpu.cpp 
-        src/ComputeGEMV_gpu.cpp 
-        src/ComputeWAXPBY_gpu.cpp)
+    set(host_sources ${host_sources} src/ComputeDotProduct_gpu.cpp src/ComputeGEMMT_gpu.cpp src/ComputeGEMVT_gpu.cpp
+                     src/ComputeGEMV_gpu.cpp src/ComputeWAXPBY_gpu.cpp)
 endif()
 
 if(HPGMP_BUILD_REFERENCE)
@@ -197,12 +191,8 @@ if(HPGMP_BUILD_REFERENCE)
         src/optimize_problem_ref.cpp)
 
     if(HPGMP_ENABLE_HIP OR HPGMP_ENABLE_CUDA)
-        set(host_sources 
-            ${host_sources} 
-            src/ComputeGS_Forward_gpu.cpp 
-            src/ComputeProlongation_gpu.cpp
-            src/ComputeRestriction_gpu.cpp 
-            src/ComputeSPMV_gpu.cpp)
+        set(host_sources ${host_sources} src/ComputeGS_Forward_gpu.cpp src/ComputeProlongation_gpu.cpp
+                         src/ComputeRestriction_gpu.cpp src/ComputeSPMV_gpu.cpp)
     endif()
 else()
     set(host_sources ${host_sources} src/ComputeMG.cpp src/optimize_problem_ell_rb.cpp)
