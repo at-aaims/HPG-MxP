@@ -79,25 +79,23 @@ elseif(HPGMP_ENABLE_CUDA)
     set(CMAKE_CUDA_FLAGS_DEBUG "${CMAKE_CUDA_FLAGS_DEBUG} -G")
 endif()
 
-set(device_sources src/Vector.cpp)
-
+# List device source files. Therse are files that contain __global__,
+# threadIdx.x, etc., such that we need to specify the language as CUDA or HIP 
+# when compiling for GPUs
+set(device_sources src/Vector.dev.cpp)
 if(HPGMP_ENABLE_HIP OR HPGMP_ENABLE_CUDA)
-    set(device_sources ${device_sources} src/ComputeDotProduct_gpu.cpp src/ComputeGEMMT_gpu.cpp
-                       src/ComputeGEMVT_gpu.cpp src/ComputeGEMV_gpu.cpp src/ComputeWAXPBY_gpu.cpp)
-
     if(HPGMP_BUILD_REFERENCE)
-        set(device_sources ${device_sources} src/ComputeGS_Forward_gpu.cpp src/ComputeProlongation_gpu.cpp
-                           src/ComputeRestriction_gpu.cpp src/ComputeSPMV_gpu.cpp src/ExchangeHalo_gpu.cpp)
+        set(device_sources ${device_sources} src/ExchangeHalo.dev.cpp)
     else()
         set(device_sources
             ${device_sources}
             src/ComputeWAXPBY_opt.dev.cpp
-            src/ell_matrix.cpp
-            src/ell_multicolor_gs.cpp
+            src/ell_matrix.dev.cpp
+            src/ell_multicolor_gs.dev.cpp
             src/multicoloring.dev.cpp
             src/permute.dev.cpp
-            src/prolongation.cpp
-            src/restriction.cpp)
+            src/prolongation.dev.cpp
+            src/restriction.dev.cpp)
     endif()
 endif()
 
@@ -121,6 +119,7 @@ else()
     add_library(hpgmp_device ${device_sources})
 endif()
 
+# List source files that can be compiled with host compilers
 set(host_sources
     src/BenchGMRES.cpp
     src/CheckAspectRatio.cpp
@@ -169,6 +168,16 @@ set(host_sources
     src/mytimer.cpp
     src/options_strings.cpp)
 
+if(HPGMP_ENABLE_HIP OR HPGMP_ENABLE_CUDA)
+    set(host_sources 
+        ${host_sources} 
+        src/ComputeDotProduct_gpu.cpp 
+        src/ComputeGEMMT_gpu.cpp
+        src/ComputeGEMVT_gpu.cpp 
+        src/ComputeGEMV_gpu.cpp 
+        src/ComputeWAXPBY_gpu.cpp)
+endif()
+
 if(HPGMP_BUILD_REFERENCE)
     set(host_sources
         ${host_sources}
@@ -186,6 +195,15 @@ if(HPGMP_BUILD_REFERENCE)
         src/ExchangeHalo.cpp
         src/ExchangeHalo_ref.cpp
         src/optimize_problem_ref.cpp)
+
+    if(HPGMP_ENABLE_HIP OR HPGMP_ENABLE_CUDA)
+        set(host_sources 
+            ${host_sources} 
+            src/ComputeGS_Forward_gpu.cpp 
+            src/ComputeProlongation_gpu.cpp
+            src/ComputeRestriction_gpu.cpp 
+            src/ComputeSPMV_gpu.cpp)
+    endif()
 else()
     set(host_sources ${host_sources} src/ComputeMG.cpp src/optimize_problem_ell_rb.cpp)
 endif()
