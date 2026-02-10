@@ -7,7 +7,6 @@ int ComputeWAXPBY_opt(local_int_t n,
                       const VectorX_type& x,
                       typename VectorY_type::scalar_type beta,
                       const VectorY_type& y,
-                      VectorW_type& w,
-                      bool& isoptimized);
+                      VectorW_type& w);
 
 #endif

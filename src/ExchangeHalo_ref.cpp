@@ -128,8 +128,8 @@ void ExchangeHalo_ref(const SparseMatrix_type& A, Vector_type& x)
     }
     TOCK(time2);
 
-    x.time1 = time1;
-    x.time2 = time2;
+    x.time1_ = time1;
+    x.time2_ = time2;
     delete[] request;
 
     HPGMP_RANGE_POP(__FUNCTION__);

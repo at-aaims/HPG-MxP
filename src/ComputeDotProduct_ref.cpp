@@ -56,13 +56,13 @@ int ComputeDotProduct_ref(const local_int_t n, const Vector_type& x, const Vecto
 
     HPGMP_RANGE_PUSH(__FUNCTION__);
 
-    assert(x.localLength >= n); // Test vector lengths
-    assert(y.localLength >= n);
+    assert(x.local_length() >= n); // Test vector lengths
+    assert(y.local_length() >= n);
 
     scalar_type local_result(0.0);
 
-    scalar_type* xv = x.values;
-    scalar_type* yv = y.values;
+    const scalar_type* xv = x.values();
+    const scalar_type* yv = y.values();
     if (yv == xv) {
 #ifndef HPGMP_NO_OPENMP
         // clang-format off
@@ -83,12 +83,12 @@ int ComputeDotProduct_ref(const local_int_t n, const Vector_type& x, const Vecto
     // Use MPI's reduce function to collect all partial sums
     double t0 = mytimer();
     int size; // Number of MPI processes, My process ID
-    MPI_Comm_size(x.comm, &size);
+    MPI_Comm_size(x.get_comm(), &size);
 
     result = local_result;
     if (size > 1) {
         MPI_Datatype MPI_SCALAR_TYPE = MpiTypeTraits<scalar_type>::getType();
-        MPI_Allreduce(MPI_IN_PLACE, &result, 1, MPI_SCALAR_TYPE, MPI_SUM, x.comm);
+        MPI_Allreduce(MPI_IN_PLACE, &result, 1, MPI_SCALAR_TYPE, MPI_SUM, x.get_comm());
     }
     time_allreduce += mytimer() - t0;
 #else

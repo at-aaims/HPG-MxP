@@ -12,11 +12,13 @@ DistMatrixBase::DistMatrixBase(const SparseMatrix<scalar>& A)
       local_ncols_{A.localNumberOfColumns},
       numberOfSendNeighbors_{A.numberOfSendNeighbors},
       totalToBeSent_{A.totalToBeSent},
-      elementsToSend_{static_cast<local_int_t*>(dctx_->device_alloc(totalToBeSent_ * sizeof(local_int_t)))},
+      elementsToSend_{static_cast<local_int_t*>(
+          dctx_->device_alloc(totalToBeSent_ * sizeof(local_int_t)))},
       neighbors_{A.neighbors},
       receiveLength_{A.receiveLength},
       sendLength_{A.sendLength},
-      halo_row_ind_{static_cast<local_int_t*>(dctx_->device_alloc(totalToBeSent_ * sizeof(local_int_t)))},
+      halo_row_ind_{static_cast<local_int_t*>(
+          dctx_->device_alloc(totalToBeSent_ * sizeof(local_int_t)))},
       n_independent_sets_{A.nblocks},
       ind_perm_{A.perm},
       ind_sizes_{A.sizes},

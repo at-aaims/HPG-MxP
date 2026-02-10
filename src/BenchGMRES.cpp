@@ -158,8 +158,8 @@ int BenchGMRES(int argc, char** argv, comm_type comm, DeviceCtx* const dctx, int
     {
 #ifdef HPGMP_WITH_PROFILING
         const int numberOfGmresCalls = 1;
-#else // HPGMP_WITH_PROFILING \
-    // Get number of iterations to fill the required time depending on the run type
+#else
+        // Get number of iterations to fill the required time depending on the run type
         const int numberOfGmresCalls = get_num_iterations(
             comm, A, A_lo, data, data_lo, b, x, maxIters, restart_length, verbose,
             test_data.runningTime, test_data.minOfficialTime, gopts.run_type);

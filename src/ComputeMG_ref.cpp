@@ -46,7 +46,7 @@
   @see ComputeMG
 */
 template<class SparseMatrix_type, class Vector_type>
-int ComputeMG(const SparseMatrix_type& A, const Vector_type& r, Vector_type& x, bool symmetric)
+int ComputeMG(const SparseMatrix_type& A, const Vector_type& r, Vector_type& x, bool symmetric, perf_counters& ft)
 {
 
     HPGMP_RANGE_PUSH(__FUNCTION__);
@@ -74,13 +74,13 @@ int ComputeMG(const SparseMatrix_type& A, const Vector_type& r, Vector_type& x, 
 
         // Compute residual vector
         TICK();
-        double time1 = x.time1, time2 = x.time2;
+        double time1 = x.time1_, time2 = x.time2_;
         ierr = ComputeSPMV_ref(A, x, *A.mgData->Axf);
         if (ierr != 0)
             return ierr;
-        x.time1 = time1;
-        x.time2 = time2;
-        TOCK(x.time1);
+        x.time1_ = time1;
+        x.time2_ = time2;
+        TOCK(x.time1_);
 
         // Restriction operation
         TICK();
@@ -89,20 +89,20 @@ int ComputeMG(const SparseMatrix_type& A, const Vector_type& r, Vector_type& x, 
             HPGMP_RANGE_POP(__FUNCTION__);
             return ierr;
         }
-        TOCK(x.time3);
+        TOCK(x.time3_);
 
         // MG on coarser-grid
-        A.mgData->xc->time1 = A.mgData->xc->time2 = 0.0;
-        A.mgData->xc->time3 = A.mgData->xc->time4 = 0.0;
-        ierr                                      = ComputeMG_ref(*A.Ac, *A.mgData->rc, *A.mgData->xc, symmetric);
+        A.mgData->xc->time1_ = A.mgData->xc->time2_ = 0.0;
+        A.mgData->xc->time3_ = A.mgData->xc->time4_ = 0.0;
+        ierr                                        = ComputeMG(*A.Ac, *A.mgData->rc, *A.mgData->xc, symmetric, ft);
         if (ierr != 0) {
             HPGMP_RANGE_POP(__FUNCTION__);
             return ierr;
         }
-        x.time1 += A.mgData->xc->time1;
-        x.time2 += A.mgData->xc->time2;
-        x.time3 += A.mgData->xc->time3;
-        x.time4 += A.mgData->xc->time4;
+        x.time1_ += A.mgData->xc->time1_;
+        x.time2_ += A.mgData->xc->time2_;
+        x.time3_ += A.mgData->xc->time3_;
+        x.time4_ += A.mgData->xc->time4_;
 
         // Prolongation operation
         TICK();
@@ -111,7 +111,7 @@ int ComputeMG(const SparseMatrix_type& A, const Vector_type& r, Vector_type& x, 
             HPGMP_RANGE_POP(__FUNCTION__);
             return ierr;
         }
-        TOCK(x.time4);
+        TOCK(x.time4_);
 
         // Post-smoothing
         const int numberOfPostsmootherSteps = A.mgData->numberOfPostsmootherSteps;
@@ -150,7 +150,7 @@ int ComputeMG(const SparseMatrix_type& A, const Vector_type& r, Vector_type& x, 
  * --------------- */
 
 template int ComputeMG< SparseMatrix<double>, Vector<double> >(
-    SparseMatrix<double> const&, Vector<double> const&, Vector<double>&, bool);
+    SparseMatrix<double> const&, Vector<double> const&, Vector<double>&, bool, perf_counters&);
 
 template int ComputeMG< SparseMatrix<float>, Vector<float> >(
-    SparseMatrix<float> const&, Vector<float> const&, Vector<float>&, bool);
+    SparseMatrix<float> const&, Vector<float> const&, Vector<float>&, bool, perf_counters&);

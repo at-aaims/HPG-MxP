@@ -53,13 +53,13 @@ int ComputeSPMV_ref(const SparseMatrix_type& A, Vector_type& x, Vector_type& y)
 
     HPGMP_RANGE_PUSH(__FUNCTION__);
 
-    assert(x.localLength >= A.localNumberOfColumns); // Test vector lengths
-    assert(y.localLength >= A.localNumberOfRows);
+    assert(x.local_length() >= A.localNumberOfColumns); // Test vector lengths
+    assert(y.local_length() >= A.localNumberOfRows);
     typedef typename SparseMatrix_type::scalar_type scalar_type;
 
     const local_int_t nrow = A.localNumberOfRows;
-    scalar_type* const xv  = x.values;
-    scalar_type* const yv  = y.values;
+    scalar_type* const xv  = x.values();
+    scalar_type* const yv  = y.values();
 
 #ifndef HPGMP_NO_MPI
     if (A.geom->size > 1) {

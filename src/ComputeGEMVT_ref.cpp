@@ -44,14 +44,14 @@ int ComputeGEMVT_ref(const local_int_t m, const local_int_t n,
     const scalarA_type one(1.0);
     const scalarA_type zero(0.0);
 
-    assert(x.localLength >= m); // Test vector lengths
-    assert(y.m >= n);
-    assert(y.n == 1);
+    assert(x.local_length() >= m); // Test vector lengths
+    assert(y.n_rows() >= n);
+    assert(y.n_cols() == 1);
 
     // Input serial dense vector
-    scalarA_type* const Av = A.values;
-    scalarX_type* const xv = x.values;
-    scalarY_type* const yv = y.values;
+    const scalarA_type* const Av = A.values();
+    const scalarX_type* const xv = x.values();
+    scalarY_type* const yv       = y.values();
 
     // GEMV on HOST CPU
     double t0;
@@ -79,10 +79,10 @@ int ComputeGEMVT_ref(const local_int_t m, const local_int_t n,
     // Use MPI's reduce function to collect all partial sums
     TICK();
     int size; // Number of MPI processes, My process ID
-    MPI_Comm_size(A.comm, &size);
+    MPI_Comm_size(A.get_comm(), &size);
     if (size > 1) {
         MPI_Datatype MPI_SCALAR_TYPE = MpiTypeTraits<scalarY_type>::getType();
-        MPI_Allreduce(MPI_IN_PLACE, yv, n, MPI_SCALAR_TYPE, MPI_SUM, A.comm);
+        MPI_Allreduce(MPI_IN_PLACE, yv, n, MPI_SCALAR_TYPE, MPI_SUM, A.get_comm());
     }
     TIME(y.time2);
 #else

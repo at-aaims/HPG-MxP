@@ -129,10 +129,17 @@ void ExchangeHalo_ref(const SparseMatrix_type& A, Vector_type& x)
     dctx->synchronize_halo_stream();
 
 #if !defined(HPGMP_USE_GPU_AWARE_MPI)
+#if defined(HPGMP_WITH_CUDA)
+    if (cudaSuccess != cudaMemcpy(sendBuffer, A.d_sendBuffer, totalToBeSent * sizeof(scalar_type),
+                                  cudaMemcpyDeviceToHost)) {
+        printf(" Failed to memcpy d_y\n");
+    }
+#elif defined(HPGMP_WITH_HIP)
     if (hipSuccess != hipMemcpy(sendBuffer, A.d_sendBuffer, totalToBeSent * sizeof(scalar_type),
                                 hipMemcpyDeviceToHost)) {
         printf(" Failed to memcpy d_y\n");
     }
+#endif
 #endif
 
     double time1 = 0.0;
@@ -185,8 +192,8 @@ void ExchangeHalo_ref(const SparseMatrix_type& A, Vector_type& x)
     TOCK(time1);
 #endif
 
-    x.time1 = time1;
-    x.time2 = time2;
+    x.time1_ = time1;
+    x.time2_ = time2;
     delete[] request;
 
     HPGMP_RANGE_POP(__FUNCTION__);

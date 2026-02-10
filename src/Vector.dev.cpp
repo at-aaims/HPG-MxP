@@ -57,7 +57,7 @@ void Vector<scalar>::initialize(local_int_t localLength, comm_type comm, DeviceC
     values_      = (scalar*)dctx_->pinned_host_alloc(localLength * sizeof(scalar));
     send_gather_ = dctx_->create_event();
 #else
-    v.values = new scalar_type[localLength];
+    values_ = new scalar_type[localLength];
 #endif
 }
 
@@ -151,7 +151,7 @@ void Vector<scalar>::fill_random()
     // TODO: Add 1 to generated vector
     curandDestroyGenerator(generator);
 #else
-    scalar* vv = v.values();
+    scalar* vv = values_;
     for (int i = 0; i < localLength_; ++i) {
         vv[i] = rand() / (scalar)(RAND_MAX) + 1.0;
     }
@@ -188,7 +188,7 @@ void Vector<scalar_type>::scale(const scalar_type value)
     }
 #else
     // host CPU
-    scalar_type* vv = v.values();
+    scalar_type* vv = values_;
 #if defined(HPGMP_WITH_BLAS)
     if (std::is_same<scalar_type, double>::value) {
         cblas_dscal(localLength_, value, (double*)vv, 1);
@@ -623,6 +623,7 @@ void Vector<scalar>::update_halos_finalize(const DistMatrixBase* const mat) cons
 #endif // HPGMP_ONLY_BLOCKING_COMMS
 
 
+#if defined(HPGMP_WITH_CUDA) || defined(HPGMP_WITH_HIP)
 template<unsigned int BLOCKSIZE, typename scalar>
 __launch_bounds__(BLOCKSIZE)
     __global__ void kernel_permute(const local_int_t size,
@@ -636,14 +637,21 @@ __launch_bounds__(BLOCKSIZE)
     }
     out[perm[gid]] = in[gid];
 }
+#endif
 
 template<typename scalar>
 void Vector<scalar>::permute(const local_int_t* const perm)
 {
     const auto size = localLength_;
-    auto buffer     = reinterpret_cast<scalar*>(dctx_->device_alloc(size * sizeof(scalar)));
 
+    auto buffer = reinterpret_cast<scalar*>(dctx_->device_alloc(size * sizeof(scalar)));
+
+#if defined(HPGMP_WITH_CUDA) || defined(HPGMP_WITH_HIP)
     kernel_permute<1024><<<(size - 1) / 1024 + 1, 1024>>>(size, perm, d_values_, buffer);
+#else
+    for (int i = 0; i < size; ++i)
+        buffer[perm[i]] = d_values_[i];
+#endif
 
     dctx_->device_free(d_values_);
     d_values_ = buffer;
@@ -757,6 +765,8 @@ void CopyVector(const Vector<scalar_src>& v, Vector<scalar_dst>& w)
 #endif
 #endif
     }
+#else
+    for (int i = 0; i < localLength; ++i) wv[i] = vv[i];
 #endif
 }
 

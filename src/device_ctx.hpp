@@ -7,12 +7,16 @@
 using dev_blas_ctx = rocblas_handle;
 #elif defined HPGMP_WITH_CUDA
 using dev_blas_ctx = cublasHandle_t;
+#else
+using dev_blas_ctx = int;
 #endif
 
 #ifdef HPGMP_WITH_HIP
 using dev_spblas_ctx = rocsparse_handle;
 #elif defined HPGMP_WITH_CUDA
 using dev_spblas_ctx = cusparseHandle_t;
+#else
+using dev_spblas_ctx = int;
 #endif
 
 #ifdef HPGMP_WITH_HIP

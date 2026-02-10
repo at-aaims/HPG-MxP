@@ -450,9 +450,7 @@ int OptimizeProblem_ref(SparseMatrix_type& A, GMRESData_type& data, Vector_type&
             cusparseCreateDnVec(&vecX, ncol, (void*)curLevelMatrix->workx.d_values(), computeType);
             cusparseCreateDnVec(&vecY, nrow, (void*)tempy.d_values(), computeType);
             // allocate buffer
-            const SC one(1.0);
-            const SC zero(0.0);
-            cusparseSpMV_bufferSize(A.cusparseHandle, CUSPARSE_OPERATION_NON_TRANSPOSE,
+            cusparseSpMV_bufferSize(dctx->get_sparse_handle(), CUSPARSE_OPERATION_NON_TRANSPOSE,
                                     &one, A_cusparse, vecX, &zero, vecY,
                                     computeType, CUSPARSE_MV_ALG_DEFAULT,
                                     &curLevelMatrix->buffer_size_A);
@@ -552,17 +550,27 @@ int OptimizeProblem_ref(SparseMatrix_type& A, GMRESData_type& data, Vector_type&
             cusparseSetMatIndexBase(curLevelMatrix->descrU, CUSPARSE_INDEX_BASE_ZERO);
 #if CUDA_VERSION >= 11000
             cusparseSpMatDescr_t U_cusparse;
-            cusparseCreateCsr(&U_cusparse, nrow, ncol,
+            cusparseCreateCsr(&U_cusparse,
+                              nrow,
+                              ncol,
                               curLevelMatrix->nnzU,
                               curLevelMatrix->d_Urow_ptr,
-                              curLevelMatrix->d_Ucol_idx, c urLevelMatrix->d_Unzvals,
-                              CUSPARSE_INDEX_32I, CUSPARSE_INDEX_32I,
-                              CUSPARSE_INDEX_BASE_ZERO, computeType);
+                              curLevelMatrix->d_Ucol_idx,
+                              curLevelMatrix->d_Unzvals,
+                              CUSPARSE_INDEX_32I,
+                              CUSPARSE_INDEX_32I,
+                              CUSPARSE_INDEX_BASE_ZERO,
+                              computeType);
             // allocate buffer
-            cusparseSpMV_bufferSize(A.cusparseHandle,
+            cusparseSpMV_bufferSize(dctx->get_sparse_handle(),
                                     CUSPARSE_OPERATION_NON_TRANSPOSE,
-                                    &one, U_cusparse, vecX, &zero, vecY,
-                                    computeType, CUSPARSE_MV_ALG_DEFAULT,
+                                    &one,
+                                    U_cusparse,
+                                    vecX,
+                                    &zero,
+                                    vecY,
+                                    computeType,
+                                    CUSPARSE_MV_ALG_DEFAULT,
                                     &curLevelMatrix->buffer_size_U);
             cudaMalloc(&curLevelMatrix->buffer_U, curLevelMatrix->buffer_size_U);
 #endif
@@ -777,13 +785,13 @@ int OptimizeProblem_ref(SparseMatrix_type& A, GMRESData_type& data, Vector_type&
                 cusparseCreateDnVec(&vecX, nrow, (void*)curLevelMatrix->workx.d_values(), computeType);
                 cusparseCreateDnVec(&vecY, nc, (void*)tempy.d_values(), computeType);
                 // allocate buffer for R
-                cusparseSpMV_bufferSize(A.cusparseHandle, CUSPARSE_OPERATION_NON_TRANSPOSE,
+                cusparseSpMV_bufferSize(dctx->get_sparse_handle(), CUSPARSE_OPERATION_NON_TRANSPOSE,
                                         &one, R_cusparse, vecX, &one, vecY,
                                         computeType, CUSPARSE_MV_ALG_DEFAULT,
                                         &curLevelMatrix->mgData->buffer_size_R);
                 cudaMalloc(&curLevelMatrix->mgData->buffer_R, curLevelMatrix->mgData->buffer_size_R);
                 // allocate buffer for P
-                cusparseSpMV_bufferSize(A.cusparseHandle, CUSPARSE_OPERATION_TRANSPOSE,
+                cusparseSpMV_bufferSize(dctx->get_sparse_handle(), CUSPARSE_OPERATION_TRANSPOSE,
                                         &one, R_cusparse, vecY, &one, vecX,
                                         computeType, CUSPARSE_MV_ALG_DEFAULT,
                                         &curLevelMatrix->mgData->buffer_size_P);

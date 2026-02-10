@@ -81,15 +81,15 @@ int ComputeGS_Forward_ref(const SparseMatrix_type& A, const Vector_type& r, Vect
 
 #ifndef HPGMP_NO_MPI
 
-    double time1 = x.time1;
-    double time2 = x.time2;
+    double time1 = x.time1_;
+    double time2 = x.time2_;
 
     // Exchange Halo
     ExchangeHalo(A, x);
 
     // restore timers (Exchange record comm in those)
-    x.time1 = time1;
-    x.time2 = time2;
+    x.time1_ = time1;
+    x.time2_ = time2;
 
 #ifdef HPGMP_DEBUG
     if (A.geom->rank == 0) {
@@ -154,7 +154,7 @@ int ComputeGS_Forward_ref(const SparseMatrix_type& A, const Vector_type& r, Vect
                           vecX,
                           &one, vecB,
                           computeType, CUSPARSE_MV_ALG_DEFAULT, A.buffer_U);
-    TOCK(x.time1);
+    TOCK(x.time1_);
     if (CUSPARSE_STATUS_SUCCESS != status) {
         printf(" Failed cusparseSpMV for GS\n");
     }
@@ -175,7 +175,7 @@ int ComputeGS_Forward_ref(const SparseMatrix_type& A, const Vector_type& r, Vect
                                 (float*)d_xv,
                                 (const float*)&one, (float*)d_bv);
     }
-    TOCK(x.time1);
+    TOCK(x.time1_);
     if (CUSPARSE_STATUS_SUCCESS != status) {
         printf(" Failed cusparseDcsrmv for GS\n");
     }
@@ -203,9 +203,9 @@ int ComputeGS_Forward_ref(const SparseMatrix_type& A, const Vector_type& r, Vect
 #endif
                        &buffer_size, A.buffer_U))
     {
-        printf(" Failed rocsparse_spmv\n");
+        printf(" Failed rocsparse_spmv for GS\n");
     }
-    TOCK(x.time1);
+    TOCK(x.time1_);
     rocsparse_destroy_dnvec_descr(vecX);
     rocsparse_destroy_dnvec_descr(vecY);
 #endif
@@ -273,7 +273,7 @@ int ComputeGS_Forward_ref(const SparseMatrix_type& A, const Vector_type& r, Vect
   }
 #endif
 #endif
-    TOCK(x.time2);
+    TOCK(x.time2_);
 
 #ifdef HPGMP_DEBUG
     scalar_type* tv = (scalar_type*)malloc(nrow * sizeof(scalar_type));

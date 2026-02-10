@@ -51,6 +51,7 @@ int ComputeSPMV(const SparseMatrix_type& A, Vector_type& x, Vector_type& y)
     A.isSpmvOptimized = false;
     return ComputeSPMV_ref(A, x, y);
 #else
+    A.isSpmvOptimized = true;
     return ComputeSPMV_ell(A, x, y);
 #endif
 }

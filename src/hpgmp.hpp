@@ -130,7 +130,7 @@ typedef int comm_type;
 #define MPI_Abort(comm, errorcode) abort();
 #define MPI_Barrier(comm) ;
 #else
-#include "mpi.h"
+#include <mpi.h>
 typedef MPI_Comm comm_type;
 #endif
 

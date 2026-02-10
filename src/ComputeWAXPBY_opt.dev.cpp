@@ -70,13 +70,11 @@ int ComputeWAXPBY_opt(const local_int_t n,
                       const VectorX_type& x,
                       const typename VectorY_type::scalar_type beta,
                       const VectorY_type& y,
-                      VectorW_type& w,
-                      bool& isoptimized)
+                      VectorW_type& w)
 {
 
     HPGMP_RANGE_PUSH(__FUNCTION__);
 
-    isoptimized = true;
     assert(x.local_length() >= n); // Test vector lengths
     assert(y.local_length() >= n);
 
@@ -169,14 +167,14 @@ int ComputeWAXPBY_opt(const local_int_t n,
 
 // uniform
 template int ComputeWAXPBY_opt< Vector<double>, Vector<double>, Vector<double> >(
-    int, double, Vector<double> const&, double, Vector<double> const&, Vector<double>&, bool& opt);
+    int, double, Vector<double> const&, double, Vector<double> const&, Vector<double>&);
 
 template int ComputeWAXPBY_opt< Vector<float>, Vector<float>, Vector<float> >(
-    int, float, Vector<float> const&, float, Vector<float> const&, Vector<float>&, bool& opt);
+    int, float, Vector<float> const&, float, Vector<float> const&, Vector<float>&);
 
 
 // mixed
 template int ComputeWAXPBY_opt< Vector<double>, Vector<float>, Vector<double> >(
-    int, double, Vector<double> const&, float, Vector<float> const&, Vector<double>&, bool& opt);
+    int, double, Vector<double> const&, float, Vector<float> const&, Vector<double>&);
 
 #endif

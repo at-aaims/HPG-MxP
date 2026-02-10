@@ -13,8 +13,11 @@
 #define ROCM_VERSION ROCM_VERSION_MAJOR * 10000 + ROCM_VERSION_MINOR * 100 + ROCM_VERSION_PATCH
 #include <rocblas/rocblas.h>
 #include <rocsparse/rocsparse.h>
+#else
+#include <stddef.h>
 #endif
 
+#if 0 // TODO: Revisit half precision support
 #if defined HPGMP_WITH_CUDA || defined HPGMP_WITH_HIP
 //#   define HALF_ROUND_STYLE 1         // round-to-nearest
 //#   define HALF_ROUND_TIES_TO_EVEN 1
@@ -28,6 +31,7 @@ using half = __half;
 #else
 // CPU
 using half = _Float16;
+#endif
 #endif
 
 #if defined HPGMP_WITH_CUDA || defined HPGMP_WITH_HIP

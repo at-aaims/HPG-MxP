@@ -30,6 +30,7 @@
 #include "Vector.hpp"
 #include "MGData.hpp"
 #include "optimization_base.hpp"
+#include "Profiling.hpp"
 
 #include <unordered_map>
 
@@ -162,14 +163,14 @@ public:
     local_int_t* d_mtxIndL = nullptr;
     SC* d_matrixValues     = nullptr;
 
+#endif
+
     // Multicolor GS
     int nblocks{}; //!< Number of independent sets
     int ublocks{}; //!< Number of upper triangular sets
     local_int_t* sizes   = nullptr; //!< Number of rows of each independent set
     local_int_t* offsets = nullptr; //!< Pointer to the first row of each independent set
     local_int_t* perm    = nullptr; //!< Permutation obtained by independent set coloring
-#endif
-
     double time1{}, time2{};
 };
 

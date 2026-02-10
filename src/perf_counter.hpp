@@ -22,10 +22,10 @@ public:
             return 0;
         } else if constexpr (std::is_same<T, float>::value) {
             return 1;
-        } else if constexpr (std::is_same<T, half>::value) {
+#if 0 // TODO: Revisit half-precision support
+        } else if constexpr (std::is_same<T,half>::value) {
             return 2;
-        } else {
-            static_assert(false, "Precision not supported!");
+#endif
         }
     }
 
@@ -81,7 +81,11 @@ public:
     double get_total_memory_bytes() const
     {
         double total = i_mem_traffic * sizeof(int);
-        constexpr std::array<size_t, 3> sizes{sizeof(double), sizeof(float), sizeof(half)};
+#if 0 // TODO: Revisit half-precision support
+        constexpr std::array<size_t,3> sizes{sizeof(double), sizeof(float), sizeof(half)};
+#else
+        constexpr std::array<size_t, 2> sizes{sizeof(double), sizeof(float)};
+#endif
         for (int i = 0; i < n_precs; i++) {
             total += static_cast<double>(f_mem_traffic[i]) * sizes[i];
         }
