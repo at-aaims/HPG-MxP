@@ -181,9 +181,16 @@ int main(int argc, char* argv[])
     using ginkgo_vec_type  = gko::matrix::Dense<scalar_type>;
     using gmres            = gko::solver::Gmres<>;
     using bj               = gko::preconditioner::Jacobi<>;
-    auto ginkgo_mat        = ginkgo_coo_type::create(ginkgo_exec, gko::dim<2>{A.localNumberOfRows, A.localNumberOfColumns}, A.localNumberOfNonzeros);
-    auto rhs               = ginkgo_vec_type::create(ginkgo_exec, gko::dim<2>{A.localNumberOfRows, 1}, 1);
-    auto u                 = ginkgo_vec_type::create(ginkgo_exec, gko::dim<2>{A.localNumberOfRows, 1}, 1);
+    auto ginkgo_mat        = ginkgo_coo_type::create(ginkgo_exec,
+                                                     gko::dim<2>{static_cast<gko::size_type>(A.localNumberOfRows),
+                                                                 static_cast<gko::size_type>(A.localNumberOfColumns)},
+                                                     A.localNumberOfNonzeros);
+    auto rhs               = ginkgo_vec_type::create(ginkgo_exec,
+                                                     gko::dim<2>{static_cast<gko::size_type>(A.localNumberOfRows), 1},
+                                                     1);
+    auto u                 = ginkgo_vec_type::create(ginkgo_exec,
+                                                     gko::dim<2>{static_cast<gko::size_type>(A.localNumberOfRows), 1},
+                                                     1);
     auto ginkgo_mat_values = ginkgo_mat->get_values();
     auto ginkgo_mat_rows   = ginkgo_mat->get_row_idxs();
     auto ginkgo_mat_cols   = ginkgo_mat->get_col_idxs();
@@ -206,6 +213,7 @@ int main(int argc, char* argv[])
         }
         rhs_values[row] = b_values[row];
     }
+
     auto solver_factory = gmres::build()
                               .with_criteria(gko::stop::Iteration::build()
                                                  .with_max_iters(1000)
@@ -215,8 +223,11 @@ int main(int argc, char* argv[])
                                                  .on(ginkgo_exec))
                               .with_preconditioner(bj::build().with_max_block_size(8u).on(ginkgo_exec))
                               .on(ginkgo_exec);
-    auto solver                                                      = solver_factory->generate(gko::clone(ginkgo_exec, ginkgo_mat));
+
+    auto solver = solver_factory->generate(gko::clone(ginkgo_exec, ginkgo_mat));
+
     std::shared_ptr<const gko::log::Convergence<scalar_type>> logger = gko::log::Convergence<scalar_type>::create();
+
     solver->add_logger(logger);
     solver->apply(rhs, u);
     ginkgo_time = mytimer() - ginkgo_time;
