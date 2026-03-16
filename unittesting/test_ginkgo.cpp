@@ -236,8 +236,11 @@ int main(int argc, char* argv[])
         std::cout << " Ginkgo   Time               " << ginkgo_time << " seconds." << std::endl;
         std::cout << " Ginkgo   Convergence status " << std::boolalpha << logger->has_converged() << "." << std::endl;
         std::cout << " Ginkgo   Iteration count    " << logger->get_num_iterations() << "." << std::endl;
-        auto residual_norm = gko::as<ginkgo_vec_type>(logger->get_residual_norm());
     }
+
+    // check status
+    int status = 0;
+    if (!logger->has_converged()) status = 1;
 
     // free
     DeleteMatrix(A);
@@ -246,5 +249,5 @@ int main(int argc, char* argv[])
 #ifndef HPGMP_NO_MPI
     MPI_Finalize();
 #endif
-    return 0;
+    return status;
 }
