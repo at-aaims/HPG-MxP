@@ -83,7 +83,7 @@ void GenerateNonsymProblem_ref(SparseMatrix_type& A, Vector_type* b, Vector_type
 
 
     // Allocate arrays that are of length localNumberOfRows
-    char* nonzerosInRow                 = new char[localNumberOfRows];
+    local_int_t* nonzerosInRow          = new local_int_t[localNumberOfRows];
     global_int_t** mtxIndG              = new global_int_t*[localNumberOfRows];
     local_int_t** mtxIndL               = new local_int_t*[localNumberOfRows];
     matrix_scalar_type** matrixValues   = new matrix_scalar_type*[localNumberOfRows];
@@ -168,7 +168,7 @@ void GenerateNonsymProblem_ref(SparseMatrix_type& A, Vector_type* b, Vector_type
                 HPGMP_fout << " rank, globalRow, localRow = " << A.geom->rank << " " //
                            << currentGlobalRow << " " << A.globalToLocalMap[currentGlobalRow] << endl;
 #endif
-                char numberOfNonzerosInRow              = 0;
+                local_int_t numberOfNonzerosInRow       = 0;
                 matrix_scalar_type* currentValuePointer = matrixValues[currentLocalRow]; // Pointer to current value in current row
                 vector_scalar_type bi(0.0);
                 global_int_t* currentIndexPointerG = mtxIndG[currentLocalRow]; // Pointer to current index in current row

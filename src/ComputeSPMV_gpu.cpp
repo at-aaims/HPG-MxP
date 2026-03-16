@@ -94,9 +94,9 @@ int ComputeSPMV_ref(const SparseMatrix_type& A, Vector_type& x, Vector_type& y)
         scalar_type sum                   = 0.0;
         const scalar_type* const cur_vals = A.matrixValues[i];
         const local_int_t* const cur_inds = A.mtxIndL[i];
-        const int cur_nnz                 = A.nonzerosInRow[i];
+        const local_int_t cur_nnz         = A.nonzerosInRow[i];
 
-        for (int j = 0; j < cur_nnz; j++)
+        for (local_int_t j = 0; j < cur_nnz; j++)
             sum += cur_vals[j] * xv[cur_inds[j]];
         yv[i] = sum;
     }

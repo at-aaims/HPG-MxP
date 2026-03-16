@@ -65,7 +65,7 @@ public:
     local_int_t localNumberOfColumns     = 0; //!< number of columns local to this process
     local_int_t localNumberOfNonzeros    = 0; //!< number of nonzeros local to this process
     local_int_t localNumberOfMGNonzeros  = 0; //!< number of nonzeros local to this process, for MG
-    char* nonzerosInRow                  = nullptr; //!< The number of nonzeros in a row will always be 27 or fewer
+    local_int_t* nonzerosInRow           = nullptr; //!< The number of nonzeros in a row will always be 27 or fewer
     global_int_t** mtxIndG               = nullptr; //!< matrix indices as global values
     local_int_t** mtxIndL                = nullptr; //!< matrix indices as local values
     SC** matrixValues                    = nullptr; //!< values of matrix entries

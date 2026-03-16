@@ -214,7 +214,7 @@ __launch_bounds__(BLOCKSIZEX* BLOCKSIZEY)
                                const local_int_t* __restrict__ hash,
                                const int color1,
                                const int color2,
-                               //const char* __restrict__ nonzerosInRow,
+                               //const local_int_t* __restrict__ nonzerosInRow,
                                const local_int_t* __restrict__ mtxIndL,
                                local_int_t* __restrict__ colors)
 {

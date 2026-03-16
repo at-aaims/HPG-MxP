@@ -31,6 +31,7 @@ option(HPGMP_ENABLE_TESTS "Enable unit tests" ON)
 option(HPGMP_BUILD_REFERENCE "Build reference implementation without optimizations" OFF)
 option(HPGMP_ENABLE_ASAN "Build address sanitizer" OFF)
 option(HPGMP_ENABLE_PROFILING "Enable profiling" OFF)
+option(HPGMP_ENABLE_GINKGO "Enable Ginkgo for linear algebra operations" OFF)
 option(CMAKE_DEBUG "Enable CMake script debugging" OFF)
 
 # set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-unused-result")
@@ -163,7 +164,6 @@ set(host_sources
     src/estimate_run_time.cpp
     src/finalize.cpp
     src/init.cpp
-    src/matrix_base.cpp
     src/mytimer.cpp
     src/options_strings.cpp)
 
@@ -195,7 +195,7 @@ if(HPGMP_BUILD_REFERENCE)
                          src/ComputeRestriction_gpu.cpp src/ComputeSPMV_gpu.cpp)
     endif()
 else()
-    set(host_sources ${host_sources} src/ComputeMG.cpp src/optimize_problem_ell_rb.cpp)
+    set(host_sources ${host_sources} src/ComputeMG.cpp src/matrix_base.cpp src/optimize_problem_ell_rb.cpp)
 endif()
 
 add_library(hpgmp ${host_sources})
@@ -312,6 +312,13 @@ endif()
 if(HPGMP_ENABLE_BLAS)
     target_compile_definitions(hpgmp PUBLIC HPGMP_WITH_BLAS)
     message(WARNING "CPU BLAS is enabled")
+endif()
+
+if(HPGMP_ENABLE_GINKGO)
+    find_package(Ginkgo REQUIRED)
+    target_compile_definitions(hpgmp PUBLIC HPGMP_WITH_GINKGO)
+    target_link_libraries(hpgmp PUBLIC Ginkgo::ginkgo)
+    message(STATUS "Ginkgo is enabled")
 endif()
 
 add_executable(xhpgmp src/main_hpgmp.cpp)

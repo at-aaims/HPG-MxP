@@ -150,7 +150,7 @@ void seemingly_necessary_stuff_from_reference(SparseMatrix<SC>* M)
       global_int_t nnzL = 0;
       global_int_t nnz = curLevelMatrix->localNumberOfNonzeros;
       int *h_row_ptr = (int*)malloc((nrow+1)* sizeof(int));
-      int *h_col_ind = (int*)malloc( nnz    * sizeof(int));
+      int *h_col_idx = (int*)malloc( nnz    * sizeof(int));
       SC  *h_nzvals  = (SC *)malloc( nnz    * sizeof(SC));
 
       nnz = 0;
@@ -159,10 +159,10 @@ void seemingly_necessary_stuff_from_reference(SparseMatrix<SC>* M)
         const SC * const cur_vals = curLevelMatrix->matrixValues[i];
         const local_int_t * const cur_inds = curLevelMatrix->mtxIndL[i];
 
-        const int cur_nnz = curLevelMatrix->nonzerosInRow[i];
-        for (int j=0; j<cur_nnz; j++) {
+        const local_int_t cur_nnz = curLevelMatrix->nonzerosInRow[i];
+        for (local_int_t j=0; j<cur_nnz; j++) {
           h_nzvals[nnz+j] = cur_vals[j];
-          h_col_ind[nnz+j] = cur_inds[j];
+          h_col_idx[nnz+j] = cur_inds[j];
           if (cur_inds[j] <= i) {
             nnzL++;
           }
@@ -182,7 +182,7 @@ void seemingly_necessary_stuff_from_reference(SparseMatrix<SC>* M)
                                     dctx->device_alloc(totalToBeSent*sizeof(local_int_t)));
 #endif
       dctx->copy_host_to_device_sync(curLevelMatrix->d_row_ptr, h_row_ptr, (nrow+1)*sizeof(int));
-      dctx->copy_host_to_device_sync(curLevelMatrix->d_col_idx, h_col_ind, nnz*sizeof(int));
+      dctx->copy_host_to_device_sync(curLevelMatrix->d_col_idx, h_col_idx, nnz*sizeof(int));
       dctx->copy_host_to_device_sync(curLevelMatrix->d_nzvals, h_nzvals, nnz*sizeof(SC));
 #ifndef HPGMP_NO_MPI
       dctx->copy_host_to_device_sync(curLevelMatrix->d_elementsToSend,
@@ -190,16 +190,16 @@ void seemingly_necessary_stuff_from_reference(SparseMatrix<SC>* M)
 #endif
       // free matrix on host
       free(h_row_ptr);
-      free(h_col_ind);
+      free(h_col_idx);
       free(h_nzvals);
 
       // Extract lower/upper-triangular matrix
       global_int_t nnzU = nnz-nnzL;
       int *h_Lrow_ptr = (int*)malloc((nrow+1)* sizeof(int));
-      int *h_Lcol_ind = (int*)malloc( nnzL   * sizeof(int));
+      int *h_Lcol_idx = (int*)malloc( nnzL   * sizeof(int));
       SC  *h_Lnzvals  = (SC *)malloc( nnzL   * sizeof(SC));
       int *h_Urow_ptr = (int*)malloc((nrow+1)* sizeof(int));
-      int *h_Ucol_ind = (int*)malloc( nnzU   * sizeof(int));
+      int *h_Ucol_idx = (int*)malloc( nnzU   * sizeof(int));
       SC  *h_Unzvals  = (SC *)malloc( nnzU   * sizeof(SC));
       nnzL = 0;
       nnzU = 0;
@@ -213,11 +213,11 @@ void seemingly_necessary_stuff_from_reference(SparseMatrix<SC>* M)
         for (int j=0; j<cur_nnz; j++) {
           if (cur_inds[j] <= i) {
             h_Lnzvals[nnzL] = cur_vals[j];
-            h_Lcol_ind[nnzL] = cur_inds[j];
+            h_Lcol_idx[nnzL] = cur_inds[j];
             nnzL ++;
           } else {
             h_Unzvals[nnzU] = cur_vals[j];
-            h_Ucol_ind[nnzU] = cur_inds[j];
+            h_Ucol_idx[nnzU] = cur_inds[j];
             nnzU ++;
           }
         }
@@ -232,7 +232,7 @@ void seemingly_necessary_stuff_from_reference(SparseMatrix<SC>* M)
       curLevelMatrix->d_Lcol_idx = static_cast<int*>(dctx->device_alloc(nnzL*sizeof(int)));
       curLevelMatrix->d_Lnzvals = static_cast<SC*>(dctx->device_alloc(nnzL*sizeof(SC)));
       dctx->copy_host_to_device_sync(curLevelMatrix->d_Lrow_ptr, h_Lrow_ptr, (nrow+1)*sizeof(int));
-      dctx->copy_host_to_device_sync(curLevelMatrix->d_Lcol_idx, h_Lcol_ind, nnzL*sizeof(int));
+      dctx->copy_host_to_device_sync(curLevelMatrix->d_Lcol_idx, h_Lcol_idx, nnzL*sizeof(int));
       dctx->copy_host_to_device_sync(curLevelMatrix->d_Lnzvals, h_Lnzvals, nnzL*sizeof(SC));
 
       // copy CSR(U) to device
@@ -240,15 +240,15 @@ void seemingly_necessary_stuff_from_reference(SparseMatrix<SC>* M)
       curLevelMatrix->d_Ucol_idx = static_cast<int*>(dctx->device_alloc(nnzU*sizeof(int)));
       curLevelMatrix->d_Unzvals = static_cast<SC*>(dctx->device_alloc(nnzU*sizeof(SC)));
       dctx->copy_host_to_device_sync(curLevelMatrix->d_Urow_ptr, h_Urow_ptr, (nrow+1)*sizeof(int));
-      dctx->copy_host_to_device_sync(curLevelMatrix->d_Ucol_idx, h_Ucol_ind, nnzU*sizeof(int));
+      dctx->copy_host_to_device_sync(curLevelMatrix->d_Ucol_idx, h_Ucol_idx, nnzU*sizeof(int));
       dctx->copy_host_to_device_sync(curLevelMatrix->d_Unzvals,  h_Unzvals, nnzU*sizeof(SC));
 
       // free matrix on host
       free(h_Lrow_ptr);
-      free(h_Lcol_ind);
+      free(h_Lcol_idx);
       free(h_Lnzvals);
       free(h_Urow_ptr);
-      free(h_Ucol_ind);
+      free(h_Ucol_idx);
       free(h_Unzvals);
 
       // Clean up unnecessary things from reference optimize problem
