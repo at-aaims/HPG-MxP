@@ -175,21 +175,21 @@ int main(int argc, char* argv[])
 #endif
 
     // Use Ginkgo to solve
-    double ginkgo_time       = mytimer();
-    using ginkgo_ell_type    = gko::matrix::Ell<scalar_type, local_int_t>;
-    using ginkgo_coo_type    = gko::matrix::Coo<scalar_type, local_int_t>;
-    using ginkgo_vec_type    = gko::matrix::Dense<scalar_type>;
-    using gmres              = gko::solver::Gmres<>;
-    using bj                 = gko::preconditioner::Jacobi<>;
-    auto ginkgo_mat          = ginkgo_coo_type::create(ginkgo_exec, gko::dim<2>{A.localNumberOfRows, A.localNumberOfColumns}, A.localNumberOfNonzeros);
-    auto rhs                 = ginkgo_vec_type::create(ginkgo_exec, gko::dim<2>{A.localNumberOfRows, 1}, 1);
-    auto u                   = ginkgo_vec_type::create(ginkgo_exec, gko::dim<2>{A.localNumberOfRows, 1}, 1);
-    auto ginkgo_mat_values   = ginkgo_mat->get_values();
-    auto ginkgo_mat_rows     = ginkgo_mat->get_row_idxs();
-    auto ginkgo_mat_cols     = ginkgo_mat->get_col_idxs();
-    auto rhs_values          = rhs->get_values();
-    auto b_values            = b.values();
-    local_int_t i = 0;
+    double ginkgo_time     = mytimer();
+    using ginkgo_ell_type  = gko::matrix::Ell<scalar_type, local_int_t>;
+    using ginkgo_coo_type  = gko::matrix::Coo<scalar_type, local_int_t>;
+    using ginkgo_vec_type  = gko::matrix::Dense<scalar_type>;
+    using gmres            = gko::solver::Gmres<>;
+    using bj               = gko::preconditioner::Jacobi<>;
+    auto ginkgo_mat        = ginkgo_coo_type::create(ginkgo_exec, gko::dim<2>{A.localNumberOfRows, A.localNumberOfColumns}, A.localNumberOfNonzeros);
+    auto rhs               = ginkgo_vec_type::create(ginkgo_exec, gko::dim<2>{A.localNumberOfRows, 1}, 1);
+    auto u                 = ginkgo_vec_type::create(ginkgo_exec, gko::dim<2>{A.localNumberOfRows, 1}, 1);
+    auto ginkgo_mat_values = ginkgo_mat->get_values();
+    auto ginkgo_mat_rows   = ginkgo_mat->get_row_idxs();
+    auto ginkgo_mat_cols   = ginkgo_mat->get_col_idxs();
+    auto rhs_values        = rhs->get_values();
+    auto b_values          = b.values();
+    local_int_t i          = 0;
     for (local_int_t row = 0; row < A.localNumberOfColumns; ++row)
     {
         auto currentRowValues = A.matrixValues[row];
@@ -198,10 +198,10 @@ int main(int argc, char* argv[])
         {
             if (currentRowColInd[col] != -1)
             {
-              ginkgo_mat_rows[i] = row;
-              ginkgo_mat_cols[i] = currentRowColInd[col];
-              ginkgo_mat_values[i] = currentRowValues[col];
-              i++;
+                ginkgo_mat_rows[i]   = row;
+                ginkgo_mat_cols[i]   = currentRowColInd[col];
+                ginkgo_mat_values[i] = currentRowValues[col];
+                i++;
             }
         }
         rhs_values[row] = b_values[row];
@@ -215,7 +215,7 @@ int main(int argc, char* argv[])
                                                  .on(ginkgo_exec))
                               .with_preconditioner(bj::build().with_max_block_size(8u).on(ginkgo_exec))
                               .on(ginkgo_exec);
-    auto solver = solver_factory->generate(gko::clone(ginkgo_exec, ginkgo_mat));
+    auto solver                                                      = solver_factory->generate(gko::clone(ginkgo_exec, ginkgo_mat));
     std::shared_ptr<const gko::log::Convergence<scalar_type>> logger = gko::log::Convergence<scalar_type>::create();
     solver->add_logger(logger);
     solver->apply(rhs, u);
@@ -235,7 +235,7 @@ int main(int argc, char* argv[])
         std::cout << " Optimize Time               " << t7 << " seconds." << std::endl;
         std::cout << " Ginkgo   Time               " << ginkgo_time << " seconds." << std::endl;
         std::cout << " Ginkgo   Convergence status " << std::boolalpha << logger->has_converged() << "." << std::endl;
-        std::cout << " Ginkgo   Iteration count    " << logger->get_num_iterations() << "." << std::endl;    
+        std::cout << " Ginkgo   Iteration count    " << logger->get_num_iterations() << "." << std::endl;
         auto residual_norm = gko::as<ginkgo_vec_type>(logger->get_residual_norm());
     }
 
