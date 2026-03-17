@@ -134,12 +134,11 @@ int main(int argc, char* argv[])
     std::cout << "A.localNumberOfRows: " << A.localNumberOfRows << "\n";
     std::cout << "A.localNumberOfColumns: " << A.localNumberOfColumns << "\n";
     std::cout << "A.localNumberOfNonzeros: " << A.localNumberOfNonzeros << "\n";
-    std::cout << "A.max_nnz_per_row: " << A.max_nnz_per_row << "\n";
     std::cout << "A.colInd: (First 10 rows)\n";
     for (local_int_t row = 0; row < 10; ++row)
     {
         auto currentRowColInd = A.mtxIndL[row];
-        for (local_int_t col = 0; col < A.max_nnz_per_row; ++col)
+        for (local_int_t col = 0; col < A.nonzerosInRow[row]; ++col)
         {
             std::cout << currentRowColInd[col] << " ";
         }
@@ -150,7 +149,7 @@ int main(int argc, char* argv[])
     {
         auto currentRowValues = A.matrixValues[row];
         auto currentRowColInd = A.mtxIndL[row];
-        for (local_int_t col = 0; col < A.max_nnz_per_row; ++col)
+        for (local_int_t col = 0; col < A.nonzerosInRow[row]; ++col)
         {
             std::cout << currentRowValues[col] << " ";
         }
@@ -202,7 +201,7 @@ int main(int argc, char* argv[])
     {
         auto currentRowValues = A.matrixValues[row];
         auto currentRowColInd = A.mtxIndL[row];
-        for (local_int_t col = 0; col < A.max_nnz_per_row; ++col)
+        for (local_int_t col = 0; col < A.nonzerosInRow[row]; ++col)
         {
             if (currentRowColInd[col] != -1)
             {
