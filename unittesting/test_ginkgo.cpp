@@ -174,12 +174,13 @@ int main(int argc, char* argv[])
 #endif
 
     // Use Ginkgo to solve
-    double ginkgo_time     = mytimer();
-    using gmres            = gko::solver::Gmres<>;
-    using bj               = gko::preconditioner::Jacobi<>;
-    using ginkgo_vec_type  = gko::matrix::Dense<scalar_type>;
-    using ginkgo_ell_type  = gko::matrix::Ell<scalar_type, local_int_t>;
-    using ginkgo_coo_type  = gko::matrix::Coo<scalar_type, local_int_t>;
+    double ginkgo_time    = mytimer();
+    using gmres           = gko::solver::Gmres<>;
+    using bj              = gko::preconditioner::Jacobi<>;
+    using ginkgo_vec_type = gko::matrix::Dense<scalar_type>;
+    using ginkgo_ell_type = gko::matrix::Ell<scalar_type, local_int_t>;
+    using ginkgo_coo_type = gko::matrix::Coo<scalar_type, local_int_t>;
+#ifdef HPGMP_REFERENCE
     using ginkgo_mat_type  = ginkgo_coo_type;
     auto ginkgo_mat        = ginkgo_mat_type::create(ginkgo_exec,
                                                      gko::dim<2>{static_cast<gko::size_type>(A.localNumberOfRows),
@@ -213,6 +214,33 @@ int main(int argc, char* argv[])
         }
         rhs_values[row] = b_values[row];
     }
+#else
+    using ginkgo_mat_type = gko::matrix::Ell<scalar_type, local_int_t>;
+    std::shared_ptr<const ELLMatrix<scalar_type>> mat =
+        dynamic_cast<EllOptData<scalar_type>*>(A.optimizationData)->mat;
+    auto mat_ptr    = mat.get();
+    auto ginkgo_mat = ginkgo_mat_type::create_const(ginkgo_exec,
+                                                    gko::dim<2>{static_cast<gko::size_type>(A.localNumberOfRows),
+                                                                static_cast<gko::size_type>(A.localNumberOfColumns)},
+                                                    gko::make_const_array_view(ginkgo_exec,
+                                                                               mat_ptr->get_ld_values() * mat_ptr->get_ell_width(),
+                                                                               mat_ptr->get_values()),
+                                                    gko::make_const_array_view(ginkgo_exec,
+                                                                               mat_ptr->get_ld_indices() * mat_ptr->get_ell_width(),
+                                                                               mat_ptr->get_col_idxs()),
+                                                    mat_ptr->get_ell_width(),
+                                                    mat_ptr->get_ld_values());
+    auto rhs        = ginkgo_vec_type::create(ginkgo_exec,
+                                              gko::dim<2>{static_cast<gko::size_type>(A.localNumberOfRows), 1},
+                                              gko::make_array_view(ginkgo_exec,
+                                                                   mat_ptr->get_ld_values(),
+                                                                   b.values()),
+                                              1);
+    auto u          = ginkgo_vec_type::create(ginkgo_exec,
+                                              gko::dim<2>{static_cast<gko::size_type>(A.localNumberOfRows), 1},
+                                              1);
+
+#endif
 
     auto solver_factory = gmres::build()
                               .with_criteria(gko::stop::Iteration::build()
