@@ -176,12 +176,13 @@ int main(int argc, char* argv[])
 
     // Use Ginkgo to solve
     double ginkgo_time     = mytimer();
-    using ginkgo_ell_type  = gko::matrix::Ell<scalar_type, local_int_t>;
-    using ginkgo_coo_type  = gko::matrix::Coo<scalar_type, local_int_t>;
-    using ginkgo_vec_type  = gko::matrix::Dense<scalar_type>;
     using gmres            = gko::solver::Gmres<>;
     using bj               = gko::preconditioner::Jacobi<>;
-    auto ginkgo_mat        = ginkgo_coo_type::create(ginkgo_exec,
+    using ginkgo_vec_type  = gko::matrix::Dense<scalar_type>;
+    using ginkgo_ell_type  = gko::matrix::Ell<scalar_type, local_int_t>;
+    using ginkgo_coo_type  = gko::matrix::Coo<scalar_type, local_int_t>;
+    using ginkgo_mat_type  = ginkgo_coo_type;
+    auto ginkgo_mat        = ginkgo_mat_type::create(ginkgo_exec,
                                                      gko::dim<2>{static_cast<gko::size_type>(A.localNumberOfRows),
                                                                  static_cast<gko::size_type>(A.localNumberOfColumns)},
                                                      A.localNumberOfNonzeros);
@@ -191,9 +192,9 @@ int main(int argc, char* argv[])
     auto u                 = ginkgo_vec_type::create(ginkgo_exec,
                                                      gko::dim<2>{static_cast<gko::size_type>(A.localNumberOfRows), 1},
                                                      1);
-    auto ginkgo_mat_values = ginkgo_mat->get_values();
     auto ginkgo_mat_rows   = ginkgo_mat->get_row_idxs();
     auto ginkgo_mat_cols   = ginkgo_mat->get_col_idxs();
+    auto ginkgo_mat_values = ginkgo_mat->get_values();
     auto rhs_values        = rhs->get_values();
     auto b_values          = b.values();
     local_int_t i          = 0;
