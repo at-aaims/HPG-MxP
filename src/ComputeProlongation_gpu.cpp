@@ -105,6 +105,7 @@ int ComputeProlongation_ref(const SparseMatrix_type& Af, Vector_type& xf)
     }
 #endif
 #elif defined(HPGMP_WITH_HIP)
+    rocsparse_status status;
     rocsparse_datatype rocsparse_compute_type = rocsparse_datatype_f64_r;
     if (std::is_same<scalar_type, float>::value) {
         rocsparse_compute_type = rocsparse_datatype_f32_r;
@@ -113,16 +114,16 @@ int ComputeProlongation_ref(const SparseMatrix_type& Af, Vector_type& xf)
     rocsparse_dnvec_descr vecX, vecY;
     rocsparse_create_dnvec_descr(&vecX, nc, (void*)d_xcv, rocsparse_compute_type);
     rocsparse_create_dnvec_descr(&vecY, n, (void*)d_xfv, rocsparse_compute_type);
-    if (rocsparse_status_success !=
-        rocsparse_spmv(sphandle, rocsparse_operation_none,
-                       &one, Af.mgData->descrP, vecX, &one, vecY,
-                       rocsparse_compute_type, rocsparse_spmv_alg_default,
+    status = rocsparse_spmv(sphandle, rocsparse_operation_none,
+                            &one, Af.mgData->descrP, vecX, &one, vecY,
+                            rocsparse_compute_type, rocsparse_spmv_alg_default,
 #if ROCM_VERSION >= 50400
-                       rocsparse_spmv_stage_compute,
+                            rocsparse_spmv_stage_compute,
 #endif
-                       &buffer_size, Af.mgData->buffer_P))
+                            &buffer_size, Af.mgData->buffer_P);
+    if (rocsparse_status_success != status)
     {
-        printf(" Failed rocsparse_spmv(%dx%d) for Prolongation\n", nc, n);
+        printf(" Failed rocsparse_spmv(%dx%d) for Prolongation. Status:%d\n", nc, n, status);
     }
 #endif
 

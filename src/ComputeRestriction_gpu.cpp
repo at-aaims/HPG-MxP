@@ -136,6 +136,7 @@ int ComputeRestriction_ref(const SparseMatrix_type& A, const Vector_type& rf)
     }
 #endif
 #elif defined(HPGMP_WITH_HIP)
+    rocsparse_status status;
     rocsparse_datatype rocsparse_compute_type = rocsparse_datatype_f64_r;
     if (std::is_same<scalar_type, float>::value) {
         rocsparse_compute_type = rocsparse_datatype_f32_r;
@@ -144,28 +145,28 @@ int ComputeRestriction_ref(const SparseMatrix_type& A, const Vector_type& rf)
     rocsparse_dnvec_descr vecX, vecY;
     rocsparse_create_dnvec_descr(&vecX, n, (void*)d_rfv, rocsparse_compute_type);
     rocsparse_create_dnvec_descr(&vecY, nc, (void*)d_rcv, rocsparse_compute_type);
-    if (rocsparse_status_success !=
-        rocsparse_spmv(sphandle, rocsparse_operation_none,
-                       &one, A.mgData->descrR, vecX, &zero, vecY,
-                       rocsparse_compute_type, rocsparse_spmv_alg_default,
+    status = rocsparse_spmv(sphandle, rocsparse_operation_none,
+                            &one, A.mgData->descrR, vecX, &zero, vecY,
+                            rocsparse_compute_type, rocsparse_spmv_alg_default,
 #if ROCM_VERSION >= 50400
-                       rocsparse_spmv_stage_compute,
+                            rocsparse_spmv_stage_compute,
 #endif
-                       &buffer_size, A.mgData->buffer_R))
+                            &buffer_size, A.mgData->buffer_R);
+    if (rocsparse_status_success != status)
     {
-        printf(" Failed rocsparse_spmv for Restriction\n");
+        printf(" Failed rocsparse_spmv for Restriction. Status: %d\n", status);
     }
     rocsparse_create_dnvec_descr(&vecX, n, (void*)d_Axfv, rocsparse_compute_type);
-    if (rocsparse_status_success !=
-        rocsparse_spmv(sphandle, rocsparse_operation_none,
-                       &mone, A.mgData->descrR, vecX, &one, vecY,
-                       rocsparse_compute_type, rocsparse_spmv_alg_default,
+    status = rocsparse_spmv(sphandle, rocsparse_operation_none,
+                            &mone, A.mgData->descrR, vecX, &one, vecY,
+                            rocsparse_compute_type, rocsparse_spmv_alg_default,
 #if ROCM_VERSION >= 50400
-                       rocsparse_spmv_stage_compute,
+                            rocsparse_spmv_stage_compute,
 #endif
-                       &buffer_size, A.mgData->buffer_R))
+                            &buffer_size, A.mgData->buffer_R);
+    if (rocsparse_status_success != status)
     {
-        printf(" Failed rocsparse_spmv for Restriction\n");
+        printf(" Failed rocsparse_spmv for Restriction. Status: %d\n", status);
     }
 #endif
 
