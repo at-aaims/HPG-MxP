@@ -131,47 +131,45 @@ int main(int argc, char* argv[])
     times[7] = t7;
 
 #ifdef HPGMP_VERBOSE
-    std::cout << "A.localNumberOfRows: " << A.localNumberOfRows << "\n";
-    std::cout << "A.localNumberOfColumns: " << A.localNumberOfColumns << "\n";
-    std::cout << "A.localNumberOfNonzeros: " << A.localNumberOfNonzeros << "\n";
-    std::cout << "A.colInd: (First 10 rows)\n";
-    for (local_int_t row = 0; row < 10; ++row)
     {
-        auto currentRowColInd = A.mtxIndL[row];
-        for (local_int_t col = 0; col < A.nonzerosInRow[row]; ++col)
-        {
-            std::cout << currentRowColInd[col] << " ";
-        }
-        std::cout << "\n";
+      std::cout << "A.localNumberOfRows: " << A.localNumberOfRows << "\n";
+      std::cout << "A.localNumberOfColumns: " << A.localNumberOfColumns << "\n";
+      std::cout << "A.localNumberOfNonzeros: " << A.localNumberOfNonzeros << "\n";
+      std::cout << "A.colInd: (First 10 rows)\n";
+      for (local_int_t row = 0; row < 10; ++row)
+      {
+          auto currentRowColInd = A.mtxIndL[row];
+          for (local_int_t col = 0; col < A.nonzerosInRow[row]; ++col)
+          {
+              std::cout << currentRowColInd[col] << " ";
+          }
+          std::cout << "\n";
+      }
+      std::cout << "A.matrixValues: (First 10 rows)\n";
+      for (local_int_t row = 0; row < 10; ++row)
+      {
+          auto currentRowValues = A.matrixValues[row];
+          auto currentRowColInd = A.mtxIndL[row];
+          for (local_int_t col = 0; col < A.nonzerosInRow[row]; ++col)
+          {
+              std::cout << currentRowValues[col] << " ";
+          }
+          std::cout << "\n";
+      }
+      std::cout << "b.values(): (First 10 rows)\n";
+      auto b_values = b.values();
+      for (local_int_t row = 0; row < 10; ++row)
+      {
+          std::cout << b_values[row] << "\n";
+      }
+      std::cout << "xexact.values(): (First 10 rows)\n";
+      auto xexact_values = xexact.values();
+      for (local_int_t row = 0; row < 10; ++row)
+      {
+          std::cout << xexact_values[row] << "\n";
+      }
     }
-    std::cout << "A.matrixValues: (First 10 rows)\n";
-    for (local_int_t row = 0; row < 10; ++row)
-    {
-        auto currentRowValues = A.matrixValues[row];
-        auto currentRowColInd = A.mtxIndL[row];
-        for (local_int_t col = 0; col < A.nonzerosInRow[row]; ++col)
-        {
-            std::cout << currentRowValues[col] << " ";
-        }
-        std::cout << "\n";
-    }
-    std::cout << "b.values(): (First 10 rows)\n";
-    {
-        auto b_values = b.values();
-        for (local_int_t row = 0; row < 10; ++row)
-        {
-            std::cout << b_values[row] << "\n";
-        }
-    }
-    std::cout << "xexact.values(): (First 10 rows)\n";
-    {
-        auto xexact_values = xexact.values();
-        for (local_int_t row = 0; row < 10; ++row)
-        {
-            std::cout << xexact_values[row] << "\n";
-        }
-    }
-#endif
+#endif // HPGMP_VERBOSE
 
     // Use Ginkgo to solve
     double ginkgo_time    = mytimer();
@@ -196,7 +194,9 @@ int main(int argc, char* argv[])
     auto ginkgo_mat_cols   = ginkgo_mat->get_col_idxs();
     auto ginkgo_mat_values = ginkgo_mat->get_values();
     auto rhs_values        = rhs->get_values();
+    auto u_values          = u->get_values();
     auto b_values          = b.values();
+    auto x_values          = x.values();
     local_int_t i          = 0;
     for (local_int_t row = 0; row < A.localNumberOfColumns; ++row)
     {
@@ -213,12 +213,50 @@ int main(int argc, char* argv[])
             }
         }
         rhs_values[row] = b_values[row];
+        u_values[row]   = x_values[row];
     }
-#else
+#else // HPGMP_REFERENCE
     using ginkgo_mat_type = gko::matrix::Ell<scalar_type, local_int_t>;
     std::shared_ptr<const ELLMatrix<scalar_type>> mat =
         dynamic_cast<EllOptData<scalar_type>*>(A.optimizationData)->mat;
-    auto mat_ptr    = mat.get();
+    auto mat_ptr = mat.get();
+#ifdef HPGMP_VERBOSE
+    {
+      size_t mat_values_bytes       = mat_ptr->get_ld_values() * mat_ptr->get_ell_width() * sizeof(scalar_type);
+      size_t mat_col_bytes          = mat_ptr->get_ld_indices() * mat_ptr->get_ell_width() * sizeof(local_int_t);
+      scalar_type* h_tmp_mat_values = (scalar_type*)malloc(mat_values_bytes);
+      local_int_t* h_tmp_col_values = (local_int_t*)malloc(mat_col_bytes);
+      dctx.get()->copy_device_to_host_sync((void*)h_tmp_mat_values, mat_ptr->get_values(), mat_values_bytes);
+      dctx.get()->copy_device_to_host_sync((void*)h_tmp_col_values, mat_ptr->get_col_idxs(), mat_col_bytes);
+      b.update_host_mirror(); // Necessary to get the correct permutation on the host
+      std::cout << "ELL matrix column indices (copied to host): (First 20 rows)\n";
+      for (local_int_t row = 0; row < 20; ++row)
+      {
+          for (local_int_t col = 0; col < mat_ptr->get_ell_width(); ++col)
+          {
+              std::cout << h_tmp_col_values[row * mat_ptr->get_ell_width() + col] << " ";
+          }
+          std::cout << "\n";
+      }
+      std::cout << "ELL matrix values (copied to host): (First 20 rows)\n";
+      for (local_int_t row = 0; row < 20; ++row)
+      {
+          for (local_int_t col = 0; col < mat_ptr->get_ell_width(); ++col)
+          {
+              std::cout << h_tmp_mat_values[row * mat_ptr->get_ell_width() + col] << " ";
+          }
+          std::cout << "\n";
+      }
+      std::cout << "Permutted rhs for ELL (updated host mirror): (First 20 rows)\n";
+      auto b_values = b.values();
+      for (local_int_t row = 0; row < 20; ++row)
+      {
+          std::cout << b_values[row] << "\n";
+      }
+      free(h_tmp_mat_values);
+      free(h_tmp_col_values);
+    }
+#endif // HPGMP_VERBOSE
     auto ginkgo_mat = ginkgo_mat_type::create_const(ginkgo_exec,
                                                     gko::dim<2>{static_cast<gko::size_type>(A.localNumberOfRows),
                                                                 static_cast<gko::size_type>(A.localNumberOfColumns)},
@@ -233,14 +271,17 @@ int main(int argc, char* argv[])
     auto rhs        = ginkgo_vec_type::create(ginkgo_exec,
                                               gko::dim<2>{static_cast<gko::size_type>(A.localNumberOfRows), 1},
                                               gko::make_array_view(ginkgo_exec,
-                                                                   mat_ptr->get_ld_values(),
-                                                                   b.values()),
+                                                                   b.local_length(),
+                                                                   b.d_values()),
                                               1);
     auto u          = ginkgo_vec_type::create(ginkgo_exec,
                                               gko::dim<2>{static_cast<gko::size_type>(A.localNumberOfRows), 1},
+                                              gko::make_array_view(ginkgo_exec,
+                                                                   x.local_length(),
+                                                                   x.d_values()),
                                               1);
 
-#endif
+#endif // HPGMP_REFERENCE
 
     auto solver_factory = gmres::build()
                               .with_criteria(gko::stop::Iteration::build()
@@ -261,11 +302,13 @@ int main(int argc, char* argv[])
     ginkgo_time = mytimer() - ginkgo_time;
 
 #ifdef HPGMP_VERBOSE
-    auto u_values = u->get_values();
-    std::cout << "u.values(): (First 10 rows)\n";
-    for (local_int_t i = 0; i < 10; ++i)
     {
-        std::cout << u_values[i] << "\n";
+      auto u_values = u->get_values();
+      std::cout << "u.values(): (First 10 rows)\n";
+      for (local_int_t i = 0; i < 10; ++i)
+      {
+          std::cout << u_values[i] << "\n";
+      }
     }
 #endif
 
