@@ -179,17 +179,20 @@ int main(int argc, char* argv[])
     using ginkgo_ell_type = gko::matrix::Ell<scalar_type, local_int_t>;
     using ginkgo_coo_type = gko::matrix::Coo<scalar_type, local_int_t>;
 #ifdef HPGMP_REFERENCE
-    using ginkgo_mat_type  = ginkgo_coo_type;
-    auto ginkgo_mat        = ginkgo_mat_type::create(ginkgo_exec,
-                                                     gko::dim<2>{static_cast<gko::size_type>(A.localNumberOfRows),
-                                                                 static_cast<gko::size_type>(A.localNumberOfColumns)},
-                                                     A.localNumberOfNonzeros);
-    auto rhs               = ginkgo_vec_type::create(ginkgo_exec,
-                                                     gko::dim<2>{static_cast<gko::size_type>(A.localNumberOfRows), 1},
-                                                     1);
-    auto u                 = ginkgo_vec_type::create(ginkgo_exec,
-                                                     gko::dim<2>{static_cast<gko::size_type>(A.localNumberOfRows), 1},
-                                                     1);
+    using ginkgo_mat_type = ginkgo_coo_type;
+    auto ginkgo_mat =
+        ginkgo_mat_type::create(ginkgo_exec,
+                                gko::dim<2>{static_cast<gko::size_type>(A.localNumberOfRows),
+                                            static_cast<gko::size_type>(A.localNumberOfColumns)},
+                                A.localNumberOfNonzeros);
+    auto rhs =
+        ginkgo_vec_type::create(ginkgo_exec,
+                                gko::dim<2>{static_cast<gko::size_type>(A.localNumberOfRows), 1},
+                                1);
+    auto u =
+        ginkgo_vec_type::create(ginkgo_exec,
+                                gko::dim<2>{static_cast<gko::size_type>(A.localNumberOfRows), 1},
+                                1);
     auto ginkgo_mat_rows   = ginkgo_mat->get_row_idxs();
     auto ginkgo_mat_cols   = ginkgo_mat->get_col_idxs();
     auto ginkgo_mat_values = ginkgo_mat->get_values();
@@ -257,29 +260,32 @@ int main(int argc, char* argv[])
         free(h_tmp_col_values);
     }
 #endif // HPGMP_VERBOSE
-    auto ginkgo_mat = ginkgo_mat_type::create_const(ginkgo_exec,
-                                                    gko::dim<2>{static_cast<gko::size_type>(A.localNumberOfRows),
-                                                                static_cast<gko::size_type>(A.localNumberOfColumns)},
-                                                    gko::make_const_array_view(ginkgo_exec,
-                                                                               mat_ptr->get_ld_values() * mat_ptr->get_ell_width(),
-                                                                               mat_ptr->get_values()),
-                                                    gko::make_const_array_view(ginkgo_exec,
-                                                                               mat_ptr->get_ld_indices() * mat_ptr->get_ell_width(),
-                                                                               mat_ptr->get_col_idxs()),
-                                                    mat_ptr->get_ell_width(),
-                                                    mat_ptr->get_ld_values());
-    auto rhs        = ginkgo_vec_type::create(ginkgo_exec,
-                                              gko::dim<2>{static_cast<gko::size_type>(A.localNumberOfRows), 1},
-                                              gko::make_array_view(ginkgo_exec,
-                                                                   b.local_length(),
-                                                                   b.d_values()),
-                                              1);
-    auto u          = ginkgo_vec_type::create(ginkgo_exec,
-                                              gko::dim<2>{static_cast<gko::size_type>(A.localNumberOfRows), 1},
-                                              gko::make_array_view(ginkgo_exec,
-                                                                   x.local_length(),
-                                                                   x.d_values()),
-                                              1);
+    auto ginkgo_mat =
+        ginkgo_mat_type::create_const(ginkgo_exec,
+                                      gko::dim<2>{static_cast<gko::size_type>(A.localNumberOfRows),
+                                                  static_cast<gko::size_type>(A.localNumberOfColumns)},
+                                      gko::make_const_array_view(ginkgo_exec,
+                                                                 mat_ptr->get_ld_values() * mat_ptr->get_ell_width(),
+                                                                 mat_ptr->get_values()),
+                                      gko::make_const_array_view(ginkgo_exec,
+                                                                 mat_ptr->get_ld_indices() * mat_ptr->get_ell_width(),
+                                                                 mat_ptr->get_col_idxs()),
+                                      mat_ptr->get_ell_width(),
+                                      mat_ptr->get_ld_values());
+    auto rhs =
+        ginkgo_vec_type::create(ginkgo_exec,
+                                gko::dim<2>{static_cast<gko::size_type>(A.localNumberOfRows), 1},
+                                gko::make_array_view(ginkgo_exec,
+                                                     b.local_length(),
+                                                     b.d_values()),
+                                1);
+    auto u =
+        ginkgo_vec_type::create(ginkgo_exec,
+                                gko::dim<2>{static_cast<gko::size_type>(A.localNumberOfRows), 1},
+                                gko::make_array_view(ginkgo_exec,
+                                                     x.local_length(),
+                                                     x.d_values()),
+                                1);
 
 #endif // HPGMP_REFERENCE
 
