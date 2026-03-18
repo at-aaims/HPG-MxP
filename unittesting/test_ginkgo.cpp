@@ -167,35 +167,36 @@ int main(int argc, char* argv[])
 #endif // HPGMP_VERBOSE
 
     // Use Ginkgo to solve
-    double ginkgo_time    = mytimer();
-    using gmres           = gko::solver::Gmres<>;
-    using bj              = gko::preconditioner::Jacobi<>;
-    using ginkgo_vec_type = gko::matrix::Dense<scalar_type>;
-    using ginkgo_ell_type = gko::matrix::Ell<scalar_type, local_int_t>;
-    using ginkgo_coo_type = gko::matrix::Coo<scalar_type, local_int_t>;
+    double gko_time    = mytimer();
+    using gmres        = gko::solver::Gmres<>;
+    using bj           = gko::preconditioner::Jacobi<>;
+    using gko_vec_type = gko::matrix::Dense<scalar_type>;
+    using gko_ell_type = gko::matrix::Ell<scalar_type, local_int_t>;
+    using gko_coo_type = gko::matrix::Coo<scalar_type, local_int_t>;
+    auto gko_exec      = create_ginkgo_executor();
 #ifdef HPGMP_REFERENCE
-    using ginkgo_mat_type = ginkgo_coo_type;
-    auto ginkgo_mat =
-        ginkgo_mat_type::create(ginkgo_exec,
-                                gko::dim<2>{static_cast<gko::size_type>(A.localNumberOfRows),
-                                            static_cast<gko::size_type>(A.localNumberOfColumns)},
-                                A.localNumberOfNonzeros);
+    using gko_mat_type = gko_coo_type;
+    auto gko_mat =
+        gko_mat_type::create(gko_exec,
+                             gko::dim<2>{static_cast<gko::size_type>(A.localNumberOfRows),
+                                         static_cast<gko::size_type>(A.localNumberOfColumns)},
+                             A.localNumberOfNonzeros);
     auto rhs =
-        ginkgo_vec_type::create(ginkgo_exec,
-                                gko::dim<2>{static_cast<gko::size_type>(A.localNumberOfRows), 1},
-                                1);
+        gko_vec_type::create(gko_exec,
+                             gko::dim<2>{static_cast<gko::size_type>(A.localNumberOfRows), 1},
+                             1);
     auto u =
-        ginkgo_vec_type::create(ginkgo_exec,
-                                gko::dim<2>{static_cast<gko::size_type>(A.localNumberOfRows), 1},
-                                1);
-    auto ginkgo_mat_rows   = ginkgo_mat->get_row_idxs();
-    auto ginkgo_mat_cols   = ginkgo_mat->get_col_idxs();
-    auto ginkgo_mat_values = ginkgo_mat->get_values();
-    auto rhs_values        = rhs->get_values();
-    auto u_values          = u->get_values();
-    auto b_values          = b.values();
-    auto x_values          = x.values();
-    local_int_t i          = 0;
+        gko_vec_type::create(gko_exec,
+                             gko::dim<2>{static_cast<gko::size_type>(A.localNumberOfRows), 1},
+                             1);
+    auto gko_mat_rows   = gko_mat->get_row_idxs();
+    auto gko_mat_cols   = gko_mat->get_col_idxs();
+    auto gko_mat_values = gko_mat->get_values();
+    auto rhs_values     = rhs->get_values();
+    auto u_values       = u->get_values();
+    auto b_values       = b.values();
+    auto x_values       = x.values();
+    local_int_t i       = 0;
     for (local_int_t row = 0; row < A.localNumberOfColumns; ++row)
     {
         auto currentRowValues = A.matrixValues[row];
@@ -204,9 +205,9 @@ int main(int argc, char* argv[])
         {
             if (currentRowColInd[col] != -1)
             {
-                ginkgo_mat_rows[i]   = row;
-                ginkgo_mat_cols[i]   = currentRowColInd[col];
-                ginkgo_mat_values[i] = currentRowValues[col];
+                gko_mat_rows[i]   = row;
+                gko_mat_cols[i]   = currentRowColInd[col];
+                gko_mat_values[i] = currentRowValues[col];
                 i++;
             }
         }
@@ -214,7 +215,7 @@ int main(int argc, char* argv[])
         u_values[row]   = x_values[row];
     }
 #else // HPGMP_REFERENCE
-    using ginkgo_mat_type = gko::matrix::Ell<scalar_type, local_int_t>;
+    using gko_mat_type = gko::matrix::Ell<scalar_type, local_int_t>;
     std::shared_ptr<const ELLMatrix<scalar_type>> mat =
         dynamic_cast<EllOptData<scalar_type>*>(A.optimizationData)->mat;
     auto mat_ptr = mat.get();
@@ -255,52 +256,52 @@ int main(int argc, char* argv[])
         free(h_tmp_col_values);
     }
 #endif // HPGMP_VERBOSE
-    auto ginkgo_mat =
-        ginkgo_mat_type::create_const(ginkgo_exec,
-                                      gko::dim<2>{static_cast<gko::size_type>(A.localNumberOfRows),
-                                                  static_cast<gko::size_type>(A.localNumberOfColumns)},
-                                      gko::make_const_array_view(ginkgo_exec,
-                                                                 mat_ptr->get_ld_values() * mat_ptr->get_ell_width(),
-                                                                 mat_ptr->get_values()),
-                                      gko::make_const_array_view(ginkgo_exec,
-                                                                 mat_ptr->get_ld_indices() * mat_ptr->get_ell_width(),
-                                                                 mat_ptr->get_col_idxs()),
-                                      mat_ptr->get_ell_width(),
-                                      mat_ptr->get_ld_values());
+    auto gko_mat =
+        gko_mat_type::create_const(gko_exec,
+                                   gko::dim<2>{static_cast<gko::size_type>(A.localNumberOfRows),
+                                               static_cast<gko::size_type>(A.localNumberOfColumns)},
+                                   gko::make_const_array_view(gko_exec,
+                                                              mat_ptr->get_ld_values() * mat_ptr->get_ell_width(),
+                                                              mat_ptr->get_values()),
+                                   gko::make_const_array_view(gko_exec,
+                                                              mat_ptr->get_ld_indices() * mat_ptr->get_ell_width(),
+                                                              mat_ptr->get_col_idxs()),
+                                   mat_ptr->get_ell_width(),
+                                   mat_ptr->get_ld_values());
     auto rhs =
-        ginkgo_vec_type::create(ginkgo_exec,
-                                gko::dim<2>{static_cast<gko::size_type>(A.localNumberOfRows), 1},
-                                gko::make_array_view(ginkgo_exec,
-                                                     b.local_length(),
-                                                     b.d_values()),
-                                1);
+        gko_vec_type::create(gko_exec,
+                             gko::dim<2>{static_cast<gko::size_type>(A.localNumberOfRows), 1},
+                             gko::make_array_view(gko_exec,
+                                                  b.local_length(),
+                                                  b.d_values()),
+                             1);
     auto u =
-        ginkgo_vec_type::create(ginkgo_exec,
-                                gko::dim<2>{static_cast<gko::size_type>(A.localNumberOfRows), 1},
-                                gko::make_array_view(ginkgo_exec,
-                                                     x.local_length(),
-                                                     x.d_values()),
-                                1);
+        gko_vec_type::create(gko_exec,
+                             gko::dim<2>{static_cast<gko::size_type>(A.localNumberOfRows), 1},
+                             gko::make_array_view(gko_exec,
+                                                  x.local_length(),
+                                                  x.d_values()),
+                             1);
 
 #endif // HPGMP_REFERENCE
 
     auto solver_factory = gmres::build()
                               .with_criteria(gko::stop::Iteration::build()
                                                  .with_max_iters(1000)
-                                                 .on(ginkgo_exec),
+                                                 .on(gko_exec),
                                              gko::stop::ResidualNorm<scalar_type>::build()
                                                  .with_reduction_factor(1e-9)
-                                                 .on(ginkgo_exec))
-                              .with_preconditioner(bj::build().with_max_block_size(8u).on(ginkgo_exec))
-                              .on(ginkgo_exec);
+                                                 .on(gko_exec))
+                              .with_preconditioner(bj::build().with_max_block_size(8u).on(gko_exec))
+                              .on(gko_exec);
 
-    auto solver = solver_factory->generate(gko::clone(ginkgo_exec, ginkgo_mat));
+    auto solver = solver_factory->generate(gko::clone(gko_exec, gko_mat));
 
     std::shared_ptr<const gko::log::Convergence<scalar_type>> logger = gko::log::Convergence<scalar_type>::create();
 
     solver->add_logger(logger);
     solver->apply(rhs, u);
-    ginkgo_time = mytimer() - ginkgo_time;
+    gko_time = mytimer() - gko_time;
 
 #ifdef HPGMP_VERBOSE
     {
@@ -316,10 +317,10 @@ int main(int argc, char* argv[])
     if (A.geom->rank == 0) {
         std::cout << " Setup    Time               " << setup_time << " seconds." << std::endl;
         std::cout << " Optimize Time               " << t7 << " seconds." << std::endl;
-        std::cout << " Ginkgo   Time               " << ginkgo_time << " seconds." << std::endl;
+        std::cout << " Ginkgo   Time               " << gko_time << " seconds." << std::endl;
         std::cout << " Ginkgo   Convergence status " << std::boolalpha << logger->has_converged() << "." << std::endl;
         std::cout << " Ginkgo   Iteration count    " << logger->get_num_iterations() << "." << std::endl;
-        auto residual_norm = gko::as<ginkgo_vec_type>(logger->get_residual_norm());
+        auto residual_norm = gko::as<gko_vec_type>(logger->get_residual_norm());
         std::cout << " Ginkgo   Residual norm      " << residual_norm->at(0, 0) << "." << std::endl;
     }
 
