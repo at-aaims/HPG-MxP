@@ -798,6 +798,9 @@ int OptimizeProblem_ref(SparseMatrix_type& A, GMRESData_type& data, Vector_type&
 #endif
 #elif defined(HPGMP_WITH_HIP)
                 rocsparse_datatype rocsparse_compute_type = rocsparse_datatype_f64_r;
+                if (std::is_same<SC, float>::value) {
+                    rocsparse_compute_type = rocsparse_datatype_f32_r;
+                }
                 rocsparse_create_csr_descr(&(curLevelMatrix->mgData->descrR), nc, nrow, nc,
                                            curLevelMatrix->mgData->d_row_ptr,
                                            curLevelMatrix->mgData->d_col_idx,
