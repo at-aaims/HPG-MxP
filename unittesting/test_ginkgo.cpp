@@ -119,11 +119,6 @@ int main(int argc, char* argv[])
     setup_time = mytimer() - setup_time; // Capture total time of setup
     times[9]   = setup_time; // Save it for reporting
 
-    // Simulate halos
-#ifndef HPGMP_NO_MPI
-    //const local_int_t nhalos = simulate_halos<SparseMatrix_type>(A);
-#endif
-
     // Call user-tunable set up function.
     double t7 = mytimer();
     OptimizeProblem(A, data, b, x, xexact);
