@@ -295,7 +295,7 @@ int main(int argc, char* argv[])
                               .with_preconditioner(bj::build().with_max_block_size(8u).on(gko_exec))
                               .on(gko_exec);
 
-    auto solver = solver_factory->generate(gko::clone(gko_exec, gko_mat));
+    auto solver = solver_factory->generate(gko_mat);
 
     std::shared_ptr<const gko::log::Convergence<scalar_type>> logger = gko::log::Convergence<scalar_type>::create();
 
