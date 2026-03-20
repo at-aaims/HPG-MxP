@@ -257,7 +257,7 @@ int main(int argc, char* argv[])
     }
 #endif // HPGMP_VERBOSE
     auto gko_mat =
-        gko_mat_type::create_const(gko_exec,
+        gko::share(gko_mat_type::create_const(gko_exec,
                                    gko::dim<2>{static_cast<gko::size_type>(A.localNumberOfRows),
                                                static_cast<gko::size_type>(A.localNumberOfColumns)},
                                    gko::make_const_array_view(gko_exec,
