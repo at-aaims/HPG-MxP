@@ -258,16 +258,16 @@ int main(int argc, char* argv[])
 #endif // HPGMP_VERBOSE
     auto gko_mat =
         gko::share(gko_mat_type::create_const(gko_exec,
-                                   gko::dim<2>{static_cast<gko::size_type>(A.localNumberOfRows),
-                                               static_cast<gko::size_type>(A.localNumberOfColumns)},
-                                   gko::make_const_array_view(gko_exec,
-                                                              mat_ptr->get_ld_values() * mat_ptr->get_ell_width(),
-                                                              mat_ptr->get_values()),
-                                   gko::make_const_array_view(gko_exec,
-                                                              mat_ptr->get_ld_indices() * mat_ptr->get_ell_width(),
-                                                              mat_ptr->get_col_idxs()),
-                                   mat_ptr->get_ell_width(),
-                                   mat_ptr->get_ld_values()));
+                                              gko::dim<2>{static_cast<gko::size_type>(A.localNumberOfRows),
+                                                          static_cast<gko::size_type>(A.localNumberOfColumns)},
+                                              gko::make_const_array_view(gko_exec,
+                                                                         mat_ptr->get_ld_values() * mat_ptr->get_ell_width(),
+                                                                         mat_ptr->get_values()),
+                                              gko::make_const_array_view(gko_exec,
+                                                                         mat_ptr->get_ld_indices() * mat_ptr->get_ell_width(),
+                                                                         mat_ptr->get_col_idxs()),
+                                              mat_ptr->get_ell_width(),
+                                              mat_ptr->get_ld_values()));
     auto rhs =
         gko_vec_type::create(gko_exec,
                              gko::dim<2>{static_cast<gko::size_type>(A.localNumberOfRows), 1},
