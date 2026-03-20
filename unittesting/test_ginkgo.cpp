@@ -178,9 +178,9 @@ int main(int argc, char* argv[])
     using gko_mat_type = gko_coo_type;
     auto gko_mat =
         gko::share(gko_mat_type::create(gko_exec,
-                             gko::dim<2>{static_cast<gko::size_type>(A.localNumberOfRows),
-                                         static_cast<gko::size_type>(A.localNumberOfColumns)},
-                             A.localNumberOfNonzeros));
+                                        gko::dim<2>{static_cast<gko::size_type>(A.localNumberOfRows),
+                                                    static_cast<gko::size_type>(A.localNumberOfColumns)},
+                                        A.localNumberOfNonzeros));
     auto rhs =
         gko_vec_type::create(gko_exec,
                              gko::dim<2>{static_cast<gko::size_type>(A.localNumberOfRows), 1},
