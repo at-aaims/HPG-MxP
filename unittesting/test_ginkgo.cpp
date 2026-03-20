@@ -267,7 +267,7 @@ int main(int argc, char* argv[])
                                                               mat_ptr->get_ld_indices() * mat_ptr->get_ell_width(),
                                                               mat_ptr->get_col_idxs()),
                                    mat_ptr->get_ell_width(),
-                                   mat_ptr->get_ld_values());
+                                   mat_ptr->get_ld_values()));
     auto rhs =
         gko_vec_type::create(gko_exec,
                              gko::dim<2>{static_cast<gko::size_type>(A.localNumberOfRows), 1},
