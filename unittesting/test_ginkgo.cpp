@@ -326,7 +326,9 @@ int main(int argc, char* argv[])
 
     // check status
     int status = 0;
-    if (!logger->has_converged()) status = 1;
+    if (!logger->has_converged()) {
+        status = 1;
+    }
 
     // free
     DeleteMatrix(A);
