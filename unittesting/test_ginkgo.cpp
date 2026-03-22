@@ -215,7 +215,7 @@ int main(int argc, char* argv[])
         u_values[row]   = x_values[row];
     }
 #else // HPGMP_REFERENCE
-    using gko_mat_type = gko::matrix::Ell<scalar_type, local_int_t>;
+    using gko_mat_type = gko_ell_type;
     std::shared_ptr<const ELLMatrix<scalar_type>> mat =
         dynamic_cast<EllOptData<scalar_type>*>(A.optimizationData)->mat;
     auto mat_ptr = mat.get();
