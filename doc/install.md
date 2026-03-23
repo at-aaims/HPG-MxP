@@ -38,6 +38,7 @@ Additionally, HPGMP-specific options of interest include:
 
 * Enable detail timers: `-DHPGMP_DETAILED_TIMING`
 
+* Use reference implementations (as opposed to optimized versions): `HPGMP_BUILD_REFERENCE`
 
 By default HPGMP will::
 

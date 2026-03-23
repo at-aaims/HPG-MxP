@@ -57,10 +57,10 @@ void SetupHalo_ref(SparseMatrix_type& A)
 
     // Extract Matrix pieces
 
-    local_int_t localNumberOfRows = A.localNumberOfRows;
-    const char* nonzerosInRow     = A.nonzerosInRow;
-    global_int_t** mtxIndG        = A.mtxIndG;
-    local_int_t** mtxIndL         = A.mtxIndL;
+    local_int_t localNumberOfRows    = A.localNumberOfRows;
+    const local_int_t* nonzerosInRow = A.nonzerosInRow;
+    global_int_t** mtxIndG           = A.mtxIndG;
+    local_int_t** mtxIndL            = A.mtxIndL;
 
 #ifdef HPGMP_NO_MPI // In the non-MPI case we simply copy global indices to local index storage
 #ifndef HPGMP_NO_OPENMP
@@ -69,11 +69,11 @@ void SetupHalo_ref(SparseMatrix_type& A)
     // clang-format on
 #endif
     for (local_int_t i = 0; i < localNumberOfRows; i++) {
-        const int cur_nnz = nonzerosInRow[i];
-        for (int j = 0; j < cur_nnz; j++) {
+        const local_int_t cur_nnz = nonzerosInRow[i];
+        for (local_int_t j = 0; j < cur_nnz; j++) {
             mtxIndL[i][j] = mtxIndG[i][j];
         }
-        for (int j = cur_nnz; j < maxNumberOfNonzerosPerRow; j++) {
+        for (local_int_t j = cur_nnz; j < maxNumberOfNonzerosPerRow; j++) {
             mtxIndL[i][j] = -1;
         }
     }
@@ -200,8 +200,7 @@ void SetupHalo_ref(SparseMatrix_type& A)
     }
 #endif
 
-#endif
-    // ifdef HPGMP_NO_MPI
+#endif // HPGMP_NO_MPI
 
     return;
 }

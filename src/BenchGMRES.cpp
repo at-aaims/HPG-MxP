@@ -48,7 +48,7 @@ constexpr int non_benchmark_num_runs = 10;
 
 /// Record execution time of SpMV and MG kernels for reporting times
 template<class SparseMatrixType, class VectorType>
-void test_mg_spmv(MPI_Comm comm, DeviceCtx* dctx, const Geometry* const geom,
+void test_mg_spmv(comm_type comm, DeviceCtx* dctx, const Geometry* const geom,
                   const SparseMatrixType& A, TestGMRESData& test_data);
 
 // Get number of iterations to fill the required time
@@ -397,7 +397,7 @@ template int BenchGMRES<double, float, float >(int, char**, comm_type, DeviceCtx
 
 
 template<class SparseMatrixType, class VectorType>
-void test_mg_spmv(MPI_Comm comm, DeviceCtx* const dctx, const Geometry* const geom,
+void test_mg_spmv(comm_type comm, DeviceCtx* const dctx, const Geometry* const geom,
                   const SparseMatrixType& A, TestGMRESData& test_data)
 {
     const local_int_t nrow = A.localNumberOfRows;

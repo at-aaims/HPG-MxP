@@ -185,6 +185,7 @@ int ComputeGS_Forward_ref(const SparseMatrix_type& A, const Vector_type& r, Vect
     if (hipSuccess != hipMemcpy(d_bv, r.d_values(), nrow * sizeof(scalar_type), hipMemcpyDeviceToDevice)) {
         printf(" Failed to memcpy d_r\n");
     }
+    rocsparse_status status;
     rocsparse_datatype rocsparse_compute_type = rocsparse_datatype_f64_r;
     if (std::is_same<scalar_type, float>::value) {
         rocsparse_compute_type = rocsparse_datatype_f32_r;
@@ -194,14 +195,14 @@ int ComputeGS_Forward_ref(const SparseMatrix_type& A, const Vector_type& r, Vect
     rocsparse_create_dnvec_descr(&vecX, ncol, (void*)d_xv, rocsparse_compute_type);
     rocsparse_create_dnvec_descr(&vecY, nrow, (void*)d_bv, rocsparse_compute_type);
     TICK();
-    if (rocsparse_status_success !=
-        rocsparse_spmv(sphandle, rocsparse_operation_none,
-                       &mone, A.descrU, vecX, &one, vecY,
-                       rocsparse_compute_type, rocsparse_spmv_alg_default,
+    status = rocsparse_spmv(sphandle, rocsparse_operation_none,
+                            &mone, A.descrU, vecX, &one, vecY,
+                            rocsparse_compute_type, rocsparse_spmv_alg_default,
 #if ROCM_VERSION >= 50400
-                       rocsparse_spmv_stage_compute,
+                            rocsparse_spmv_stage_compute,
 #endif
-                       &buffer_size, A.buffer_U))
+                            &buffer_size, A.buffer_U);
+    if (rocsparse_status_success != status)
     {
         printf(" Failed rocsparse_spmv for GS\n");
     }
@@ -261,10 +262,12 @@ int ComputeGS_Forward_ref(const SparseMatrix_type& A, const Vector_type& r, Vect
     buffer_size = A.buffer_size_L;
     rocsparse_create_dnvec_descr(&vecX, nrow, (void*)d_bv, rocsparse_compute_type);
     rocsparse_create_dnvec_descr(&vecY, nrow, (void*)d_xv, rocsparse_compute_type);
-    if (rocsparse_status_success != rocsparse_spsv(sphandle, rocsparse_operation_none,
-                                                   &one, A.descrL, vecX, vecY, rocsparse_compute_type,
-                                                   rocsparse_spsv_alg_default, rocsparse_spsv_stage_compute,
-                                                   &buffer_size, A.buffer_L)) {
+    status = rocsparse_spsv(sphandle, rocsparse_operation_none,
+                            &one, A.descrL, vecX, vecY, rocsparse_compute_type,
+                            rocsparse_spsv_alg_default, rocsparse_spsv_stage_compute,
+                            &buffer_size, A.buffer_L);
+    if (rocsparse_status_success != status)
+    {
         printf(" Failed rocsparse_spsv(solve, nrow=%d, %s)\n", nrow, (rocsparse_compute_type == rocsparse_datatype_f32_r ? "single" : "double"));
     }
 #if 0 // TODO: copying output to host..

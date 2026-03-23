@@ -85,7 +85,7 @@ void GenerateNonsymProblem_v1_ref(DeviceCtx* const dctx, SparseMatrix_type& A, V
 
 
     // Allocate arrays that are of length localNumberOfRows
-    char* nonzerosInRow                 = new char[localNumberOfRows];
+    local_int_t* nonzerosInRow          = new local_int_t[localNumberOfRows];
     global_int_t** mtxIndG              = new global_int_t*[localNumberOfRows];
     local_int_t** mtxIndL               = new local_int_t*[localNumberOfRows];
     matrix_scalar_type** matrixValues   = new matrix_scalar_type*[localNumberOfRows];
@@ -174,7 +174,7 @@ void GenerateNonsymProblem_v1_ref(DeviceCtx* const dctx, SparseMatrix_type& A, V
                 HPGMP_fout << " rank, globalRow, localRow = " << A.geom->rank << " " //
                            << currentGlobalRow << " " << A.globalToLocalMap[currentGlobalRow] << endl;
 #endif
-                char numberOfNonzerosInRow              = 0;
+                local_int_t numberOfNonzerosInRow       = 0;
                 matrix_scalar_type* currentValuePointer = matrixValues[currentLocalRow]; // Pointer to current value in current row
                 vector_scalar_type bi                   = 0.0;
                 global_int_t* currentIndexPointerG      = mtxIndG[currentLocalRow]; // Pointer to current index in current row
@@ -219,7 +219,9 @@ void GenerateNonsymProblem_v1_ref(DeviceCtx* const dctx, SparseMatrix_type& A, V
                 } // end sz loop
                 nonzerosInRow[currentLocalRow] = numberOfNonzerosInRow;
 #ifndef HPGMP_NO_OPENMP
-#pragma omp critical
+                // clang-format off
+                #pragma omp critical
+                // clang-format on
 #endif
                 localNumberOfNonzeros += numberOfNonzerosInRow; // Protect this with an atomic
                 if (init_vect) {

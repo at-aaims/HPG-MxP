@@ -65,34 +65,31 @@ double mytimer(void)
 
 #if defined(HPGMP_USE_FENCE)
 #if defined(HPGMP_WITH_CUDA)
-//#include <cuda_runtime.h>
-//#include "cublas_v2.h"
 void fence()
 {
     if (cudaSuccess != cudaDeviceSynchronize()) {
-        throw std::runtime_error("Could synchronize CUDA device!");
+        throw std::runtime_error("Could not synchronize CUDA device!");
     }
 }
 
 void fence(stream_t stream)
 {
     if (cudaSuccess != cudaStreamSynchronize(stream)) {
-        throw std::runtime_error("Could synchronize CUDA stream!");
+        throw std::runtime_error("Could not synchronize CUDA stream!");
     }
 }
 #elif defined(HPGMP_WITH_HIP)
-//#include "hip/hip_runtime.h"
 void fence()
 {
     if (hipSuccess != hipDeviceSynchronize()) {
-        throw std::runtime_error("Could synchronize HIP device!");
+        throw std::runtime_error("Could not synchronize HIP device!");
     }
 }
 
 void fence(stream_t stream)
 {
     if (hipSuccess != hipStreamSynchronize(stream)) {
-        throw std::runtime_error("Could synchronize HIP stream!");
+        throw std::runtime_error("Could not synchronize HIP stream!");
     }
 }
 #endif

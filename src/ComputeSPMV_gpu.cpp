@@ -94,9 +94,9 @@ int ComputeSPMV_ref(const SparseMatrix_type& A, Vector_type& x, Vector_type& y)
         scalar_type sum                   = 0.0;
         const scalar_type* const cur_vals = A.matrixValues[i];
         const local_int_t* const cur_inds = A.mtxIndL[i];
-        const int cur_nnz                 = A.nonzerosInRow[i];
+        const local_int_t cur_nnz         = A.nonzerosInRow[i];
 
-        for (int j = 0; j < cur_nnz; j++)
+        for (local_int_t j = 0; j < cur_nnz; j++)
             sum += cur_vals[j] * xv[cur_inds[j]];
         yv[i] = sum;
     }
@@ -157,6 +157,7 @@ int ComputeSPMV_ref(const SparseMatrix_type& A, Vector_type& x, Vector_type& y)
     }
 #endif
 #elif defined(HPGMP_WITH_HIP)
+    rocsparse_status status;
     rocsparse_datatype rocsparse_compute_type = rocsparse_datatype_f64_r;
     if (std::is_same<scalar_type, float>::value) {
         rocsparse_compute_type = rocsparse_datatype_f32_r;
@@ -165,14 +166,14 @@ int ComputeSPMV_ref(const SparseMatrix_type& A, Vector_type& x, Vector_type& y)
     rocsparse_dnvec_descr vecX, vecY;
     rocsparse_create_dnvec_descr(&vecX, ncol, (void*)d_xv, rocsparse_compute_type);
     rocsparse_create_dnvec_descr(&vecY, nrow, (void*)d_yv, rocsparse_compute_type);
-    if (rocsparse_status_success !=
-        rocsparse_spmv(sphandle, rocsparse_operation_none,
-                       &one, A.descrA, vecX, &zero, vecY,
-                       rocsparse_compute_type, rocsparse_spmv_alg_default,
+    status = rocsparse_spmv(sphandle, rocsparse_operation_none,
+                            &one, A.descrA, vecX, &zero, vecY,
+                            rocsparse_compute_type, rocsparse_spmv_alg_default,
 #if ROCM_VERSION >= 50400
-                       rocsparse_spmv_stage_compute,
+                            rocsparse_spmv_stage_compute,
 #endif
-                       &buffer_size, A.buffer_A))
+                            &buffer_size, A.buffer_A);
+    if (rocsparse_status_success != status)
     {
         printf(" Failed rocsparse_spmv for SpMV\n");
     }

@@ -107,7 +107,7 @@ void ReportResults(const SparseMatrix_type& A, int numberOfMgLevels,
         double fnbytes = ((double)sizeof(Geometry)); // Geometry struct in main.cpp
 
         // Model for GenerateProblem_ref.cpp
-        fnbytes += fnrow * sizeof(char); // array nonzerosInRow
+        fnbytes += fnrow * sizeof(local_int_t); // array nonzerosInRow
         fnbytes += fnrow * ((double)sizeof(global_int_t*)); // mtxIndG
         fnbytes += fnrow * ((double)sizeof(local_int_t*)); // mtxIndL
         fnbytes += fnrow * ((double)sizeof(double*)); // matrixValues
@@ -144,7 +144,7 @@ void ReportResults(const SparseMatrix_type& A, int numberOfMgLevels,
             fnbytes_Af += ((double)(sizeof(Geometry) + sizeof(SparseMatrix_type) + 3 * sizeof(Vector_type) + sizeof(MGData_type))); // Account for structs geomc, Ac, rc, xc, Axf - (minor)
 
             // Model for GenerateProblem.cpp (called within GenerateCoarseProblem.cpp)
-            fnbytes_Af += fnrow_Af * sizeof(char); // array nonzerosInRow
+            fnbytes_Af += fnrow_Af * sizeof(local_int_t); // array nonzerosInRow
             fnbytes_Af += fnrow_Af * ((double)sizeof(global_int_t*)); // mtxIndG
             fnbytes_Af += fnrow_Af * ((double)sizeof(local_int_t*)); // mtxIndL
             fnbytes_Af += fnrow_Af * ((double)sizeof(double*)); // matrixValues
