@@ -158,13 +158,13 @@ __launch_bounds__(BLOCKSIZEX* BLOCKSIZEY)
 #endif
 }
 
-template<unsigned int BLOCKSIZEX, unsigned int BLOCKSIZEY, typename hiscalar>
+template<unsigned int BLOCKSIZEX, unsigned int BLOCKSIZEY, typename mscalar>
 __launch_bounds__(BLOCKSIZEX* BLOCKSIZEY)
     __global__ void kernel_to_ell_val(const local_int_t m,
                                       const local_int_t nnz_per_row,
                                       const int ld_v,
-                                      const hiscalar* __restrict__ matrixValues,
-                                      hiscalar* __restrict__ ell_val)
+                                      const mscalar* __restrict__ matrixValues,
+                                      mscalar* __restrict__ ell_val)
 {
     const local_int_t row = blockIdx.x * BLOCKSIZEY + threadIdx.y;
 
@@ -176,7 +176,7 @@ __launch_bounds__(BLOCKSIZEX* BLOCKSIZEY)
     ell_val[idx]          = matrixValues[row * nnz_per_row + threadIdx.x];
 }
 
-template<unsigned int BLOCKSIZE, typename hiscalar>
+template<unsigned int BLOCKSIZE, typename mscalar>
 __launch_bounds__(BLOCKSIZE)
     __global__ void kernel_to_halo(const local_int_t n_halo_rows,
                                    const local_int_t m,
@@ -187,10 +187,10 @@ __launch_bounds__(BLOCKSIZE)
                                    const int halo_ld_i,
                                    const int halo_ld_v,
                                    const local_int_t* __restrict__ ell_col_ind,
-                                   const hiscalar* __restrict__ ell_val,
+                                   const mscalar* __restrict__ ell_val,
                                    const local_int_t* __restrict__ halo_row_ind,
                                    local_int_t* __restrict__ halo_col_ind,
-                                   hiscalar* __restrict__ halo_val)
+                                   mscalar* __restrict__ halo_val)
 {
     const local_int_t gid = blockIdx.x * BLOCKSIZE + threadIdx.x;
 
@@ -477,8 +477,8 @@ __global__ void simple_ell_spmv_halo(const local_int_t nrows, const int ldv, con
     yvals[perm[halo_row_ind[row_idx]]] += partial;
 }
 
-template<typename hiscalar, typename vscalar>
-void ell_interior_spmv(const ELLMatrix<hiscalar>* mat, const Vector<vscalar>* x, Vector<vscalar>* y)
+template<typename mscalar, typename vscalar>
+void ell_interior_spmv(const ELLMatrix<mscalar>* mat, const Vector<vscalar>* x, Vector<vscalar>* y)
 {
     constexpr int block_size = 1024;
     int nblocks              = (mat->get_local_num_rows() - 1) / block_size + 1;
@@ -492,8 +492,8 @@ template void ell_interior_spmv(const ELLMatrix<double>* mat, const Vector<doubl
 template void ell_interior_spmv(const ELLMatrix<float>* mat, const Vector<float>* x, Vector<float>* y);
 template void ell_interior_spmv(const ELLMatrix<float>* mat, const Vector<double>* x, Vector<double>* y);
 
-template<typename hiscalar, typename vscalar>
-void ell_halo_spmv(const ELLMatrix<hiscalar>* mat, const Vector<vscalar>* x, Vector<vscalar>* y)
+template<typename mscalar, typename vscalar>
+void ell_halo_spmv(const ELLMatrix<mscalar>* mat, const Vector<vscalar>* x, Vector<vscalar>* y)
 {
     constexpr int block_size = 1024;
     const int nblocks        = (mat->get_num_halo_rows() - 1) / block_size + 1;
@@ -509,8 +509,8 @@ template void ell_halo_spmv(const ELLMatrix<double>* mat, const Vector<double>* 
 template void ell_halo_spmv(const ELLMatrix<float>* mat, const Vector<float>* x, Vector<float>* y);
 template void ell_halo_spmv(const ELLMatrix<float>* mat, const Vector<double>* x, Vector<double>* y);
 
-template<typename hiscalar, typename vscalar>
-void ell_spmv(const ELLMatrix<hiscalar>* mat, const Vector<vscalar>* x, Vector<vscalar>* y)
+template<typename mscalar, typename vscalar>
+void ell_spmv(const ELLMatrix<mscalar>* mat, const Vector<vscalar>* x, Vector<vscalar>* y)
 {
     auto dctx = x->get_device_context();
 
@@ -519,7 +519,7 @@ void ell_spmv(const ELLMatrix<hiscalar>* mat, const Vector<vscalar>* x, Vector<v
 
     // On compute stream: launch interior computations
 #ifdef HPGMP_WITH_GINKGO
-    ginkgo_ell_interior_spmv<hiscalar, vscalar>(mat, x, y);
+    ginkgo_ell_interior_spmv<mscalar, vscalar>(mat, x, y);
 #else
     ell_interior_spmv(mat, x, y);
 #endif
