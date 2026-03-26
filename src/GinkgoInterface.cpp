@@ -17,10 +17,10 @@ int ginkgo_ell_interior_spmv(const ELLMatrix<mscalar>* mat, const Vector<vscalar
     using bj           = gko::preconditioner::Jacobi<>;
     using gko_vec_type = gko::matrix::Dense<vscalar>;
     using gko_ell_type = gko::matrix::Ell<mscalar, local_int_t>;
-    using gko_mat_type = gko_ell_type;
+    using gko_amp_type = gko::matrix::AMP<mscalar, local_int_t>;
     auto gko_exec      = create_ginkgo_executor();
-    auto gko_mat =
-        gko::share(gko_mat_type::create_const(gko_exec,
+    auto gko_ell_mat =
+        gko::share(gko_ell_type::create_const(gko_exec,
                                               gko::dim<2>{static_cast<gko::size_type>(mat->get_local_num_rows()),
                                                           static_cast<gko::size_type>(mat->get_local_num_cols())},
                                               gko::make_const_array_view(gko_exec,
@@ -31,6 +31,8 @@ int ginkgo_ell_interior_spmv(const ELLMatrix<mscalar>* mat, const Vector<vscalar
                                                                          mat->get_col_idxs()),
                                               mat->get_ell_width(),
                                               mat->get_ld_values()));
+    auto gko_amp_mat = gko_amp_type::build().with_tolerance(1e-1).on(gko_exec)->generate(gko_ell_mat);
+    std::cout << "gko_amp_mat->num_precisions:" << gko_amp_mat->num_precisions << "\n";
     auto gko_x =
         gko_vec_type::create_const(gko_exec,
                                    gko::dim<2>{static_cast<gko::size_type>(x->local_length()), 1},
@@ -46,7 +48,7 @@ int ginkgo_ell_interior_spmv(const ELLMatrix<mscalar>* mat, const Vector<vscalar
                                                   y->d_values()),
                              1);
 
-    gko_mat->apply(gko_x, gko_y);
+    gko_amp_mat->apply(gko_x, gko_y);
 
     return 0;
 }
