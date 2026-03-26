@@ -138,6 +138,7 @@ set(host_sources
     src/ComputeSYMGS.cpp
     src/ComputeTRSM.cpp
     src/ComputeWAXPBY.cpp
+    src/GinkgoInterface.cpp 
     src/GMRES.cpp
     src/GMRES_IR.cpp
     src/GenerateGeometry.cpp

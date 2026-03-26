@@ -21,13 +21,9 @@ using gko_exec_type = gko::OmpExecutor;
 #endif // HPGMP_NO_OPENMP
 #endif // HPGMP_WITH_HIP of HPGMP_WITH_CUDA
 
-std::shared_ptr<gko::Executor> create_ginkgo_executor()
-{
-#if defined(HPGMP_WITH_HIP) || defined(HPGMP_WITH_CUDA)
-    return gko_exec_type::create(0, gko_reference_exec_type::create());
-#else
-    return gko_exec_type::create();
-#endif
-}
+std::shared_ptr<gko::Executor> create_ginkgo_executor();
+
+template<typename hiscalar, typename vscalar>
+int ginkgo_ell_interior_spmv(const ELLMatrix<hiscalar>* mat, const Vector<vscalar>* x, Vector<vscalar>* y);
 
 #endif // HPGMP_GINKGO_INTERFACE
