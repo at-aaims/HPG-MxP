@@ -84,11 +84,11 @@ protected:
 //template <typename mscalar, typename vscalar>
 //void ell_spmv(const ELLMatrix<mscalar>* mat, const Vector<vscalar> *x, Vector<vscalar>* y);
 
-template<typename hiscalar, typename vscalar>
-void ell_halo_spmv(const ELLMatrix<hiscalar>* mat, const Vector<vscalar>* x, Vector<vscalar>* y);
+template<typename mscalar, typename vscalar>
+void ell_halo_spmv(const ELLMatrix<mscalar>* mat, const Vector<vscalar>* x, Vector<vscalar>* y);
 
-template<typename hiscalar, typename vscalar>
-void ell_interior_spmv(const ELLMatrix<hiscalar>* mat, const Vector<vscalar>* x, Vector<vscalar>* y);
+template<typename mscalar, typename vscalar>
+void ell_interior_spmv(const ELLMatrix<mscalar>* mat, const Vector<vscalar>* x, Vector<vscalar>* y);
 
 template<typename hiscalar, typename loscalar = hiscalar>
 struct EllOptData : public OptimizationData

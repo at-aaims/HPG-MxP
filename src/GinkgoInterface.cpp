@@ -10,13 +10,13 @@ std::shared_ptr<gko::Executor> create_ginkgo_executor()
 #endif
 }
 
-template<typename hiscalar, typename vscalar>
-int ginkgo_ell_interior_spmv(const ELLMatrix<hiscalar>* mat, const Vector<vscalar>* x, Vector<vscalar>* y)
+template<typename mscalar, typename vscalar>
+int ginkgo_ell_interior_spmv(const ELLMatrix<mscalar>* mat, const Vector<vscalar>* x, Vector<vscalar>* y)
 {
     using gmres        = gko::solver::Gmres<>;
     using bj           = gko::preconditioner::Jacobi<>;
     using gko_vec_type = gko::matrix::Dense<vscalar>;
-    using gko_ell_type = gko::matrix::Ell<hiscalar, local_int_t>;
+    using gko_ell_type = gko::matrix::Ell<mscalar, local_int_t>;
     using gko_mat_type = gko_ell_type;
     auto gko_exec      = create_ginkgo_executor();
     auto gko_mat =
