@@ -45,6 +45,11 @@
 #endif
 
 #include "Vector.hpp"
+
+#ifdef HPGMP_WITH_GINKGO
+#include "GinkgoInterface.hpp"
+#endif
+
 #include "exceptions.hpp"
 
 #include "kernel_helpers.hpp.inc"
@@ -513,7 +518,11 @@ void ell_spmv(const ELLMatrix<hiscalar>* mat, const Vector<vscalar>* x, Vector<v
     x->update_halos_pack_send_buffer(mat);
 
     // On compute stream: launch interior computations
+#ifdef HPGMP_WITH_GINKGO
+    ginkgo_ell_interior_spmv<hiscalar, vscalar>(mat, x, y);
+#else
     ell_interior_spmv(mat, x, y);
+#endif
 
     // wait for comms to complete
     x->update_halos_send_receive(mat);
