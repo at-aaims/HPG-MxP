@@ -227,7 +227,6 @@ int main(int argc, char* argv[])
         local_int_t* h_tmp_col_values = (local_int_t*)malloc(mat_col_bytes);
         dctx.get()->copy_device_to_host_sync((void*)h_tmp_mat_values, mat_ptr->get_values(), mat_values_bytes);
         dctx.get()->copy_device_to_host_sync((void*)h_tmp_col_values, mat_ptr->get_col_idxs(), mat_col_bytes);
-        b.update_host_mirror(); // Necessary to get the correct permutation on the host
         std::cout << "ELL matrix column indices (copied to host): (First 20 rows)\n";
         for (local_int_t row = 0; row < 20; ++row)
         {
