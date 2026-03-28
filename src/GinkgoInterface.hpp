@@ -1,11 +1,6 @@
 #ifndef HPGMP_GINKGO_INTERFACE
 #define HPGMP_GINKGO_INTERFACE
 
-#include "ell_matrix.hpp"
-#include "Profiling.hpp"
-#include "SparseMatrix.hpp"
-#include "Vector.hpp"
-
 #include <ginkgo/ginkgo.hpp>
 
 using gko_reference_exec_type = gko::ReferenceExecutor;
@@ -19,11 +14,8 @@ using gko_exec_type = gko_reference_exec_type;
 #else // OPENMP
 using gko_exec_type = gko::OmpExecutor;
 #endif // HPGMP_NO_OPENMP
-#endif // HPGMP_WITH_HIP of HPGMP_WITH_CUDA
+#endif // HPGMP_WITH_HIP or HPGMP_WITH_CUDA
 
 std::shared_ptr<gko::Executor> create_ginkgo_executor();
-
-template<typename mscalar, typename vscalar>
-int ginkgo_ell_interior_spmv(const ELLMatrix<mscalar>* mat, const Vector<vscalar>* x, Vector<vscalar>* y);
 
 #endif // HPGMP_GINKGO_INTERFACE

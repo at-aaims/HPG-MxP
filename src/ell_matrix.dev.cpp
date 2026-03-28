@@ -46,10 +46,6 @@
 
 #include "Vector.hpp"
 
-#ifdef HPGMP_WITH_GINKGO
-#include "GinkgoInterface.hpp"
-#endif
-
 #include "exceptions.hpp"
 
 #include "kernel_helpers.hpp.inc"
@@ -65,8 +61,8 @@ ELLMatrix<hiscalar, loscalar>::ELLMatrix(const SparseMatrix<hiscalar>& A)
       col_idxs_{static_cast<local_int_t*>(dctx_->device_alloc(ell_width_ * ldi_ * sizeof(local_int_t)))},
       values_{static_cast<hiscalar*>(dctx_->device_alloc(ell_width_ * ldv_ * sizeof(hiscalar)))}
 {
-    int rank = 0;
 #ifndef HPGMP_NO_MPI
+    int rank = 0;
     MPI_Comm_rank(comm_, &rank);
 #endif
     convert_from_csr(A);
@@ -518,11 +514,7 @@ void ell_spmv(const ELLMatrix<mscalar>* mat, const Vector<vscalar>* x, Vector<vs
     x->update_halos_pack_send_buffer(mat);
 
     // On compute stream: launch interior computations
-#ifdef HPGMP_WITH_GINKGO
-    ginkgo_ell_interior_spmv<mscalar, vscalar>(mat, x, y);
-#else
     ell_interior_spmv(mat, x, y);
-#endif
 
     // wait for comms to complete
     x->update_halos_send_receive(mat);
