@@ -119,6 +119,10 @@ int OptimizeProblemELL(SparseMatrix<mat_scalar>& A, GMRESData<solver_scalar>& da
     b.permute(A.perm);
     xexact.permute(A.perm);
 
+    // Update host mirrors with permutted values
+    b.update_host_mirror(); 
+    xexact.update_host_mirror(); 
+
     return 0;
 }
 
