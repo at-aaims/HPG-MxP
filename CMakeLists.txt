@@ -92,6 +92,7 @@ if(HPGMP_ENABLE_HIP OR HPGMP_ENABLE_CUDA)
             src/ComputeWAXPBY_opt.dev.cpp
             src/ell_matrix.dev.cpp
             src/ell_multicolor_gs.dev.cpp
+            src/GinkgoMatrix.cpp 
             src/multicoloring.dev.cpp
             src/permute.dev.cpp
             src/prolongation.dev.cpp
@@ -196,7 +197,7 @@ if(HPGMP_BUILD_REFERENCE)
                          src/ComputeRestriction_gpu.cpp src/ComputeSPMV_gpu.cpp)
     endif()
 else()
-    set(host_sources ${host_sources} src/ComputeMG.cpp src/matrix_base.cpp src/optimize_problem_ell_rb.cpp)
+    set(host_sources ${host_sources} src/ComputeMG.cpp src/matrix_base.cpp src/optimize_problem_ell_rb.cpp )
 endif()
 
 add_library(hpgmp ${host_sources})
@@ -320,6 +321,12 @@ if(HPGMP_ENABLE_GINKGO)
     target_compile_definitions(hpgmp PUBLIC HPGMP_WITH_GINKGO)
     target_link_libraries(hpgmp PUBLIC Ginkgo::ginkgo)
     message(STATUS "Ginkgo is enabled")
+    if(HPGMP_BUILD_REFERENCE)
+        message(WARNING "Ginkgo is not used within the benchmark for reference builds.")
+    else()
+        message(WARNING "Using Ginkgo within the benchmark for optimized builds requires a custom "
+                        "version of Ginkgo that supports adaptive mixed-precision matrices.")
+    endif()
 endif()
 
 add_executable(xhpgmp src/main_hpgmp.cpp)
