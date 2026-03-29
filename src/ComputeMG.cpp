@@ -29,6 +29,10 @@
 #include "prolongation.hpp"
 #include "mytimer.hpp"
 
+#ifdef HPGMP_WITH_GINKGO
+#include "GinkgoMatrix.hpp"
+#endif
+
 /*!
  * @param[in] A the known system matrix
  * @param[in] r the residual or input RHS on the finest grid.
@@ -63,8 +67,13 @@ int ComputeMG(const SparseMatrix_type& A, const Vector_type& r, Vector_type& x,
     //ft.mg_rp.f_mem_traffic[0] += x.local_length();
     ft.mg_rp.add_memory_traffic<scalar_type>(mpisize * x.local_length());
 
+#ifdef HPGMP_WITH_GINKGO
+    std::shared_ptr<const GinkgoMatrix<scalar_type>> mat =
+        dynamic_cast<GinkgoOptData<scalar_type>*>(A.optimizationData)->mat;
+#else
     std::shared_ptr<const ELLMatrix<scalar_type>> mat =
         dynamic_cast<EllOptData<scalar_type>*>(A.optimizationData)->mat;
+#endif
 
     int ierr = 0;
     if (A.mgData != 0)
