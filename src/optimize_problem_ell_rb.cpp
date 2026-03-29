@@ -92,7 +92,7 @@ int OptimizeProblemELL(SparseMatrix<mat_scalar>& A, GMRESData<solver_scalar>& da
         }
 #endif
         auto moptdata       = new EllOptData<mat_scalar>;
-        moptdata->mat       = std::make_shared<ELLMatrix<mat_scalar>>(*M);
+        moptdata->mat       = std::make_shared<ELLMatrix<mat_scalar>>(*M); // Performs row permutation
         M->optimizationData = moptdata;
 #ifdef HPGMP_VERBOSE
         MPI_Barrier(A.comm);
@@ -100,15 +100,6 @@ int OptimizeProblemELL(SparseMatrix<mat_scalar>& A, GMRESData<solver_scalar>& da
             std::cout << "Built ELL on grid " << igrid << "." << std::endl;
         }
 #endif
-
-        // Permute matrix rows
-        moptdata->mat->permute_rows(M->perm);
-
-        // Extract diagonal indices and inverse values
-        moptdata->mat->extract_diagonal();
-
-        dctx->device_free(M->d_mtxIndL);
-        dctx->device_free(M->d_matrixValues);
 
         // Go to next level in hierarchy
         M = M->Ac;

@@ -25,8 +25,10 @@ GinkgoMatrix<hiscalar, loscalar>::GinkgoMatrix(const SparseMatrix<hiscalar>& A)
         gko::share(gko_amp_type::build().with_tolerance(1e-1).on(gko_exec)->generate(std::move(ell_mat)));
     gko_mat_ = amp_mat;
     std::cout << "amp_mat->num_precisions:" << amp_mat->num_precisions << "\n";
-    // TODO
-    // Delete data from ELLMatrix that is no longer needed
+    
+    // Delete data from ELLMatrix that are no longer needed
+    this->dctx_->device_free(this->col_idxs_);
+    this->dctx_->device_free(this->values_);
 }
 
 template<typename mscalar, typename vscalar>
