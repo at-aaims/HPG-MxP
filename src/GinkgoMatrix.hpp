@@ -11,7 +11,7 @@ public:
     using scalar_type  = hiscalar;
     using gko_ell_type = gko::matrix::Ell<scalar_type, local_int_t>;
     using gko_amp_type = gko::matrix::AMP<scalar_type, local_int_t>;
-    using gko_mat_type = gko_ell_type;
+    using gko_mat_type = gko_amp_type;
 
     GinkgoMatrix(comm_type comm, DeviceCtx* const dctx, const Geometry* const geom) = delete;
 
