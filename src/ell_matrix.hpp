@@ -93,7 +93,8 @@ void ell_interior_spmv(const ELLMatrix<mscalar>* mat, const Vector<vscalar>* x, 
 template<typename hiscalar, typename loscalar = hiscalar>
 struct EllOptData : public OptimizationData
 {
-    std::shared_ptr<ELLMatrix<hiscalar, loscalar>> mat;
+    using matrix_type = ELLMatrix<hiscalar, loscalar>;
+    std::shared_ptr<matrix_type> mat;
 };
 
 template<class SparseMatrix_type, class Vector_type>

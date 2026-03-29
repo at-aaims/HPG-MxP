@@ -6,36 +6,50 @@
 template<typename hiscalar, typename loscalar>
 GinkgoMatrix<hiscalar, loscalar>::GinkgoMatrix(const SparseMatrix<hiscalar>& A)
     : ELLMatrix<hiscalar, loscalar>(A)
-{ 
+{
+    assert(this->ldi_ == this->ldv_);
     auto gko_exec = create_ginkgo_executor();
     auto ell_mat =
-        gko::share(gko_ell_type::create_const(gko_exec,
-                                          gko::dim<2>{static_cast<gko::size_type>(this->local_nrows_),
-                                                      static_cast<gko::size_type>(this->local_ncols_)},
-                                          gko::make_const_array_view(gko_exec,
-                                                                     this->ldv_ * this->ell_width_,
-                                                                     this->values_),
-                                          gko::make_const_array_view(gko_exec,
-                                                                     this->ldi_ * this->ell_width_,
-                                                                     this->col_idxs_),
-                                          this->ell_width_,
-                                          this->ldv_));
+        gko::share(gko_ell_type::create(gko_exec,
+                                        gko::dim<2>{static_cast<gko::size_type>(this->local_nrows_),
+                                                    static_cast<gko::size_type>(this->local_ncols_)},
+                                        gko::make_array_view(gko_exec,
+                                                             this->ldv_ * this->ell_width_,
+                                                             this->values_),
+                                        gko::make_array_view(gko_exec,
+                                                             this->ldi_ * this->ell_width_,
+                                                             this->col_idxs_),
+                                        this->ell_width_,
+                                        this->ldv_));
 
-    auto amp_mat = 
-        gko::share(gko_amp_type::build().with_tolerance(1e-1).on(gko_exec)->generate(std::move(ell_mat)));
-    gko_mat_ = amp_mat;
-    std::cout << "amp_mat->num_precisions:" << amp_mat->num_precisions << "\n";
-    
+    if constexpr (std::is_same_v<gko_mat_type, gko_ell_type>)
+    {
+        gko_mat_ = ell_mat;
+    } else if constexpr (std::is_same_v<gko_mat_type, gko_amp_type>)
+    {
+        auto amp_mat =
+            gko::share(gko_amp_type::build().with_tolerance(1e-1).on(gko_exec)->generate(std::move(ell_mat)));
+        gko_mat_ = amp_mat;
+        std::cout << "Using Ginkgo AMP matrix.\n";
+        std::cout << "amp_mat->num_precisions:" << amp_mat->num_precisions << "\n";
+    } else
+    {
+        throw std::runtime_error("Unsupported gko_mat_type in GinkgoMatrix!");
+    }
+
+    // TODO
     // Delete data from ELLMatrix that are no longer needed
-    this->dctx_->device_free(this->col_idxs_);
-    this->dctx_->device_free(this->values_);
+    //this->dctx_->device_free(this->col_idxs_);
+    //this->dctx_->device_free(this->values_);
+    //this->col_idxs_ = nullptr;
+    //this->values_   = nullptr;
 }
 
 template<typename mscalar, typename vscalar>
 int ginkgo_interior_spmv(const GinkgoMatrix<mscalar>* mat, const Vector<vscalar>* x, Vector<vscalar>* y)
 {
     using gko_vec_type = gko::matrix::Dense<vscalar>;
-    auto gko_exec = mat->get_gko_mat()->get_executor();
+    auto gko_exec      = mat->get_gko_mat()->get_executor();
     auto gko_x =
         gko_vec_type::create_const(gko_exec,
                                    gko::dim<2>{static_cast<gko::size_type>(x->local_length()), 1},
@@ -59,7 +73,7 @@ int ginkgo_interior_spmv(const GinkgoMatrix<mscalar>* mat, const Vector<vscalar>
 template<typename mscalar, typename vscalar>
 void ginkgo_spmv(const GinkgoMatrix<mscalar>* mat, const Vector<vscalar>* x, Vector<vscalar>* y)
 {
-    auto dctx = x->get_device_context();
+    auto dctx    = x->get_device_context();
 
     // On halo stream: pack send buffer and copy to host if needed
     x->update_halos_pack_send_buffer(mat);
@@ -71,7 +85,7 @@ void ginkgo_spmv(const GinkgoMatrix<mscalar>* mat, const Vector<vscalar>* x, Vec
     x->update_halos_send_receive(mat);
     x->update_halos_finalize(mat);
 
-    ell_halo_spmv(static_cast<const ELLMatrix<mscalar>*>(mat), x, y);
+    ell_halo_spmv(mat, x, y);
 
     dctx->synchronize_halo_stream();
     dctx->synchronize_compute_stream();
@@ -84,7 +98,7 @@ int ComputeSPMV_ginkgo(const SparseMatrix_type& A, Vector_type& x, Vector_type& 
     HPGMP_RANGE_PUSH(__FUNCTION__);
 
     using scalar_type = typename SparseMatrix_type::scalar_type;
-    auto gko_data  = static_cast<const GinkgoOptData<scalar_type, scalar_type>*>(A.optimizationData);
+    auto gko_data     = static_cast<const GinkgoOptData<scalar_type, scalar_type>*>(A.optimizationData);
     ginkgo_spmv(gko_data->mat.get(), &x, &y);
 
     HPGMP_RANGE_POP(__FUNCTION__);

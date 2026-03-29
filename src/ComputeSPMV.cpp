@@ -24,7 +24,11 @@
 #ifdef HPGMP_REFERENCE
 #include "ComputeSPMV_ref.hpp"
 #else // HPGMP_REFERENCE
+#ifdef HPGMP_WITH_GINKGO
+#include "GinkgoMatrix.hpp"
+#else
 #include "ell_matrix.hpp"
+#endif
 #endif // HPGMP_REFERENCE
 
 /*!
@@ -52,7 +56,11 @@ int ComputeSPMV(const SparseMatrix_type& A, Vector_type& x, Vector_type& y)
     return ComputeSPMV_ref(A, x, y);
 #else
     A.isSpmvOptimized = true;
+#ifdef HPGMP_WITH_GINKGO
+    return ComputeSPMV_ginkgo(A, x, y);
+#else
     return ComputeSPMV_ell(A, x, y);
+#endif
 #endif
 }
 

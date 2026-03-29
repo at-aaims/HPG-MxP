@@ -8,10 +8,10 @@ template<typename hiscalar, typename loscalar = hiscalar>
 class GinkgoMatrix : public ELLMatrix<hiscalar, loscalar>
 {
 public:
-    using scalar_type = hiscalar;
+    using scalar_type  = hiscalar;
     using gko_ell_type = gko::matrix::Ell<scalar_type, local_int_t>;
     using gko_amp_type = gko::matrix::AMP<scalar_type, local_int_t>;
-    using gko_mat_type = gko_amp_type;
+    using gko_mat_type = gko_ell_type;
 
     GinkgoMatrix(comm_type comm, DeviceCtx* const dctx, const Geometry* const geom) = delete;
 
@@ -21,7 +21,8 @@ public:
      */
     GinkgoMatrix(const SparseMatrix<hiscalar>& A);
 
-    ~GinkgoMatrix();
+    ~GinkgoMatrix()
+    { }
 
     auto get_gko_mat() const { return gko_mat_; }
 
@@ -32,7 +33,8 @@ protected:
 template<typename hiscalar, typename loscalar = hiscalar>
 struct GinkgoOptData : public EllOptData<hiscalar, loscalar>
 {
-    std::shared_ptr<GinkgoMatrix<hiscalar, loscalar>> mat;
+    using matrix_type = GinkgoMatrix<hiscalar, loscalar>;
+    std::shared_ptr<matrix_type> mat;
 };
 
 template<typename mscalar, typename vscalar>
