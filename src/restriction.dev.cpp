@@ -34,6 +34,10 @@
 #include "hpgmp.hpp"
 #include "ell_matrix.hpp"
 
+#ifdef HPGMP_WITH_GINKGO
+#include "GinkgoMatrix.hpp"
+#endif
+
 #include "kernel_helpers.hpp.inc"
 
 #define LAUNCH_FUSED_RESTRICT_SPMV(blocksize, width)                                           \
@@ -47,9 +51,9 @@
             rf.d_values(),                                                                     \
             A.localNumberOfRows,                                                               \
             A.localNumberOfColumns,                                                            \
-            ell->get_ld_indices(), ell->get_ld_values(),                                       \
-            ell->get_col_idxs(),                                                               \
-            ell->get_values(),                                                                 \
+            mat->get_ld_indices(), mat->get_ld_values(),                                       \
+            mat->get_col_idxs(),                                                               \
+            mat->get_values(),                                                                 \
             xf.d_values(),                                                                     \
             A.mgData->rc->d_values(),                                                          \
             A.perm,                                                                            \
@@ -188,44 +192,49 @@ template<typename mscalar, typename vscalar>
 int fused_spmv_restriction(const SparseMatrix<mscalar>& A, const Vector<vscalar>& rf,
                            const Vector<vscalar>& xf)
 {
-    std::shared_ptr<const ELLMatrix<mscalar>> ell =
+#ifdef HPGMP_WITH_GINKGO
+    std::shared_ptr<const GinkgoMatrix<mscalar>> mat =
+        dynamic_cast<GinkgoOptData<mscalar>*>(A.optimizationData)->mat;
+#else
+    std::shared_ptr<const ELLMatrix<mscalar>> mat =
         dynamic_cast<EllOptData<mscalar>*>(A.optimizationData)->mat;
-    auto stream_interior = ell->get_device_context()->get_compute_stream();
+#endif
+    auto stream_interior = mat->get_device_context()->get_compute_stream();
 #ifndef HPCG_NO_MPI
     if (A.geom->size > 1)
     {
-        xf.update_halos_pack_send_buffer(ell.get());
+        xf.update_halos_pack_send_buffer(mat.get());
     }
 #endif
 
-    if (ell->get_ell_width() == 27) {
+    if (mat->get_ell_width() == 27) {
         LAUNCH_FUSED_RESTRICT_SPMV(1024, 27);
     }
 
 #ifndef HPCG_NO_MPI
     if (A.geom->size > 1)
     {
-        xf.update_halos_send_receive(ell.get());
-        xf.update_halos_finalize(ell.get());
+        xf.update_halos_send_receive(mat.get());
+        xf.update_halos_finalize(mat.get());
 
-        dim3 blocks((ell->get_num_halo_rows() - 1) / 128 + 1);
+        dim3 blocks((mat->get_num_halo_rows() - 1) / 128 + 1);
         dim3 threads(128);
 
         kernel_fused_restrict_spmv_halo<128><<<blocks,
                                                threads,
                                                0,
                                                stream_interior>>>(
-            ell->get_num_halo_rows(), ell->get_local_num_cols(),
+            mat->get_num_halo_rows(), mat->get_local_num_cols(),
             A.mgData->d_c2fOperator,
-            ell->get_ell_width(), ell->get_halo_ld_indices(), ell->get_halo_ld_values(),
-            ell->get_halo_row_indices(), ell->get_halo_col_idxs(),
-            ell->get_halo_values(),
+            mat->get_ell_width(), mat->get_halo_ld_indices(), mat->get_halo_ld_values(),
+            mat->get_halo_row_indices(), mat->get_halo_col_idxs(),
+            mat->get_halo_values(),
             xf.d_values(), A.mgData->rc->d_values(),
             A.Ac->perm);
     }
 #endif
-    ell->get_device_context()->synchronize_compute_stream();
-    ell->get_device_context()->synchronize_halo_stream();
+    mat->get_device_context()->synchronize_compute_stream();
+    mat->get_device_context()->synchronize_halo_stream();
     return 0;
 }
 
