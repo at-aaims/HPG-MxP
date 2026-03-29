@@ -219,8 +219,9 @@ int main(int argc, char* argv[])
     std::shared_ptr<const GinkgoMatrix<scalar_type>> mat =
         dynamic_cast<GinkgoOptData<scalar_type>*>(A.optimizationData)->mat;
     auto mat_ptr = mat.get();
-    // In principle, could use GinkgoMatrix directly, but keeping a second construction to
-    // maintain compatibility with the reference build, and to test the accessors below.
+    // In principle, could use GinkgoMatrix directly, but keeping a second construction with ELL to
+    // test the accessors below and because some solver functionalities are not
+    // supported with AMP yet.
 #ifdef HPGMP_VERBOSE
     {
         size_t mat_values_bytes       = mat_ptr->get_ld_values() * mat_ptr->get_ell_width() * sizeof(scalar_type);
