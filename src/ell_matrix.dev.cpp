@@ -66,13 +66,24 @@ ELLMatrix<hiscalar, loscalar>::ELLMatrix(const SparseMatrix<hiscalar>& A)
     MPI_Comm_rank(comm_, &rank);
 #endif
     convert_from_csr(A);
+
+    // Permute matrix rows
+    permute_rows(A.perm);
+
+    // Extract diagonal indices and inverse values
+    extract_diagonal();
+
+    dctx_->device_free(A.d_mtxIndL);
+    dctx_->device_free(A.d_matrixValues);
 }
 
 template<typename hiscalar, typename loscalar>
 ELLMatrix<hiscalar, loscalar>::~ELLMatrix()
 {
+#ifndef HPGMP_WITH_GINKGO // could alternatively set these to nullptr during earlier free
     dctx_->device_free(col_idxs_);
     dctx_->device_free(values_);
+#endif
     dctx_->device_free(halo_col_idxs_);
     dctx_->device_free(halo_values_);
     dctx_->device_free(diag_idxs_);

@@ -26,6 +26,9 @@ int OptimizeProblem(SparseMatrix_type& A, GMRESData_type& data, Vector_type& b, 
     OptimizeProblem_ref(A, data, b, x, xexact);
 #else
     OptimizeProblemELL(A, data, b, x, xexact);
+#ifdef HPGMP_WITH_GINKGO
+    // Generate Ginkgo AMP matrix, given ELL
+#endif
 #endif
     return 0;
 }
