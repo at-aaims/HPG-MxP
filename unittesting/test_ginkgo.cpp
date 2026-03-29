@@ -29,9 +29,9 @@
 #include "SparseMatrix.hpp"
 #include "Vector.hpp"
 #include "GMRESData.hpp"
-#include "ell_matrix.hpp"
 #include "simulate_halos.hpp"
 #include "GinkgoInterface.hpp"
+#include "GinkgoMatrix.hpp"
 
 typedef double scalar_type;
 //typedef float  scalar_type;
@@ -216,9 +216,11 @@ int main(int argc, char* argv[])
     }
 #else // HPGMP_REFERENCE
     using gko_mat_type = gko_ell_type;
-    std::shared_ptr<const ELLMatrix<scalar_type>> mat =
-        dynamic_cast<EllOptData<scalar_type>*>(A.optimizationData)->mat;
+    std::shared_ptr<const GinkgoMatrix<scalar_type>> mat =
+        dynamic_cast<GinkgoOptData<scalar_type>*>(A.optimizationData)->mat;
     auto mat_ptr = mat.get();
+    // In principle, could use GinkgoMatrix directly, but keeping a second construction to
+    // maintain compatibility with the reference build, and to test the accessors below.
 #ifdef HPGMP_VERBOSE
     {
         size_t mat_values_bytes       = mat_ptr->get_ld_values() * mat_ptr->get_ell_width() * sizeof(scalar_type);

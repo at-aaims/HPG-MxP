@@ -38,6 +38,10 @@
 #include "permute.hpp"
 #include "multicoloring.hpp"
 
+#ifdef HPGMP_WITH_GINKGO
+#include "GinkgoMatrix.hpp"
+#endif
+
 /*!
   Optimizes the data structures used for GMRES to increase the
   performance of the benchmark version of the preconditioned GMRES algorithm.
@@ -91,9 +95,15 @@ int OptimizeProblemELL(SparseMatrix<mat_scalar>& A, GMRESData<solver_scalar>& da
             std::cout << "Setting up ELL on grid " << igrid << "." << std::endl;
         }
 #endif
+#ifdef HPGMP_WITH_GINKGO
+        auto moptdata       = new GinkgoOptData<mat_scalar>;
+        moptdata->mat       = std::make_shared<GinkgoMatrix<mat_scalar>>(*M);
+        M->optimizationData = moptdata;
+#else
         auto moptdata       = new EllOptData<mat_scalar>;
         moptdata->mat       = std::make_shared<ELLMatrix<mat_scalar>>(*M); // Performs row permutation
         M->optimizationData = moptdata;
+#endif
 #ifdef HPGMP_VERBOSE
         MPI_Barrier(A.comm);
         if (A.geom->rank == 0) {
@@ -111,8 +121,8 @@ int OptimizeProblemELL(SparseMatrix<mat_scalar>& A, GMRESData<solver_scalar>& da
     xexact.permute(A.perm);
 
     // Update host mirrors with permutted values
-    b.update_host_mirror(); 
-    xexact.update_host_mirror(); 
+    b.update_host_mirror();
+    xexact.update_host_mirror();
 
     return 0;
 }
