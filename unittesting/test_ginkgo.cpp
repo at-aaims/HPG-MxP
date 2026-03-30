@@ -32,6 +32,7 @@
 #include "simulate_halos.hpp"
 #include "GinkgoInterface.hpp"
 #include "GinkgoMatrix.hpp"
+#include "GinkgoSolver.hpp"
 
 typedef double scalar_type;
 //typedef float  scalar_type;
@@ -331,6 +332,9 @@ int main(int argc, char* argv[])
     if (!logger->has_converged()) {
         status = 1;
     }
+
+    // Quick test for GinkgoSolver (Gauss Seidel) constructor
+    auto gko_gs = GinkgoSolver<scalar_type>(mat_ptr);
 
     // free
     DeleteMatrix(A);
