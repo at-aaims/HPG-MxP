@@ -1,5 +1,5 @@
-#ifndef HPGMP_MATRIX_GINKGO
-#define HPGMP_MATRIX_GINKGO
+#ifndef HPGMP_GINKGO_MATRIX_HPP
+#define HPGMP_GINKGO_MATRIX_HPP
 
 #include "ell_matrix.hpp"
 #include "GinkgoInterface.hpp"

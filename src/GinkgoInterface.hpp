@@ -1,5 +1,5 @@
-#ifndef HPGMP_GINKGO_INTERFACE
-#define HPGMP_GINKGO_INTERFACE
+#ifndef HPGMP_GINKGO_INTERFACE_HPP
+#define HPGMP_GINKGO_INTERFACE_HPP
 
 #include <ginkgo/ginkgo.hpp>
 
