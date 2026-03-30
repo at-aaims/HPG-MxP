@@ -22,8 +22,52 @@ GinkgoSolver<hiscalar, loscalar>::GinkgoSolver(const GinkgoMatrix<hiscalar>* mat
     std::cout << "Using Ginkgo (FwdGaussSeidel) solver.\n";
 }
 
+template<typename mscalar, typename vscalar>
+int ginkgo_multicolor_gs_interior(const GinkgoSolver<mscalar>* interior_solver, const GinkgoMatrix<mscalar>* mat,
+                                  const Vector<vscalar>* r, Vector<vscalar>* x)
+{
+    using gko_vec_type = gko::matrix::Dense<vscalar>;
+    auto gko_solver    = interior_solver->get_solver();
+    auto gko_exec      = mat->get_gko_mat()->get_executor();
+    auto gko_r =
+        gko_vec_type::create_const(gko_exec,
+                                   gko::dim<2>{static_cast<gko::size_type>(r->local_length()), 1},
+                                   gko::make_const_array_view(gko_exec,
+                                                              r->local_length(),
+                                                              r->d_values()),
+                                   1);
+    auto gko_x =
+        gko_vec_type::create(gko_exec,
+                             gko::dim<2>{static_cast<gko::size_type>(x->local_length()), 1},
+                             gko::make_array_view(gko_exec,
+                                                  x->local_length(),
+                                                  x->d_values()),
+                             1);
+
+    gko_solver->apply(gko_r, gko_x);
+
+    return 0;
+}
+
+template<typename mscalar, typename vscalar>
+int ginkgo_multicolor_gs(const GinkgoSolver<mscalar>* interior_solver, const GinkgoMatrix<mscalar>* mat,
+                         const Vector<vscalar>* r, Vector<vscalar>* x)
+{
+    int ierr = ginkgo_multicolor_gs_interior(interior_solver, mat, r, x);
+    return 0;
+}
+
 // Available template instantiations
 template class GinkgoSolver<double, double>;
 template class GinkgoSolver<float, float>;
 
+template int ginkgo_multicolor_gs_interior(const GinkgoSolver<double>* interior_solver, const GinkgoMatrix<double>* mat, 
+                                           const Vector<double>* r, Vector<double>* x);
+template int ginkgo_multicolor_gs_interior(const GinkgoSolver<float>* interior_solver, const GinkgoMatrix<float>* mat, 
+                                           const Vector<float>* r, Vector<float>* x);
+
+template int ginkgo_multicolor_gs(const GinkgoSolver<double>* interior_solver, const GinkgoMatrix<double>* mat, 
+                                  const Vector<double>* r, Vector<double>* x);
+template int ginkgo_multicolor_gs(const GinkgoSolver<float>* interior_solver, const GinkgoMatrix<float>* mat, 
+                                  const Vector<float>* r, Vector<float>* x);
 #endif
