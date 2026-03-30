@@ -23,7 +23,11 @@ protected:
 };
 
 template<typename mscalar, typename vscalar>
-int ginkgo_multicolor_gs(const GinkgoSolver<mscalar>* solver, const Vector<vscalar>* r,
-                         Vector<vscalar>* x);
+int ginkgo_multicolor_gs_interior(const GinkgoSolver<mscalar>* interior_solver, const GinkgoMatrix<mscalar>* mat,
+                                  const Vector<vscalar>* r, Vector<vscalar>* x);
+
+template<typename mscalar, typename vscalar>
+int ginkgo_multicolor_gs(const GinkgoSolver<mscalar>* interior_solver, const GinkgoMatrix<mscalar>* mat,
+                         const Vector<vscalar>* r, Vector<vscalar>* x);
 
 #endif
