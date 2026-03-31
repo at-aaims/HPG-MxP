@@ -49,15 +49,15 @@
             A.d_matrixValues);                                         \
     }
 
-template<typename scalar>
-__device__ void swap(local_int_t& key, scalar& val, int mask, int dir)
+template<typename scalar_type>
+__device__ void swap(local_int_t& key, scalar_type& val, int mask, int dir)
 {
 #ifdef HPGMP_WITH_HIP
     const local_int_t key1 = __shfl_xor(key, mask);
-    const scalar val1      = __shfl_xor(val, mask);
+    const scalar_type val1 = __shfl_xor(val, mask);
 #elif HPGMP_WITH_CUDA
     const local_int_t key1 = __shfl_xor_sync(0xffffffff, key, mask);
-    const scalar val1      = __shfl_xor_sync(0xffffffff, val, mask);
+    const scalar_type val1 = __shfl_xor_sync(0xffffffff, val, mask);
 #endif
 
     if (key < key1 == dir)
@@ -72,19 +72,19 @@ __device__ int get_bit(int x, int i)
     return (x >> i) & 1;
 }
 
-template<unsigned int BLOCKSIZEX, unsigned int BLOCKSIZEY, typename scalar>
+template<unsigned int BLOCKSIZEX, unsigned int BLOCKSIZEY, typename scalar_type>
 __launch_bounds__(BLOCKSIZEX* BLOCKSIZEY)
     __global__ void kernel_perm_cols(const local_int_t m,
                                      const local_int_t n,
                                      const local_int_t nonzerosPerRow,
                                      const local_int_t* __restrict__ perm,
                                      local_int_t* __restrict__ mtxIndL,
-                                     scalar* __restrict__ matrixValues)
+                                     scalar_type* __restrict__ matrixValues)
 {
     const local_int_t row = blockIdx.x * BLOCKSIZEY + threadIdx.y;
     const local_int_t idx = row * nonzerosPerRow + threadIdx.x;
     local_int_t key       = n;
-    scalar val            = 0.0;
+    scalar_type val       = 0.0;
 
     if (threadIdx.x < nonzerosPerRow && row < m)
     {
@@ -127,8 +127,8 @@ __launch_bounds__(BLOCKSIZEX* BLOCKSIZEY)
     }
 }
 
-template<typename scalar>
-void permute_columns(SparseMatrix<scalar>& A)
+template<typename scalar_type>
+void permute_columns(SparseMatrix<scalar_type>& A)
 {
     // Determine blocksize in x direction
     unsigned int dim_x = A.max_nnz_per_row;
