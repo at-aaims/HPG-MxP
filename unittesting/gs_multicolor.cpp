@@ -140,11 +140,11 @@ int main(int argc, char* argv[])
     xl.initialize(A.localNumberOfColumns, A.comm, dctx.get());
 
 #ifdef HPGMP_WITH_GINKGO
-    std::shared_ptr<const GinkgoMatrix<scalar_type>> mat =
-        dynamic_cast<GinkgoOptData<scalar_type>*>(A.optimizationData)->mat;
+    std::shared_ptr<const GinkgoMatrix<scalar_type, scalar_type>> mat =
+        dynamic_cast<GinkgoOptData<scalar_type, scalar_type>*>(A.optimizationData)->mat;
 #else
-    std::shared_ptr<const ELLMatrix<scalar_type>> mat =
-        dynamic_cast<EllOptData<scalar_type>*>(A.optimizationData)->mat;
+    std::shared_ptr<const ELLMatrix<scalar_type, scalar_type>> mat =
+        dynamic_cast<EllOptData<scalar_type, scalar_type>*>(A.optimizationData)->mat;
 #endif
     ierr = ell_multicolor_gs(false, mat.get(), &b, &xl);
 

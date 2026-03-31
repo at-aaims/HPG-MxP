@@ -39,7 +39,7 @@ GinkgoMatrix<hiscalar, loscalar>::GinkgoMatrix(const SparseMatrix<hiscalar>& A)
 }
 
 template<typename mscalar, typename vscalar>
-int ginkgo_interior_spmv(const GinkgoMatrix<mscalar>* mat, const Vector<vscalar>* x, Vector<vscalar>* y)
+int ginkgo_interior_spmv(const GinkgoMatrix<mscalar, mscalar>* mat, const Vector<vscalar>* x, Vector<vscalar>* y)
 {
     using gko_vec_type = gko::matrix::Dense<vscalar>;
     auto gko_exec      = mat->get_gko_mat()->get_executor();
@@ -64,7 +64,7 @@ int ginkgo_interior_spmv(const GinkgoMatrix<mscalar>* mat, const Vector<vscalar>
 }
 
 template<typename mscalar, typename vscalar>
-void ginkgo_spmv(const GinkgoMatrix<mscalar>* mat, const Vector<vscalar>* x, Vector<vscalar>* y)
+void ginkgo_spmv(const GinkgoMatrix<mscalar, mscalar>* mat, const Vector<vscalar>* x, Vector<vscalar>* y)
 {
     auto dctx = x->get_device_context();
 
@@ -104,10 +104,10 @@ template class GinkgoMatrix<double, double>;
 template class GinkgoMatrix<float, float>;
 
 template int ginkgo_interior_spmv<double, double>(
-    const GinkgoMatrix<double>*, const Vector<double>*, Vector<double>*);
+    const GinkgoMatrix<double, double>*, const Vector<double>*, Vector<double>*);
 
 template int ginkgo_interior_spmv<float, float>(
-    const GinkgoMatrix<float>*, const Vector<float>*, Vector<float>*);
+    const GinkgoMatrix<float, float>*, const Vector<float>*, Vector<float>*);
 
 template int ComputeSPMV_ginkgo< SparseMatrix<double>, Vector<double> >(
     const SparseMatrix<double>&, Vector<double>&, Vector<double>&);

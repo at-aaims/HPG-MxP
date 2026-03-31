@@ -217,8 +217,8 @@ int main(int argc, char* argv[])
     }
 #else // HPGMP_REFERENCE
     using gko_mat_type = gko_ell_type;
-    std::shared_ptr<const GinkgoMatrix<scalar_type>> mat =
-        dynamic_cast<GinkgoOptData<scalar_type>*>(A.optimizationData)->mat;
+    std::shared_ptr<const GinkgoMatrix<scalar_type, scalar_type>> mat =
+        dynamic_cast<GinkgoOptData<scalar_type, scalar_type>*>(A.optimizationData)->mat;
     auto mat_ptr = mat.get();
     // In principle, could use GinkgoMatrix directly, but keeping a second construction with ELL to
     // test the accessors below and because some solver functionalities are not
@@ -334,7 +334,7 @@ int main(int argc, char* argv[])
     }
 
     // Quick test for GinkgoSolver (Gauss Seidel) constructor
-    auto gko_gs = GinkgoSolver<scalar_type>(mat_ptr);
+    auto gko_gs = GinkgoSolver<scalar_type, scalar_type>(mat_ptr);
 
     // free
     DeleteMatrix(A);

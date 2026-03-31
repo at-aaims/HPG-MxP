@@ -310,7 +310,7 @@ __launch_bounds__(BLOCKSIZE)
 }
 
 template<typename mscalar, typename vscalar>
-int ell_multicolor_gs(const bool symmetric, const ELLMatrix<mscalar>* const A,
+int ell_multicolor_gs(const bool symmetric, const ELLMatrix<mscalar, mscalar>* const A,
                       const Vector<vscalar>* const r, Vector<vscalar>* const x)
 {
     assert(x->local_length() == A->get_local_num_cols());
@@ -362,7 +362,7 @@ int ell_multicolor_gs(const bool symmetric, const ELLMatrix<mscalar>* const A,
 }
 
 template<typename mscalar, typename vscalar>
-int ell_multicolor_gs_zero_initial(const bool symmetric, const ELLMatrix<mscalar>* const A,
+int ell_multicolor_gs_zero_initial(const bool symmetric, const ELLMatrix<mscalar, mscalar>* const A,
                                    const Vector<vscalar>* const r, Vector<vscalar>* const x)
 {
     assert(x->local_length() == A->get_local_num_cols());
@@ -414,17 +414,17 @@ int ell_multicolor_gs_zero_initial(const bool symmetric, const ELLMatrix<mscalar
 }
 
 template int ell_multicolor_gs(
-    bool sym, const ELLMatrix<double>* const A, const Vector<double>* const r,
+    bool sym, const ELLMatrix<double, double>* const A, const Vector<double>* const r,
     Vector<double>* const x);
 
 template int ell_multicolor_gs(
-    bool sym, const ELLMatrix<float>* const A, const Vector<float>* const r,
+    bool sym, const ELLMatrix<float, float>* const A, const Vector<float>* const r,
     Vector<float>* const x);
 
 template int ell_multicolor_gs_zero_initial(
-    bool sym, const ELLMatrix<double>* const A,
+    bool sym, const ELLMatrix<double, double>* const A,
     const Vector<double>* const r, Vector<double>* const x);
 
 template int ell_multicolor_gs_zero_initial(
-    bool sym, const ELLMatrix<float>* const A,
+    bool sym, const ELLMatrix<float, float>* const A,
     const Vector<float>* const r, Vector<float>* const x);

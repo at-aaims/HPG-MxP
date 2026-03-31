@@ -483,7 +483,7 @@ __global__ void simple_ell_spmv_halo(const local_int_t nrows, const int ldv, con
 }
 
 template<typename mscalar, typename vscalar>
-void ell_interior_spmv(const ELLMatrix<mscalar>* mat, const Vector<vscalar>* x, Vector<vscalar>* y)
+void ell_interior_spmv(const ELLMatrix<mscalar, mscalar>* mat, const Vector<vscalar>* x, Vector<vscalar>* y)
 {
     constexpr int block_size = 1024;
     int nblocks              = (mat->get_local_num_rows() - 1) / block_size + 1;
@@ -493,12 +493,12 @@ void ell_interior_spmv(const ELLMatrix<mscalar>* mat, const Vector<vscalar>* x, 
                                                         mat->get_col_idxs(), mat->get_values(), x->d_values(), y->d_values());
 }
 
-template void ell_interior_spmv(const ELLMatrix<double>* mat, const Vector<double>* x, Vector<double>* y);
-template void ell_interior_spmv(const ELLMatrix<float>* mat, const Vector<float>* x, Vector<float>* y);
-template void ell_interior_spmv(const ELLMatrix<float>* mat, const Vector<double>* x, Vector<double>* y);
+template void ell_interior_spmv(const ELLMatrix<double, double>* mat, const Vector<double>* x, Vector<double>* y);
+template void ell_interior_spmv(const ELLMatrix<float, float>* mat, const Vector<float>* x, Vector<float>* y);
+template void ell_interior_spmv(const ELLMatrix<float, float>* mat, const Vector<double>* x, Vector<double>* y);
 
 template<typename mscalar, typename vscalar>
-void ell_halo_spmv(const ELLMatrix<mscalar>* mat, const Vector<vscalar>* x, Vector<vscalar>* y)
+void ell_halo_spmv(const ELLMatrix<mscalar, mscalar>* mat, const Vector<vscalar>* x, Vector<vscalar>* y)
 {
     constexpr int block_size = 1024;
     const int nblocks        = (mat->get_num_halo_rows() - 1) / block_size + 1;
@@ -510,12 +510,12 @@ void ell_halo_spmv(const ELLMatrix<mscalar>* mat, const Vector<vscalar>* x, Vect
                                                              mat->get_reordering_permutation(), x->d_values(), y->d_values());
 }
 
-template void ell_halo_spmv(const ELLMatrix<double>* mat, const Vector<double>* x, Vector<double>* y);
-template void ell_halo_spmv(const ELLMatrix<float>* mat, const Vector<float>* x, Vector<float>* y);
-template void ell_halo_spmv(const ELLMatrix<float>* mat, const Vector<double>* x, Vector<double>* y);
+template void ell_halo_spmv(const ELLMatrix<double, double>* mat, const Vector<double>* x, Vector<double>* y);
+template void ell_halo_spmv(const ELLMatrix<float, float>* mat, const Vector<float>* x, Vector<float>* y);
+template void ell_halo_spmv(const ELLMatrix<float, float>* mat, const Vector<double>* x, Vector<double>* y);
 
 template<typename mscalar, typename vscalar>
-void ell_spmv(const ELLMatrix<mscalar>* mat, const Vector<vscalar>* x, Vector<vscalar>* y)
+void ell_spmv(const ELLMatrix<mscalar, mscalar>* mat, const Vector<vscalar>* x, Vector<vscalar>* y)
 {
     auto dctx = x->get_device_context();
 

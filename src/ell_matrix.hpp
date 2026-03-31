@@ -7,7 +7,7 @@
 #include "SparseMatrix.hpp"
 #include "optimization_base.hpp"
 
-template<typename hiscalar, typename loscalar = hiscalar>
+template<typename hiscalar, typename loscalar>
 class ELLMatrix : public DistMatrixBase
 {
 public:
@@ -85,12 +85,12 @@ protected:
 //void ell_spmv(const ELLMatrix<mscalar>* mat, const Vector<vscalar> *x, Vector<vscalar>* y);
 
 template<typename mscalar, typename vscalar>
-void ell_halo_spmv(const ELLMatrix<mscalar>* mat, const Vector<vscalar>* x, Vector<vscalar>* y);
+void ell_halo_spmv(const ELLMatrix<mscalar, mscalar>* mat, const Vector<vscalar>* x, Vector<vscalar>* y);
 
 template<typename mscalar, typename vscalar>
-void ell_interior_spmv(const ELLMatrix<mscalar>* mat, const Vector<vscalar>* x, Vector<vscalar>* y);
+void ell_interior_spmv(const ELLMatrix<mscalar, mscalar>* mat, const Vector<vscalar>* x, Vector<vscalar>* y);
 
-template<typename hiscalar, typename loscalar = hiscalar>
+template<typename hiscalar, typename loscalar>
 struct EllOptData : public OptimizationData
 {
     using matrix_type = ELLMatrix<hiscalar, loscalar>;

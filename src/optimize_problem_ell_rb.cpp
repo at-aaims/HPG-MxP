@@ -96,12 +96,12 @@ int OptimizeProblemELL(SparseMatrix<mat_scalar>& A, GMRESData<solver_scalar>& da
         }
 #endif
 #ifdef HPGMP_WITH_GINKGO
-        auto moptdata       = new GinkgoOptData<mat_scalar>;
-        moptdata->mat       = std::make_shared<GinkgoMatrix<mat_scalar>>(*M);
+        auto moptdata       = new GinkgoOptData<mat_scalar, mat_scalar>;
+        moptdata->mat       = std::make_shared<GinkgoMatrix<mat_scalar, mat_scalar>>(*M);
         M->optimizationData = moptdata;
 #else
-        auto moptdata       = new EllOptData<mat_scalar>;
-        moptdata->mat       = std::make_shared<ELLMatrix<mat_scalar>>(*M); // Performs row permutation
+        auto moptdata       = new EllOptData<mat_scalar, mat_scalar>;
+        moptdata->mat       = std::make_shared<ELLMatrix<mat_scalar, mat_scalar>>(*M); // Performs row permutation
         M->optimizationData = moptdata;
 #endif
 #ifdef HPGMP_VERBOSE
