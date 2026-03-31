@@ -36,13 +36,6 @@ GinkgoMatrix<hiscalar, loscalar>::GinkgoMatrix(const SparseMatrix<hiscalar>& A)
     {
         throw std::runtime_error("Unsupported gko_mat_type in GinkgoMatrix!");
     }
-
-    // TODO
-    // Delete data from ELLMatrix that are no longer needed
-    //this->dctx_->device_free(this->col_idxs_);
-    //this->dctx_->device_free(this->values_);
-    //this->col_idxs_ = nullptr;
-    //this->values_   = nullptr;
 }
 
 template<typename mscalar, typename vscalar>
