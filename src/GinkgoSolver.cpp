@@ -5,13 +5,13 @@
 template<typename hiscalar, typename loscalar>
 GinkgoSolver<hiscalar, loscalar>::GinkgoSolver(const GinkgoMatrix<hiscalar>* mat)
 {
-    auto gko_mat        = mat->get_gko_mat();
-    auto gko_exec       = gko_mat->get_executor();
-    auto color_ptrs     = mat->get_independent_set_offsets();
+    auto gko_mat    = mat->get_gko_mat();
+    auto gko_exec   = gko_mat->get_executor();
+    auto color_ptrs = mat->get_independent_set_offsets();
 
     // TODO: make the interface take in the data pointer or a const array
-    std::vector<local_int_t> color_ptrs_vector(color_ptrs, color_ptrs + mat->get_num_independent_sets()); 
-                                                                                                         
+    std::vector<local_int_t> color_ptrs_vector(color_ptrs, color_ptrs + mat->get_num_independent_sets());
+
     auto solver_factory = solver_type::build()
                               .with_criteria(gko::stop::Iteration::build().with_max_iters(1u))
                               .with_color_ptrs(color_ptrs_vector)
@@ -61,13 +61,13 @@ int ginkgo_multicolor_gs(const GinkgoSolver<mscalar>* interior_solver, const Gin
 template class GinkgoSolver<double, double>;
 template class GinkgoSolver<float, float>;
 
-template int ginkgo_multicolor_gs_interior(const GinkgoSolver<double>* interior_solver, const GinkgoMatrix<double>* mat, 
+template int ginkgo_multicolor_gs_interior(const GinkgoSolver<double>* interior_solver, const GinkgoMatrix<double>* mat,
                                            const Vector<double>* r, Vector<double>* x);
-template int ginkgo_multicolor_gs_interior(const GinkgoSolver<float>* interior_solver, const GinkgoMatrix<float>* mat, 
+template int ginkgo_multicolor_gs_interior(const GinkgoSolver<float>* interior_solver, const GinkgoMatrix<float>* mat,
                                            const Vector<float>* r, Vector<float>* x);
 
-template int ginkgo_multicolor_gs(const GinkgoSolver<double>* interior_solver, const GinkgoMatrix<double>* mat, 
+template int ginkgo_multicolor_gs(const GinkgoSolver<double>* interior_solver, const GinkgoMatrix<double>* mat,
                                   const Vector<double>* r, Vector<double>* x);
-template int ginkgo_multicolor_gs(const GinkgoSolver<float>* interior_solver, const GinkgoMatrix<float>* mat, 
+template int ginkgo_multicolor_gs(const GinkgoSolver<float>* interior_solver, const GinkgoMatrix<float>* mat,
                                   const Vector<float>* r, Vector<float>* x);
 #endif
