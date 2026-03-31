@@ -80,14 +80,8 @@ ELLMatrix<hiscalar, loscalar>::ELLMatrix(const SparseMatrix<hiscalar>& A)
 template<typename hiscalar, typename loscalar>
 ELLMatrix<hiscalar, loscalar>::~ELLMatrix()
 {
-    if (col_idxs_ != nullptr)
-    {
-        dctx_->device_free(col_idxs_);
-    }
-    if (values_ != nullptr)
-    {
-        dctx_->device_free(values_);
-    }
+    dctx_->device_free(col_idxs_);
+    dctx_->device_free(values_);
     dctx_->device_free(halo_col_idxs_);
     dctx_->device_free(halo_values_);
     dctx_->device_free(diag_idxs_);
