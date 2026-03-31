@@ -66,7 +66,7 @@ int ginkgo_interior_spmv(const GinkgoMatrix<mscalar>* mat, const Vector<vscalar>
 template<typename mscalar, typename vscalar>
 void ginkgo_spmv(const GinkgoMatrix<mscalar>* mat, const Vector<vscalar>* x, Vector<vscalar>* y)
 {
-    auto dctx    = x->get_device_context();
+    auto dctx = x->get_device_context();
 
     // On halo stream: pack send buffer and copy to host if needed
     x->update_halos_pack_send_buffer(mat);

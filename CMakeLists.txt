@@ -92,8 +92,8 @@ if(HPGMP_ENABLE_HIP OR HPGMP_ENABLE_CUDA)
             src/ComputeWAXPBY_opt.dev.cpp
             src/ell_matrix.dev.cpp
             src/ell_multicolor_gs.dev.cpp
-            src/GinkgoMatrix.cpp 
-            src/GinkgoSolver.cpp 
+            src/GinkgoMatrix.cpp
+            src/GinkgoSolver.cpp
             src/multicoloring.dev.cpp
             src/permute.dev.cpp
             src/prolongation.dev.cpp
@@ -140,7 +140,7 @@ set(host_sources
     src/ComputeSYMGS.cpp
     src/ComputeTRSM.cpp
     src/ComputeWAXPBY.cpp
-    src/GinkgoInterface.cpp 
+    src/GinkgoInterface.cpp
     src/GMRES.cpp
     src/GMRES_IR.cpp
     src/GenerateGeometry.cpp
@@ -198,7 +198,7 @@ if(HPGMP_BUILD_REFERENCE)
                          src/ComputeRestriction_gpu.cpp src/ComputeSPMV_gpu.cpp)
     endif()
 else()
-    set(host_sources ${host_sources} src/ComputeMG.cpp src/matrix_base.cpp src/optimize_problem_ell_rb.cpp )
+    set(host_sources ${host_sources} src/ComputeMG.cpp src/matrix_base.cpp src/optimize_problem_ell_rb.cpp)
 endif()
 
 add_library(hpgmp ${host_sources})

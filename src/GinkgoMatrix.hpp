@@ -13,21 +13,21 @@
  * mixed-precision benchmark
  */
 template<typename input_scalar_type>
-struct GinkgoMatrixSelection 
+struct GinkgoMatrixSelection
 { };
 
 template<>
 struct GinkgoMatrixSelection<float>
-{ 
+{
     using scalar_type = float;
-    using value = gko::matrix::AMP<scalar_type, local_int_t>;
+    using value       = gko::matrix::AMP<scalar_type, local_int_t>;
 };
 
 template<>
 struct GinkgoMatrixSelection<double>
-{ 
+{
     using scalar_type = double;
-    using value = gko::matrix::Ell<scalar_type, local_int_t>;
+    using value       = gko::matrix::Ell<scalar_type, local_int_t>;
 };
 
 template<typename hiscalar, typename loscalar = hiscalar>
