@@ -22,11 +22,11 @@ GinkgoSolver<hiscalar, loscalar>::GinkgoSolver(const GinkgoMatrix<hiscalar, hisc
     std::cout << "Using Ginkgo (FwdGaussSeidel) solver.\n";
 }
 
-template<typename mscalar, typename vscalar>
-int ginkgo_multicolor_gs_interior(const GinkgoSolver<mscalar, mscalar>* interior_solver, const GinkgoMatrix<mscalar, mscalar>* mat,
-                                  const Vector<vscalar>* r, Vector<vscalar>* x)
+template<typename mat_scalar_type, typename vec_scalar_type>
+int ginkgo_multicolor_gs_interior(const GinkgoSolver<mat_scalar_type, mat_scalar_type>* interior_solver, const GinkgoMatrix<mat_scalar_type, mat_scalar_type>* mat,
+                                  const Vector<vec_scalar_type>* r, Vector<vec_scalar_type>* x)
 {
-    using gko_vec_type = gko::matrix::Dense<vscalar>;
+    using gko_vec_type = gko::matrix::Dense<vec_scalar_type>;
     auto gko_solver    = interior_solver->get_solver();
     auto gko_exec      = mat->get_gko_mat()->get_executor();
     auto gko_r =
@@ -49,9 +49,9 @@ int ginkgo_multicolor_gs_interior(const GinkgoSolver<mscalar, mscalar>* interior
     return 0;
 }
 
-template<typename mscalar, typename vscalar>
-int ginkgo_multicolor_gs(const GinkgoSolver<mscalar, mscalar>* interior_solver, const GinkgoMatrix<mscalar, mscalar>* mat,
-                         const Vector<vscalar>* r, Vector<vscalar>* x)
+template<typename mat_scalar_type, typename vec_scalar_type>
+int ginkgo_multicolor_gs(const GinkgoSolver<mat_scalar_type, mat_scalar_type>* interior_solver, const GinkgoMatrix<mat_scalar_type, mat_scalar_type>* mat,
+                         const Vector<vec_scalar_type>* r, Vector<vec_scalar_type>* x)
 {
     int ierr = ginkgo_multicolor_gs_interior(interior_solver, mat, r, x);
     return 0;

@@ -163,13 +163,13 @@ __launch_bounds__(BLOCKSIZEX* BLOCKSIZEY)
 #endif
 }
 
-template<unsigned int BLOCKSIZEX, unsigned int BLOCKSIZEY, typename mscalar>
+template<unsigned int BLOCKSIZEX, unsigned int BLOCKSIZEY, typename mat_scalar_type>
 __launch_bounds__(BLOCKSIZEX* BLOCKSIZEY)
     __global__ void kernel_to_ell_val(const local_int_t m,
                                       const local_int_t nnz_per_row,
                                       const int ld_v,
-                                      const mscalar* __restrict__ matrixValues,
-                                      mscalar* __restrict__ ell_val)
+                                      const mat_scalar_type* __restrict__ matrixValues,
+                                      mat_scalar_type* __restrict__ ell_val)
 {
     const local_int_t row = blockIdx.x * BLOCKSIZEY + threadIdx.y;
 
@@ -181,7 +181,7 @@ __launch_bounds__(BLOCKSIZEX* BLOCKSIZEY)
     ell_val[idx]          = matrixValues[row * nnz_per_row + threadIdx.x];
 }
 
-template<unsigned int BLOCKSIZE, typename mscalar>
+template<unsigned int BLOCKSIZE, typename mat_scalar_type>
 __launch_bounds__(BLOCKSIZE)
     __global__ void kernel_to_halo(const local_int_t n_halo_rows,
                                    const local_int_t m,
@@ -192,10 +192,10 @@ __launch_bounds__(BLOCKSIZE)
                                    const int halo_ld_i,
                                    const int halo_ld_v,
                                    const local_int_t* __restrict__ ell_col_ind,
-                                   const mscalar* __restrict__ ell_val,
+                                   const mat_scalar_type* __restrict__ ell_val,
                                    const local_int_t* __restrict__ halo_row_ind,
                                    local_int_t* __restrict__ halo_col_ind,
-                                   mscalar* __restrict__ halo_val)
+                                   mat_scalar_type* __restrict__ halo_val)
 {
     const local_int_t gid = blockIdx.x * BLOCKSIZE + threadIdx.x;
 
@@ -390,13 +390,13 @@ void ELLMatrix<hiscalar, loscalar>::permute_rows(const local_int_t* const perm)
     dctx_->device_free(tmp_vals);
 }
 
-template<unsigned int BLOCKSIZE, typename mscalar, typename diag_scalar>
+template<unsigned int BLOCKSIZE, typename mat_scalar_type, typename diag_scalar>
 __launch_bounds__(BLOCKSIZE)
     __global__ void kernel_extract_diag_index(const local_int_t m,
                                               const local_int_t ell_width,
                                               const int ldi, const int ldv,
                                               const local_int_t* __restrict__ ell_col_ind,
-                                              const mscalar* __restrict__ ell_val,
+                                              const mat_scalar_type* __restrict__ ell_val,
                                               local_int_t* __restrict__ diag_idx,
                                               diag_scalar* __restrict__ inv_diag)
 {
@@ -433,17 +433,17 @@ void ELLMatrix<hiscalar, loscalar>::extract_diagonal()
 template class ELLMatrix<double, double>;
 template class ELLMatrix<float, float>;
 
-template<typename mscalar, typename vscalar>
+template<typename mat_scalar_type, typename vec_scalar_type>
 __global__ void simple_ell_spmv(const local_int_t nrows, const int ldv, const int ldi,
                                 const local_int_t width,
-                                const local_int_t* const col_idxs, const mscalar* const mvalues,
-                                const vscalar* const xvals, vscalar* const __restrict__ yvals)
+                                const local_int_t* const col_idxs, const mat_scalar_type* const mvalues,
+                                const vec_scalar_type* const xvals, vec_scalar_type* const __restrict__ yvals)
 {
     const local_int_t row_idx = blockIdx.x * blockDim.x + threadIdx.x;
     if (row_idx >= nrows) {
         return;
     }
-    vscalar partial = 0;
+    vec_scalar_type partial = 0;
     for (int j = 0; j < width; j++) {
         //const auto col = col_idxs[row_idx + j*ldi];
         const local_int_t col = __ldcg(col_idxs + row_idx + j * ldi);
@@ -451,39 +451,39 @@ __global__ void simple_ell_spmv(const local_int_t nrows, const int ldv, const in
             // skip over halo dependencies; these are taken care of in the halo kernel.
             continue;
         }
-        //partial += static_cast<vscalar>(mvalues[row_idx + j*ldv])
-        //    * static_cast<vscalar>(xvals[col]);
-        partial = fma(static_cast<vscalar>(__ldcg(mvalues + row_idx + j * ldv)),
+        //partial += static_cast<vec_scalar_type>(mvalues[row_idx + j*ldv])
+        //    * static_cast<vec_scalar_type>(xvals[col]);
+        partial = fma(static_cast<vec_scalar_type>(__ldcg(mvalues + row_idx + j * ldv)),
                       xvals[col], partial);
     }
     //yvals[row_idx] = partial;
     __stcg(yvals + row_idx, partial);
 }
 
-template<typename mscalar, typename vscalar>
+template<typename mat_scalar_type, typename vec_scalar_type>
 __global__ void simple_ell_spmv_halo(const local_int_t nrows, const int ldv, const int ldi,
                                      const local_int_t width, const local_int_t* const halo_row_ind,
-                                     const local_int_t* const col_idxs, const mscalar* const mvalues,
+                                     const local_int_t* const col_idxs, const mat_scalar_type* const mvalues,
                                      const local_int_t* const perm,
-                                     const vscalar* const xvals, vscalar* const __restrict__ yvals)
+                                     const vec_scalar_type* const xvals, vec_scalar_type* const __restrict__ yvals)
 {
     const local_int_t row_idx = blockIdx.x * blockDim.x + threadIdx.x;
     if (row_idx >= nrows) {
         return;
     }
-    vscalar partial = 0;
+    vec_scalar_type partial = 0;
     for (int j = 0; j < width; j++) {
         const auto col = col_idxs[row_idx + j * ldi];
         if (col < 0) {
             continue;
         }
-        partial += static_cast<vscalar>(mvalues[row_idx + j * ldv]) * static_cast<vscalar>(xvals[col]);
+        partial += static_cast<vec_scalar_type>(mvalues[row_idx + j * ldv]) * static_cast<vec_scalar_type>(xvals[col]);
     }
     yvals[perm[halo_row_ind[row_idx]]] += partial;
 }
 
-template<typename mscalar, typename vscalar>
-void ell_interior_spmv(const ELLMatrix<mscalar, mscalar>* mat, const Vector<vscalar>* x, Vector<vscalar>* y)
+template<typename mat_scalar_type, typename vec_scalar_type>
+void ell_interior_spmv(const ELLMatrix<mat_scalar_type, mat_scalar_type>* mat, const Vector<vec_scalar_type>* x, Vector<vec_scalar_type>* y)
 {
     constexpr int block_size = 1024;
     int nblocks              = (mat->get_local_num_rows() - 1) / block_size + 1;
@@ -497,8 +497,8 @@ template void ell_interior_spmv(const ELLMatrix<double, double>* mat, const Vect
 template void ell_interior_spmv(const ELLMatrix<float, float>* mat, const Vector<float>* x, Vector<float>* y);
 template void ell_interior_spmv(const ELLMatrix<float, float>* mat, const Vector<double>* x, Vector<double>* y);
 
-template<typename mscalar, typename vscalar>
-void ell_halo_spmv(const ELLMatrix<mscalar, mscalar>* mat, const Vector<vscalar>* x, Vector<vscalar>* y)
+template<typename mat_scalar_type, typename vec_scalar_type>
+void ell_halo_spmv(const ELLMatrix<mat_scalar_type, mat_scalar_type>* mat, const Vector<vec_scalar_type>* x, Vector<vec_scalar_type>* y)
 {
     constexpr int block_size = 1024;
     const int nblocks        = (mat->get_num_halo_rows() - 1) / block_size + 1;
@@ -514,8 +514,8 @@ template void ell_halo_spmv(const ELLMatrix<double, double>* mat, const Vector<d
 template void ell_halo_spmv(const ELLMatrix<float, float>* mat, const Vector<float>* x, Vector<float>* y);
 template void ell_halo_spmv(const ELLMatrix<float, float>* mat, const Vector<double>* x, Vector<double>* y);
 
-template<typename mscalar, typename vscalar>
-void ell_spmv(const ELLMatrix<mscalar, mscalar>* mat, const Vector<vscalar>* x, Vector<vscalar>* y)
+template<typename mat_scalar_type, typename vec_scalar_type>
+void ell_spmv(const ELLMatrix<mat_scalar_type, mat_scalar_type>* mat, const Vector<vec_scalar_type>* x, Vector<vec_scalar_type>* y)
 {
     auto dctx = x->get_device_context();
 

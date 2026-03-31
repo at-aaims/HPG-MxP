@@ -32,7 +32,7 @@
 
   @param[in]  n the number of vector elements (on this processor)
   @param[in]  x, y the input vectors
-  @param[out] result a pointer to scalar value, on exit will contain the result.
+  @param[out] result a pointer to scalar_type value, on exit will contain the result.
   @param[out] time_allreduce the time it took to perform the communication between processes
   @param[out] isOptimized should be set to false if this routine uses the reference implementation (is not optimized); otherwise leave it unchanged
 

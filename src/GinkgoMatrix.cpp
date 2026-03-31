@@ -38,10 +38,10 @@ GinkgoMatrix<hiscalar, loscalar>::GinkgoMatrix(const SparseMatrix<hiscalar>& A)
     }
 }
 
-template<typename mscalar, typename vscalar>
-int ginkgo_interior_spmv(const GinkgoMatrix<mscalar, mscalar>* mat, const Vector<vscalar>* x, Vector<vscalar>* y)
+template<typename mat_scalar_type, typename vec_scalar_type>
+int ginkgo_interior_spmv(const GinkgoMatrix<mat_scalar_type, mat_scalar_type>* mat, const Vector<vec_scalar_type>* x, Vector<vec_scalar_type>* y)
 {
-    using gko_vec_type = gko::matrix::Dense<vscalar>;
+    using gko_vec_type = gko::matrix::Dense<vec_scalar_type>;
     auto gko_exec      = mat->get_gko_mat()->get_executor();
     auto gko_x =
         gko_vec_type::create_const(gko_exec,
@@ -63,8 +63,8 @@ int ginkgo_interior_spmv(const GinkgoMatrix<mscalar, mscalar>* mat, const Vector
     return 0;
 }
 
-template<typename mscalar, typename vscalar>
-void ginkgo_spmv(const GinkgoMatrix<mscalar, mscalar>* mat, const Vector<vscalar>* x, Vector<vscalar>* y)
+template<typename mat_scalar_type, typename vec_scalar_type>
+void ginkgo_spmv(const GinkgoMatrix<mat_scalar_type, mat_scalar_type>* mat, const Vector<vec_scalar_type>* x, Vector<vec_scalar_type>* y)
 {
     auto dctx = x->get_device_context();
 
@@ -72,7 +72,7 @@ void ginkgo_spmv(const GinkgoMatrix<mscalar, mscalar>* mat, const Vector<vscalar
     x->update_halos_pack_send_buffer(mat);
 
     std::cout << "Using Ginkgo SPMV.\n";
-    ginkgo_interior_spmv<mscalar, vscalar>(mat, x, y);
+    ginkgo_interior_spmv<mat_scalar_type, vec_scalar_type>(mat, x, y);
 
     // wait for comms to complete
     x->update_halos_send_receive(mat);

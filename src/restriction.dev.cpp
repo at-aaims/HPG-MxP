@@ -78,17 +78,17 @@ __launch_bounds__(BLOCKSIZE)
     coarse[perm_coarse[idx_coarse]] = fine[idx_fine] - data[idx_fine];
 }
 
-template<unsigned int BLOCKSIZE, unsigned int WIDTH, typename mat_scalar, typename vec_scalar>
+template<unsigned int BLOCKSIZE, unsigned int WIDTH, typename mat_scalar_type, typename vec_scalar_type>
 __launch_bounds__(BLOCKSIZE)
     __global__ void kernel_fused_restrict_spmv(const local_int_t size,
                                                const local_int_t* f2cOperator,
-                                               const vec_scalar* r_fine,
+                                               const vec_scalar_type* r_fine,
                                                const local_int_t m, const local_int_t n,
                                                const int ldi, const int ldv,
                                                const local_int_t* __restrict__ ell_col_ind,
-                                               const mat_scalar* ell_val,
-                                               const vec_scalar* xf,
-                                               vec_scalar* r_coarse,
+                                               const mat_scalar_type* ell_val,
+                                               const vec_scalar_type* xf,
+                                               vec_scalar_type* r_coarse,
                                                const local_int_t* __restrict__ perm_fine,
                                                const local_int_t* __restrict__ perm_coarse)
 {
@@ -100,7 +100,7 @@ __launch_bounds__(BLOCKSIZE)
     const local_int_t idx_perm_fine   = __ldcg(perm_fine + idx_fine);
     const local_int_t idx_perm_coarse = __ldcg(perm_coarse + idx_coarse);
 
-    vec_scalar sum = __ldcg(r_fine + idx_perm_fine);
+    vec_scalar_type sum = __ldcg(r_fine + idx_perm_fine);
 
 #pragma unroll
     for (local_int_t p = 0; p < WIDTH; ++p)
@@ -108,7 +108,7 @@ __launch_bounds__(BLOCKSIZE)
         const local_int_t col = __ldcg(ell_col_ind + idx_perm_fine + p * ldi);
 
         if (col >= 0 && col < m) {
-            sum = fma(-static_cast<vec_scalar>(
+            sum = fma(-static_cast<vec_scalar_type>(
                           __ldcg(ell_val + idx_perm_fine + p * ldv)),
                       xf[col], sum);
         }
@@ -116,7 +116,7 @@ __launch_bounds__(BLOCKSIZE)
     __stcg(r_coarse + idx_perm_coarse, sum);
 }
 
-template<unsigned int BLOCKSIZE, typename mat_scalar, typename vec_scalar>
+template<unsigned int BLOCKSIZE, typename mat_scalar_type, typename vec_scalar_type>
 __launch_bounds__(BLOCKSIZE)
     __global__ void kernel_fused_restrict_spmv_halo(const local_int_t m,
                                                     const local_int_t n,
@@ -125,9 +125,9 @@ __launch_bounds__(BLOCKSIZE)
                                                     const int ldi, const int ldv,
                                                     const local_int_t* __restrict__ halo_row_ind,
                                                     const local_int_t* __restrict__ halo_col_ind,
-                                                    const mat_scalar* __restrict__ halo_val,
-                                                    const vec_scalar* __restrict__ xf,
-                                                    vec_scalar* __restrict__ coarse,
+                                                    const mat_scalar_type* __restrict__ halo_val,
+                                                    const vec_scalar_type* __restrict__ xf,
+                                                    vec_scalar_type* __restrict__ coarse,
                                                     const local_int_t* __restrict__ perm_coarse)
 {
     const local_int_t row = blockIdx.x * BLOCKSIZE + threadIdx.x;
@@ -141,7 +141,7 @@ __launch_bounds__(BLOCKSIZE)
         return;
     }
 
-    vec_scalar sum = 0.0;
+    vec_scalar_type sum = 0.0;
 
     for (local_int_t p = 0; p < halo_width; ++p)
     {
@@ -166,8 +166,8 @@ __launch_bounds__(BLOCKSIZE)
 
   @return Returns zero on success and a non-zero value otherwise.
 */
-template<typename mscalar, typename vscalar>
-int restriction(const SparseMatrix<mscalar>& A, const Vector<vscalar>& rf)
+template<typename mat_scalar_type, typename vec_scalar_type>
+int restriction(const SparseMatrix<mat_scalar_type>& A, const Vector<vec_scalar_type>& rf)
 {
     auto stream_interior = A.dctx->get_compute_stream();
     dim3 blocks((A.mgData->rc->local_length() - 1) / 128 + 1);
@@ -188,16 +188,16 @@ int restriction(const SparseMatrix<mscalar>& A, const Vector<vscalar>& rf)
 template int restriction(const SparseMatrix<float>& A, const Vector<float>& rf);
 template int restriction(const SparseMatrix<double>& A, const Vector<double>& rf);
 
-template<typename mscalar, typename vscalar>
-int fused_spmv_restriction(const SparseMatrix<mscalar>& A, const Vector<vscalar>& rf,
-                           const Vector<vscalar>& xf)
+template<typename mat_scalar_type, typename vec_scalar_type>
+int fused_spmv_restriction(const SparseMatrix<mat_scalar_type>& A, const Vector<vec_scalar_type>& rf,
+                           const Vector<vec_scalar_type>& xf)
 {
 #ifdef HPGMP_WITH_GINKGO
-    std::shared_ptr<const GinkgoMatrix<mscalar, mscalar>> mat =
-        dynamic_cast<GinkgoOptData<mscalar, mscalar>*>(A.optimizationData)->mat;
+    std::shared_ptr<const GinkgoMatrix<mat_scalar_type, mat_scalar_type>> mat =
+        dynamic_cast<GinkgoOptData<mat_scalar_type, mat_scalar_type>*>(A.optimizationData)->mat;
 #else
-    std::shared_ptr<const ELLMatrix<mscalar, mscalar>> mat =
-        dynamic_cast<EllOptData<mscalar, mscalar>*>(A.optimizationData)->mat;
+    std::shared_ptr<const ELLMatrix<mat_scalar_type, mat_scalar_type>> mat =
+        dynamic_cast<EllOptData<mat_scalar_type, mat_scalar_type>*>(A.optimizationData)->mat;
 #endif
     auto stream_interior = mat->get_device_context()->get_compute_stream();
 #ifndef HPCG_NO_MPI

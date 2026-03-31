@@ -81,14 +81,14 @@ protected:
     void convert_from_csr(const SparseMatrix<hiscalar>& A);
 };
 
-//template <typename mscalar, typename vscalar>
-//void ell_spmv(const ELLMatrix<mscalar>* mat, const Vector<vscalar> *x, Vector<vscalar>* y);
+//template <typename mat_scalar_type, typename vec_scalar_type>
+//void ell_spmv(const ELLMatrix<mat_scalar_type>* mat, const Vector<vec_scalar_type> *x, Vector<vec_scalar_type>* y);
 
-template<typename mscalar, typename vscalar>
-void ell_halo_spmv(const ELLMatrix<mscalar, mscalar>* mat, const Vector<vscalar>* x, Vector<vscalar>* y);
+template<typename mat_scalar_type, typename vec_scalar_type>
+void ell_halo_spmv(const ELLMatrix<mat_scalar_type, mat_scalar_type>* mat, const Vector<vec_scalar_type>* x, Vector<vec_scalar_type>* y);
 
-template<typename mscalar, typename vscalar>
-void ell_interior_spmv(const ELLMatrix<mscalar, mscalar>* mat, const Vector<vscalar>* x, Vector<vscalar>* y);
+template<typename mat_scalar_type, typename vec_scalar_type>
+void ell_interior_spmv(const ELLMatrix<mat_scalar_type, mat_scalar_type>* mat, const Vector<vec_scalar_type>* x, Vector<vec_scalar_type>* y);
 
 template<typename hiscalar, typename loscalar>
 struct EllOptData : public OptimizationData

@@ -57,9 +57,9 @@
   @see GenerateGeometry
   @see GenerateProblem
 */
-template<typename mat_scalar, typename solver_scalar, typename vec_scalar>
-int OptimizeProblemELL(SparseMatrix<mat_scalar>& A, GMRESData<solver_scalar>& data,
-                       Vector<vec_scalar>& b, Vector<vec_scalar>& x, Vector<vec_scalar>& xexact)
+template<typename mat_scalar_type, typename solver_scalar, typename vec_scalar_type>
+int OptimizeProblemELL(SparseMatrix<mat_scalar_type>& A, GMRESData<solver_scalar>& data,
+                       Vector<vec_scalar_type>& b, Vector<vec_scalar_type>& x, Vector<vec_scalar_type>& xexact)
 {
     b.update_device_data();
     xexact.update_device_data();
@@ -67,8 +67,8 @@ int OptimizeProblemELL(SparseMatrix<mat_scalar>& A, GMRESData<solver_scalar>& da
     auto dctx             = A.dctx;
     const int local_nrows = A.localNumberOfRows;
 
-    SparseMatrix<mat_scalar>* M = &A;
-    int igrid                   = 0;
+    SparseMatrix<mat_scalar_type>* M = &A;
+    int igrid                        = 0;
     while (M != NULL)
     {
 
@@ -78,10 +78,10 @@ int OptimizeProblemELL(SparseMatrix<mat_scalar>& A, GMRESData<solver_scalar>& da
             dctx->device_alloc(M->max_nnz_per_row * local_nrows * sizeof(local_int_t)));
         dctx->copy_host_to_device_sync(M->d_mtxIndL, M->mtxIndL[0],
                                        M->max_nnz_per_row * local_nrows * sizeof(local_int_t));
-        M->d_matrixValues = reinterpret_cast<mat_scalar*>(
-            dctx->device_alloc(M->max_nnz_per_row * local_nrows * sizeof(mat_scalar)));
+        M->d_matrixValues = reinterpret_cast<mat_scalar_type*>(
+            dctx->device_alloc(M->max_nnz_per_row * local_nrows * sizeof(mat_scalar_type)));
         dctx->copy_host_to_device_sync(M->d_matrixValues, M->matrixValues[0],
-                                       M->max_nnz_per_row * local_nrows * sizeof(mat_scalar));
+                                       M->max_nnz_per_row * local_nrows * sizeof(mat_scalar_type));
 
         // Perform matrix coloring
         multicolor_JPL(*M);
@@ -96,12 +96,12 @@ int OptimizeProblemELL(SparseMatrix<mat_scalar>& A, GMRESData<solver_scalar>& da
         }
 #endif
 #ifdef HPGMP_WITH_GINKGO
-        auto moptdata       = new GinkgoOptData<mat_scalar, mat_scalar>;
-        moptdata->mat       = std::make_shared<GinkgoMatrix<mat_scalar, mat_scalar>>(*M);
+        auto moptdata       = new GinkgoOptData<mat_scalar_type, mat_scalar_type>;
+        moptdata->mat       = std::make_shared<GinkgoMatrix<mat_scalar_type, mat_scalar_type>>(*M);
         M->optimizationData = moptdata;
 #else
-        auto moptdata       = new EllOptData<mat_scalar, mat_scalar>;
-        moptdata->mat       = std::make_shared<ELLMatrix<mat_scalar, mat_scalar>>(*M); // Performs row permutation
+        auto moptdata       = new EllOptData<mat_scalar_type, mat_scalar_type>;
+        moptdata->mat       = std::make_shared<ELLMatrix<mat_scalar_type, mat_scalar_type>>(*M); // Performs row permutation
         M->optimizationData = moptdata;
 #endif
 #ifdef HPGMP_VERBOSE

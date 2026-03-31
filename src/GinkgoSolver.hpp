@@ -22,14 +22,14 @@ protected:
     std::shared_ptr<solver_type> solver_;
 };
 
-template<typename mscalar, typename vscalar>
-int ginkgo_multicolor_gs_interior(const GinkgoSolver<mscalar, mscalar>* interior_solver,
-                                  const GinkgoMatrix<mscalar, mscalar>* mat,
-                                  const Vector<vscalar>* r, Vector<vscalar>* x);
+template<typename mat_scalar_type, typename vec_scalar_type>
+int ginkgo_multicolor_gs_interior(const GinkgoSolver<mat_scalar_type, mat_scalar_type>* interior_solver,
+                                  const GinkgoMatrix<mat_scalar_type, mat_scalar_type>* mat,
+                                  const Vector<vec_scalar_type>* r, Vector<vec_scalar_type>* x);
 
-template<typename mscalar, typename vscalar>
-int ginkgo_multicolor_gs(const GinkgoSolver<mscalar, mscalar>* interior_solver,
-                         const GinkgoMatrix<mscalar, mscalar>* mat,
-                         const Vector<vscalar>* r, Vector<vscalar>* x);
+template<typename mat_scalar_type, typename vec_scalar_type>
+int ginkgo_multicolor_gs(const GinkgoSolver<mat_scalar_type, mat_scalar_type>* interior_solver,
+                         const GinkgoMatrix<mat_scalar_type, mat_scalar_type>* mat,
+                         const Vector<vec_scalar_type>* r, Vector<vec_scalar_type>* x);
 
 #endif
