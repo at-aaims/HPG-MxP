@@ -30,7 +30,7 @@ struct GinkgoMatrixSelection<double>
     using value       = gko::matrix::Ell<scalar_type, local_int_t>;
 };
 
-template<typename hiscalar, typename loscalar = hiscalar>
+template<typename hiscalar, typename loscalar>
 class GinkgoMatrix : public ELLMatrix<hiscalar, loscalar>
 {
 public:
@@ -56,7 +56,7 @@ protected:
     std::shared_ptr<gko_mat_type> gko_mat_;
 };
 
-template<typename hiscalar, typename loscalar = hiscalar>
+template<typename hiscalar, typename loscalar>
 struct GinkgoOptData : public EllOptData<hiscalar, loscalar>
 {
     using matrix_type = GinkgoMatrix<hiscalar, loscalar>;
@@ -64,7 +64,7 @@ struct GinkgoOptData : public EllOptData<hiscalar, loscalar>
 };
 
 template<typename mscalar, typename vscalar>
-int ginkgo_interior_spmv(const GinkgoMatrix<mscalar>* mat, const Vector<vscalar>* x, Vector<vscalar>* y);
+int ginkgo_interior_spmv(const GinkgoMatrix<mscalar, mscalar>* mat, const Vector<vscalar>* x, Vector<vscalar>* y);
 
 template<class SparseMatrix_type, class Vector_type>
 int ComputeSPMV_ginkgo(const SparseMatrix_type& A, Vector_type& x, Vector_type& y);

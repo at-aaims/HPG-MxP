@@ -193,11 +193,11 @@ int fused_spmv_restriction(const SparseMatrix<mscalar>& A, const Vector<vscalar>
                            const Vector<vscalar>& xf)
 {
 #ifdef HPGMP_WITH_GINKGO
-    std::shared_ptr<const GinkgoMatrix<mscalar>> mat =
-        dynamic_cast<GinkgoOptData<mscalar>*>(A.optimizationData)->mat;
+    std::shared_ptr<const GinkgoMatrix<mscalar, mscalar>> mat =
+        dynamic_cast<GinkgoOptData<mscalar, mscalar>*>(A.optimizationData)->mat;
 #else
-    std::shared_ptr<const ELLMatrix<mscalar>> mat =
-        dynamic_cast<EllOptData<mscalar>*>(A.optimizationData)->mat;
+    std::shared_ptr<const ELLMatrix<mscalar, mscalar>> mat =
+        dynamic_cast<EllOptData<mscalar, mscalar>*>(A.optimizationData)->mat;
 #endif
     auto stream_interior = mat->get_device_context()->get_compute_stream();
 #ifndef HPCG_NO_MPI
