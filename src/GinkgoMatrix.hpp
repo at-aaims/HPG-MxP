@@ -4,14 +4,40 @@
 #include "ell_matrix.hpp"
 #include "GinkgoInterface.hpp"
 
+/**
+ * Ginkgo matrix selection depending on the input scalar type
+ * Note we only use Ginkgo for the local part of the matrix; not the non-local (halo) part.
+ * Ell<double> if input_scalar_type is double
+ * AMP<float> if input_scalar_type is float
+ * TODO: Figure out the instantiation of AMP<double> when performing the
+ * mixed-precision benchmark
+ */
+template<typename input_scalar_type>
+struct GinkgoMatrixSelection 
+{ };
+
+template<>
+struct GinkgoMatrixSelection<float>
+{ 
+    using scalar_type = float;
+    using value = gko::matrix::AMP<scalar_type, local_int_t>;
+};
+
+template<>
+struct GinkgoMatrixSelection<double>
+{ 
+    using scalar_type = double;
+    using value = gko::matrix::Ell<scalar_type, local_int_t>;
+};
+
 template<typename hiscalar, typename loscalar = hiscalar>
 class GinkgoMatrix : public ELLMatrix<hiscalar, loscalar>
 {
 public:
-    using scalar_type  = hiscalar;
+    using scalar_type  = typename GinkgoMatrixSelection<hiscalar>::scalar_type;
+    using gko_mat_type = typename GinkgoMatrixSelection<hiscalar>::value;
     using gko_ell_type = gko::matrix::Ell<scalar_type, local_int_t>;
     using gko_amp_type = gko::matrix::AMP<scalar_type, local_int_t>;
-    using gko_mat_type = gko_amp_type;
 
     GinkgoMatrix(comm_type comm, DeviceCtx* const dctx, const Geometry* const geom) = delete;
 
