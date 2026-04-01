@@ -105,7 +105,7 @@ void Vector<scalar>::fill_zero()
 #endif
 }
 
-template<class scalar>
+template<typename scalar>
 void Vector<scalar>::fill_random()
 {
 #ifdef HPGMP_WITH_HIP
@@ -685,7 +685,7 @@ __global__ void mxp_copy(const scalar_src* const __restrict__ src, scalar_dst* c
   @param[in] v Input vector
   @param[in] w Output vector
  */
-template<class scalar_src, class scalar_dst>
+template<typename scalar_src, typename scalar_dst>
 void CopyVector(const Vector<scalar_src>& v, Vector<scalar_dst>& w)
 {
     auto dctx                     = v.get_device_context();

@@ -28,19 +28,19 @@
 #include "SparseMatrix.hpp"
 #include "perf_counter.hpp"
 
-template<class SC, class PSC = SC>
+template<typename scalar_t, typename project_scalar_t = scalar_t>
 class GMRESData
 {
 public:
-    using scalar_type  = SC;
-    using project_type = PSC;
+    using scalar_type  = scalar_t;
+    using project_type = project_scalar_t;
 
     /*!
    * Constructor for the data structure of GMRES vectors.
    *
    * @param[in]  A    the data structure that describes the problem matrix and its structure
    */
-    GMRESData(SparseMatrix<SC>& A, DeviceCtx* const dctx)
+    GMRESData(SparseMatrix<scalar_t>& A, DeviceCtx* const dctx)
         : r(A.localNumberOfRows, A.comm, dctx),
           z(A.localNumberOfColumns, A.comm, dctx),
           p(A.localNumberOfColumns, A.comm, dctx),
@@ -50,7 +50,7 @@ public:
 
     GMRESData() { }
 
-    void initialize(SparseMatrix<SC>& A, DeviceCtx* const dctx)
+    void initialize(SparseMatrix<scalar_t>& A, DeviceCtx* const dctx)
     {
         r.initialize(A.localNumberOfRows, A.comm, dctx);
         z.initialize(A.localNumberOfColumns, A.comm, dctx);
@@ -59,11 +59,11 @@ public:
         Ap.initialize(A.localNumberOfRows, A.comm, dctx);
     }
 
-    Vector<SC> r; //!< pointer to residual vector
-    Vector<SC> z; //!< pointer to preconditioned residual vector
-    Vector<SC> p; //!< pointer to direction vector
-    Vector<SC> w; //!< pointer to workspace
-    Vector<SC> Ap; //!< pointer to Krylov vector
+    Vector<scalar_t> r; //!< pointer to residual vector
+    Vector<scalar_t> z; //!< pointer to preconditioned residual vector
+    Vector<scalar_t> p; //!< pointer to direction vector
+    Vector<scalar_t> w; //!< pointer to workspace
+    Vector<scalar_t> Ap; //!< pointer to Krylov vector
 };
 
 

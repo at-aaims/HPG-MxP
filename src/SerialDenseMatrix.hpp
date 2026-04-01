@@ -35,11 +35,11 @@
  *
  * Stored column-major.
  */
-template<class SC>
+template<typename scalar_t>
 class SerialDenseMatrix
 {
 public:
-    typedef SC scalar_type;
+    typedef scalar_t scalar_type;
 
     SerialDenseMatrix(const local_int_t m, const local_int_t n, DeviceCtx* const dctx)
         : m_{m},
@@ -157,9 +157,9 @@ private:
     local_int_t m_; //!< number of rows
     local_int_t n_; //!< number of columns
 
-    SC* values_; //!< array of values
+    scalar_t* values_; //!< array of values
     //#if defined(HPGMP_WITH_CUDA) | defined(HPGMP_WITH_HIP)
-    SC* d_values_; //!< array of values
+    scalar_t* d_values_; //!< array of values
     //#endif
     DeviceCtx* dctx_;
     /*!

@@ -1,7 +1,7 @@
 #include "SparseMatrix.hpp"
 
-template<class SC>
-void SparseMatrix<SC>::delete_host_data()
+template<typename scalar_t>
+void SparseMatrix<scalar_t>::delete_host_data()
 {
 #ifndef HPGMP_CONTIGUOUS_ARRAYS
     for (local_int_t i = 0; i < localNumberOfRows; ++i) {
