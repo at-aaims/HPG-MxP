@@ -1,7 +1,7 @@
 #include "SparseMatrix.hpp"
 
-template<typename scalar_t>
-void SparseMatrix<scalar_t>::delete_host_data()
+template<typename local_scalar_t, typename halo_scalar_t>
+void SparseMatrix<local_scalar_t, halo_scalar_t>::delete_host_data()
 {
 #ifndef HPGMP_CONTIGUOUS_ARRAYS
     for (local_int_t i = 0; i < localNumberOfRows; ++i) {
@@ -154,5 +154,5 @@ void DeleteMatrix(SparseMatrix_type& A)
 template void DeleteMatrix(SparseMatrix<double>&);
 template void DeleteMatrix(SparseMatrix<float>&);
 
-template class SparseMatrix<float>;
 template class SparseMatrix<double>;
+template class SparseMatrix<float>;
