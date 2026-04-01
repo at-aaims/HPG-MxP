@@ -3,9 +3,9 @@
 #include "GinkgoMatrix.hpp"
 #include "Profiling.hpp"
 
-template<typename hiscalar, typename loscalar>
-GinkgoMatrix<hiscalar, loscalar>::GinkgoMatrix(const SparseMatrix<hiscalar>& A)
-    : ELLMatrix<hiscalar, loscalar>(A)
+template<typename local_scalar_t, typename halo_scalar_t>
+GinkgoMatrix<local_scalar_t, halo_scalar_t>::GinkgoMatrix(const SparseMatrix<local_scalar_t, halo_scalar_t>& A)
+    : ELLMatrix<local_scalar_t, halo_scalar_t>(A)
 {
     assert(this->ldi_ == this->ldv_);
     auto gko_exec = create_ginkgo_executor();
@@ -64,7 +64,9 @@ int ginkgo_interior_spmv(const GinkgoMatrix<mat_scalar_type, mat_scalar_type>* m
 }
 
 template<typename mat_scalar_type, typename vec_scalar_type>
-void ginkgo_spmv(const GinkgoMatrix<mat_scalar_type, mat_scalar_type>* mat, const Vector<vec_scalar_type>* x, Vector<vec_scalar_type>* y)
+void ginkgo_spmv(const GinkgoMatrix<mat_scalar_type, mat_scalar_type>* mat, 
+                 const Vector<vec_scalar_type>* x, 
+                 Vector<vec_scalar_type>* y)
 {
     auto dctx = x->get_device_context();
 

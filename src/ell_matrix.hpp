@@ -73,10 +73,10 @@ protected:
     halo_scalar_t* values_ = nullptr;
 
     local_int_t* halo_col_idxs_ = nullptr;
-    halo_scalar_t* halo_values_      = nullptr;
+    halo_scalar_t* halo_values_ = nullptr;
 
-    local_int_t* diag_idxs_ = nullptr;
-    halo_scalar_t* inv_diag_     = nullptr;
+    local_int_t* diag_idxs_  = nullptr;
+    halo_scalar_t* inv_diag_ = nullptr;
 
     void convert_from_csr(const SparseMatrix<local_scalar_t, halo_scalar_t>& A);
 };
