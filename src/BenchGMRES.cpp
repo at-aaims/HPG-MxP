@@ -84,7 +84,7 @@ inline int get_num_iterations(comm_type comm,
 
   @see GMRES()
  */
-template<class scalar_type, class scalar_type2, class project_type>
+template<typename scalar_type, typename scalar_type2, typename project_type>
 int BenchGMRES(int argc, char** argv, comm_type comm, DeviceCtx* const dctx, int numberOfMgLevels,
                const bool verbose, const bool validation_failure, const HPGMP_gen_opts& gopts,
                TestGMRESData& test_data)

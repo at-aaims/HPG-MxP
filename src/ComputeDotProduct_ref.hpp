@@ -18,7 +18,7 @@
 #define COMPUTEDOTPRODUCT_REF_HPP
 #include "Vector.hpp"
 
-template<class Vector_type, class scalar_type = typename Vector_type::scalar_type>
+template<class Vector_type, typename scalar_type = typename Vector_type::scalar_type>
 int ComputeDotProduct_ref(const local_int_t n,
                           const Vector_type& x,
                           const Vector_type& y,

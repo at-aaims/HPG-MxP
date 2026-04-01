@@ -51,7 +51,7 @@
  */
 
 
-template<class scalar_type, class scalar_type2, class project_type>
+template<typename scalar_type, typename scalar_type2, class project_type>
 int ValidGMRES(const int argc, char** argv, const validation_t validation_type, comm_type comm,
                DeviceCtx* const dctx, const int numberOfMgLevels, const bool verbose,
                TestGMRESData& test_data)
