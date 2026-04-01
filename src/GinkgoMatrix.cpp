@@ -28,7 +28,7 @@ GinkgoMatrix<hiscalar, loscalar>::GinkgoMatrix(const SparseMatrix<hiscalar>& A)
     } else if constexpr (std::is_same_v<gko_mat_type, gko_amp_type>)
     {
         auto amp_mat =
-            gko::share(gko_amp_type::build().with_tolerance(1e-1).on(gko_exec)->generate(std::move(ell_mat)));
+            gko::share(gko_amp_type::build().with_tolerance(1e-8).on(gko_exec)->generate(std::move(ell_mat)));
         gko_mat_ = amp_mat;
         std::cout << "Using Ginkgo AMP matrix.\n";
         std::cout << "amp_mat->num_precisions:" << amp_mat->num_precisions << "\n";
