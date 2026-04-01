@@ -5,39 +5,41 @@
 #include "GinkgoInterface.hpp"
 
 /**
- * Ginkgo matrix selection depending on the input scalar type
+ * Ginkgo matrix selection depending on the input scalar types
  * Note we only use Ginkgo for the local part of the matrix; not the non-local (halo) part.
- * Ell<double> if input_scalar_type is double
- * AMP<float> if input_scalar_type is float
- * TODO: Figure out the instantiation of AMP<double> when performing the
- * mixed-precision benchmark
+ * Ell<> in uniform precision
+ * AMP<double> in mixed precision (float inner)
  */
-template<typename input_scalar_type>
+template<typename local_scalar_t, typename halo_scalar_t>
 struct GinkgoMatrixSelection
 { };
 
 template<>
-struct GinkgoMatrixSelection<float>
+struct GinkgoMatrixSelection<double, float>
 {
-    using scalar_type = float;
-    using value       = gko::matrix::AMP<scalar_type, local_int_t>;
+    using value = gko::matrix::AMP<double, local_int_t>;
 };
 
 template<>
-struct GinkgoMatrixSelection<double>
+struct GinkgoMatrixSelection<float, float>
 {
-    using scalar_type = double;
-    using value       = gko::matrix::Ell<scalar_type, local_int_t>;
+    using value = gko::matrix::Ell<float, local_int_t>;
 };
 
-template<typename hiscalar, typename loscalar>
-class GinkgoMatrix : public ELLMatrix<hiscalar, loscalar>
+template<>
+struct GinkgoMatrixSelection<double, double>
+{
+    using value = gko::matrix::Ell<double, local_int_t>;
+};
+
+template<typename local_scalar_t, typename halo_scalar_t>
+class GinkgoMatrix : public ELLMatrix<local_scalar_t, halo_scalar_t>
 {
 public:
-    using scalar_type  = typename GinkgoMatrixSelection<hiscalar>::scalar_type;
-    using gko_mat_type = typename GinkgoMatrixSelection<hiscalar>::value;
-    using gko_ell_type = gko::matrix::Ell<scalar_type, local_int_t>;
-    using gko_amp_type = gko::matrix::AMP<scalar_type, local_int_t>;
+    using scalar_type  = local_scalar_t;
+    using gko_mat_type = typename GinkgoMatrixSelection<local_scalar_t, halo_scalar_t>::value;
+    using gko_ell_type = gko::matrix::Ell<local_scalar_t, local_int_t>;
+    using gko_amp_type = gko::matrix::AMP<local_scalar_t, local_int_t>;
 
     GinkgoMatrix(comm_type comm, DeviceCtx* const dctx, const Geometry* const geom) = delete;
 
@@ -45,7 +47,7 @@ public:
      * Initialize this matrix with a conversion of a HPGMP SparseMatrix, with
      * ELLMatrix as an intermediary step.
      */
-    GinkgoMatrix(const SparseMatrix<hiscalar>& A);
+    GinkgoMatrix(const SparseMatrix<local_scalar_t, halo_scalar_t>& A);
 
     ~GinkgoMatrix()
     { }
@@ -56,10 +58,10 @@ protected:
     std::shared_ptr<gko_mat_type> gko_mat_;
 };
 
-template<typename hiscalar, typename loscalar>
-struct GinkgoOptData : public EllOptData<hiscalar, loscalar>
+template<typename local_scalar_t, typename halo_scalar_t>
+struct GinkgoOptData : public EllOptData<local_scalar_t, halo_scalar_t>
 {
-    using matrix_type = GinkgoMatrix<hiscalar, loscalar>;
+    using matrix_type = GinkgoMatrix<local_scalar_t, halo_scalar_t>;
     std::shared_ptr<matrix_type> mat;
 };
 
