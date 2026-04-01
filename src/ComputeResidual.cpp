@@ -45,7 +45,7 @@
 
   @param[in]  n        number of vector elements (local to this processor)
   @param[in]  v1, v2   input vectors
-  @param[out] residual pointer to scalar_type value; on exit, will contain result: inf-norm difference
+  @param[out] residual pointer to scalar value; on exit, will contain result: inf-norm difference
 
   @return Returns zero on success and a non-zero value otherwise.
 */
