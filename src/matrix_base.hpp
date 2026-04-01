@@ -32,8 +32,8 @@ public:
           geom_{geom}
     { }
 
-    template<typename scalar>
-    DistMatrixBase(const SparseMatrix<scalar, scalar>& A);
+    template<typename local_scalar_t, typename halo_scalar_t>
+    DistMatrixBase(const SparseMatrix<local_scalar_t, halo_scalar_t>& A);
 
     virtual ~DistMatrixBase();
 
