@@ -11,7 +11,8 @@
 #include "device_ctx.hpp"
 #include "hpgmp.hpp"
 
-template<typename T>
+// Forward declaration
+template<typename local_scalar_t, typename halo_scalar_t>
 class SparseMatrix;
 
 /**
@@ -32,7 +33,7 @@ public:
     { }
 
     template<typename scalar>
-    DistMatrixBase(const SparseMatrix<scalar>& A);
+    DistMatrixBase(const SparseMatrix<scalar, scalar>& A);
 
     virtual ~DistMatrixBase();
 
