@@ -52,7 +52,7 @@ void test_mg_spmv(comm_type comm, DeviceCtx* dctx, const Geometry* const geom,
                   const SparseMatrixType& A, TestGMRESData& test_data);
 
 // Get number of iterations to fill the required time
-#ifdef HPGMP_WITH_GINKGO // TODO: Improve this implementation
+#ifdef HPGMP_WITH_GINKGO_AMP // TODO: Improve this implementation
 template<typename scalar_type, typename scalar_type2, class GMRESData_type, class GMRESData_type2>
 inline int get_num_iterations(comm_type comm,
                               const SparseMatrix<scalar_type, scalar_type>& A,
@@ -108,7 +108,7 @@ int BenchGMRES(int argc, char** argv, comm_type comm, DeviceCtx* const dctx, int
     typedef GMRESData<scalar_type, scalar_type, scalar_type> GMRESData_type;
 
     typedef Vector<scalar_type2> Vector_type2;
-#ifdef HPGMP_WITH_GINKGO
+#ifdef HPGMP_WITH_GINKGO_AMP
     typedef SparseMatrix<scalar_type, scalar_type2> SparseMatrix_type2;
     typedef GMRESData<scalar_type, scalar_type2, project_type> GMRESData_type2;
 #else

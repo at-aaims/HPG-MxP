@@ -163,6 +163,7 @@ template void SetupProblem< SparseMatrix<float>, SparseMatrix<float>,
     Vector<float>&, Vector<float>&, TestGMRESData&);
 
 // mixed
+#ifdef HPGMP_WITH_GINKGO_AMP
 template void SetupProblem< SparseMatrix<double, double>,
                             SparseMatrix<double, float>,
                             GMRESData<double, double, double>,
@@ -171,7 +172,7 @@ template void SetupProblem< SparseMatrix<double, double>,
     const char*, int, char**, comm_type, DeviceCtx*, int, bool, Geometry*, SparseMatrix<double, double>&,
     GMRESData<double, double, double>&, SparseMatrix<double, float>&, GMRESData<double, float, float>&,
     Vector<double>&, Vector<double>&, TestGMRESData&);
-
+#else
 template void SetupProblem< SparseMatrix<double>,
                             SparseMatrix<float>,
                             GMRESData<double, double, double>,
@@ -180,3 +181,4 @@ template void SetupProblem< SparseMatrix<double>,
     const char*, int, char**, comm_type, DeviceCtx*, int, bool, Geometry*, SparseMatrix<double>&,
     GMRESData<double, double, double>&, SparseMatrix<float>&, GMRESData<float, float, float>&,
     Vector<double>&, Vector<double>&, TestGMRESData&);
+#endif
