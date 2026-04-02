@@ -681,7 +681,7 @@ int OptimizeProblem_ref(SparseMatrix_type& A, GMRESData_type& data, Vector_type&
 #if defined(HPGMP_WITH_CUDA) | defined(HPGMP_WITH_HIP)
             if (curLevelMatrix->mgData != 0) {
                 // -------------------------
-                // store restriction as CRS
+                // store restriction as CSR
                 const local_int_t* f2c = curLevelMatrix->mgData->f2cOperator;
                 const local_int_t nc   = curLevelMatrix->mgData->rc->local_length();
                 h_row_ptr              = (int*)malloc((nc + 1) * sizeof(int));

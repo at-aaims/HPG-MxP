@@ -57,8 +57,8 @@
   @see GenerateGeometry
   @see GenerateProblem
 */
-template<typename mat_scalar_type, typename solver_scalar, typename vec_scalar_type>
-int OptimizeProblemELL(SparseMatrix<mat_scalar_type>& A, GMRESData<solver_scalar>& data,
+template<typename local_scalar_t, typename halo_scalar_t, class GMRESData_type, typename vec_scalar_type>
+int OptimizeProblemELL(SparseMatrix<local_scalar_t, halo_scalar_t>& A, GMRESData_type& data,
                        Vector<vec_scalar_type>& b, Vector<vec_scalar_type>& x, Vector<vec_scalar_type>& xexact)
 {
     b.update_device_data();
@@ -67,8 +67,8 @@ int OptimizeProblemELL(SparseMatrix<mat_scalar_type>& A, GMRESData<solver_scalar
     auto dctx             = A.dctx;
     const int local_nrows = A.localNumberOfRows;
 
-    SparseMatrix<mat_scalar_type>* M = &A;
-    int igrid                        = 0;
+    SparseMatrix<local_scalar_t, halo_scalar_t>* M = &A;
+    int igrid                                      = 0;
     while (M != NULL)
     {
 
@@ -78,10 +78,10 @@ int OptimizeProblemELL(SparseMatrix<mat_scalar_type>& A, GMRESData<solver_scalar
             dctx->device_alloc(M->max_nnz_per_row * local_nrows * sizeof(local_int_t)));
         dctx->copy_host_to_device_sync(M->d_mtxIndL, M->mtxIndL[0],
                                        M->max_nnz_per_row * local_nrows * sizeof(local_int_t));
-        M->d_matrixValues = reinterpret_cast<mat_scalar_type*>(
-            dctx->device_alloc(M->max_nnz_per_row * local_nrows * sizeof(mat_scalar_type)));
+        M->d_matrixValues = reinterpret_cast<local_scalar_t*>(
+            dctx->device_alloc(M->max_nnz_per_row * local_nrows * sizeof(local_scalar_t)));
         dctx->copy_host_to_device_sync(M->d_matrixValues, M->matrixValues[0],
-                                       M->max_nnz_per_row * local_nrows * sizeof(mat_scalar_type));
+                                       M->max_nnz_per_row * local_nrows * sizeof(local_scalar_t));
 
         // Perform matrix coloring
         multicolor_JPL(*M);
@@ -96,12 +96,12 @@ int OptimizeProblemELL(SparseMatrix<mat_scalar_type>& A, GMRESData<solver_scalar
         }
 #endif
 #ifdef HPGMP_WITH_GINKGO
-        auto moptdata       = new GinkgoOptData<mat_scalar_type, mat_scalar_type>;
-        moptdata->mat       = std::make_shared<GinkgoMatrix<mat_scalar_type, mat_scalar_type>>(*M);
+        auto moptdata       = new GinkgoOptData<local_scalar_t, halo_scalar_t>;
+        moptdata->mat       = std::make_shared<GinkgoMatrix<local_scalar_t, halo_scalar_t>>(*M);
         M->optimizationData = moptdata;
 #else
-        auto moptdata       = new EllOptData<mat_scalar_type, mat_scalar_type>;
-        moptdata->mat       = std::make_shared<ELLMatrix<mat_scalar_type, mat_scalar_type>>(*M); // Performs row permutation
+        auto moptdata       = new EllOptData<local_scalar_t, halo_scalar_t>;
+        moptdata->mat       = std::make_shared<ELLMatrix<local_scalar_t, halo_scalar_t>>(*M); // Performs row permutation
         M->optimizationData = moptdata;
 #endif
 #ifdef HPGMP_VERBOSE
@@ -133,13 +133,19 @@ int OptimizeProblemELL(SparseMatrix<mat_scalar_type>& A, GMRESData<solver_scalar
 //    return 0.0;
 //}
 
-template int OptimizeProblemELL(SparseMatrix<double>& A, GMRESData<double>& data,
+template int OptimizeProblemELL(SparseMatrix<double>& A, GMRESData<double, double, double>& data,
                                 Vector<double>& b, Vector<double>& x, Vector<double>& xexact);
 
-template int OptimizeProblemELL(SparseMatrix<float>& A, GMRESData<float>& data,
+template int OptimizeProblemELL(SparseMatrix<float>& A, GMRESData<float, float, float>& data,
                                 Vector<float>& b, Vector<float>& x, Vector<float>& xexact);
 
-template int OptimizeProblemELL(SparseMatrix<float>& A, GMRESData<double>& data,
+template int OptimizeProblemELL(SparseMatrix<float>& A, GMRESData<double, double, double>& data,
+                                Vector<double>& b, Vector<double>& x, Vector<double>& xexact);
+
+template int OptimizeProblemELL(SparseMatrix<double, float>& A, GMRESData<double, float, float>& data,
+                                Vector<float>& b, Vector<float>& x, Vector<float>& xexact);
+
+template int OptimizeProblemELL(SparseMatrix<double, float>& A, GMRESData<double, double, double>& data,
                                 Vector<double>& b, Vector<double>& x, Vector<double>& xexact);
 
 #if 0
@@ -283,5 +289,5 @@ double OptimizeProblemMemoryUse(const SparseMatrix_type& A)
 }
 
 template double OptimizeProblemMemoryUse(const SparseMatrix<double>&);
-
 template double OptimizeProblemMemoryUse(const SparseMatrix<float>&);
+template double OptimizeProblemMemoryUse(const SparseMatrix<double, float>&);

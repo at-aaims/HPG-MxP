@@ -297,8 +297,8 @@ __launch_bounds__(BLOCKSIZEX* BLOCKSIZEY)
 constexpr int RNG_SEED   = 0x586744;
 constexpr int MAX_COLORS = 128;
 
-template<typename scalar>
-void multicolor_JPL(SparseMatrix<scalar>& A)
+template<typename local_scalar_t, typename halo_scalar_t>
+void multicolor_JPL(SparseMatrix<local_scalar_t, halo_scalar_t>& A)
 {
     const local_int_t m = A.localNumberOfRows;
 
@@ -440,9 +440,10 @@ void multicolor_JPL(SparseMatrix<scalar>& A)
 
 template void multicolor_JPL(SparseMatrix<double>&);
 template void multicolor_JPL(SparseMatrix<float>&);
+template void multicolor_JPL(SparseMatrix<double, float>&);
 
-template<typename scalar>
-void multicolor_ref(SparseMatrix<scalar>& A)
+template<typename local_scalar_t, typename halo_scalar_t>
+void multicolor_ref(SparseMatrix<local_scalar_t, halo_scalar_t>& A)
 {
     const auto local_nrows = A.localNumberOfRows;
 
@@ -495,3 +496,4 @@ void multicolor_ref(SparseMatrix<scalar>& A)
 
 template void multicolor_ref(SparseMatrix<double>&);
 template void multicolor_ref(SparseMatrix<float>&);
+template void multicolor_ref(SparseMatrix<double, float>&);

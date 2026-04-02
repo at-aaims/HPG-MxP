@@ -142,6 +142,7 @@ set(host_sources
     src/ComputeWAXPBY.cpp
     src/GinkgoInterface.cpp
     src/GMRES.cpp
+    src/GMRESData.cpp
     src/GMRES_IR.cpp
     src/GenerateGeometry.cpp
     src/GenerateNonsymCoarseProblem.cpp

@@ -74,3 +74,9 @@ template int ComputeSPMV< SparseMatrix<double>, Vector<double> >(
 
 template int ComputeSPMV< SparseMatrix<float>, Vector<float> >(
     const SparseMatrix<float>&, Vector<float>&, Vector<float>&);
+
+template int ComputeSPMV< SparseMatrix<double, float>, Vector<float> >(
+    const SparseMatrix<double, float>&, Vector<float>&, Vector<float>&);
+
+template int ComputeSPMV< SparseMatrix<double, float>, Vector<double> >(
+    const SparseMatrix<double, float>&, Vector<double>&, Vector<double>&);

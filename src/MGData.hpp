@@ -83,16 +83,16 @@ public:
     Vector_type* xc               = nullptr; // coarse grid solution vector
     Vector_type* Axf              = nullptr; // fine grid residual vector
     /*!
-   This is for storing optimized data structres created in OptimizeProblem and
-   used inside optimized ComputeSPMV().
-   */
+       This is for storing optimized data structres created in OptimizeProblem and
+       used inside optimized ComputeSPMV().
+     */
     void* optimizationData = nullptr;
     size_t buffer_size_R{};
     size_t buffer_size_P{};
     void* buffer_R = nullptr;
     void* buffer_P = nullptr;
 #if defined(HPGMP_WITH_CUDA) | defined(HPGMP_WITH_HIP)
-    // to store the restrictiion as CRS matrix on device
+    // to store the restrictiion as CDR matrix on device
     int* d_row_ptr     = nullptr;
     int* d_col_idx     = nullptr;
     scalar_t* d_nzvals = nullptr; //!< values of matrix entries

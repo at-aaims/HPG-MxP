@@ -38,8 +38,9 @@ GinkgoMatrix<local_scalar_t, halo_scalar_t>::GinkgoMatrix(const SparseMatrix<loc
     }
 }
 
-template<typename mat_scalar_type, typename vec_scalar_type>
-int ginkgo_interior_spmv(const GinkgoMatrix<mat_scalar_type, mat_scalar_type>* mat, const Vector<vec_scalar_type>* x, Vector<vec_scalar_type>* y)
+template<typename local_scalar_t, typename halo_scalar_t, typename vec_scalar_type>
+int ginkgo_interior_spmv(const GinkgoMatrix<local_scalar_t, halo_scalar_t>* mat,
+                         const Vector<vec_scalar_type>* x, Vector<vec_scalar_type>* y)
 {
     using gko_vec_type = gko::matrix::Dense<vec_scalar_type>;
     auto gko_exec      = mat->get_gko_mat()->get_executor();
@@ -63,10 +64,9 @@ int ginkgo_interior_spmv(const GinkgoMatrix<mat_scalar_type, mat_scalar_type>* m
     return 0;
 }
 
-template<typename mat_scalar_type, typename vec_scalar_type>
-void ginkgo_spmv(const GinkgoMatrix<mat_scalar_type, mat_scalar_type>* mat, 
-                 const Vector<vec_scalar_type>* x, 
-                 Vector<vec_scalar_type>* y)
+template<typename local_scalar_t, typename halo_scalar_t, typename vec_scalar_type>
+void ginkgo_spmv(const GinkgoMatrix<local_scalar_t, halo_scalar_t>* mat,
+                 const Vector<vec_scalar_type>* x, Vector<vec_scalar_type>* y)
 {
     auto dctx = x->get_device_context();
 
@@ -74,13 +74,13 @@ void ginkgo_spmv(const GinkgoMatrix<mat_scalar_type, mat_scalar_type>* mat,
     x->update_halos_pack_send_buffer(mat);
 
     std::cout << "Using Ginkgo SPMV.\n";
-    ginkgo_interior_spmv<mat_scalar_type, vec_scalar_type>(mat, x, y);
+    ginkgo_interior_spmv<local_scalar_t, halo_scalar_t, vec_scalar_type>(mat, x, y);
 
     // wait for comms to complete
     x->update_halos_send_receive(mat);
     x->update_halos_finalize(mat);
 
-    ell_halo_spmv(mat, x, y);
+    ell_halo_spmv<local_scalar_t, halo_scalar_t, vec_scalar_type>(mat, x, y);
 
     dctx->synchronize_halo_stream();
     dctx->synchronize_compute_stream();
@@ -92,8 +92,9 @@ int ComputeSPMV_ginkgo(const SparseMatrix_type& A, Vector_type& x, Vector_type& 
 
     HPGMP_RANGE_PUSH(__FUNCTION__);
 
-    using scalar_type = typename SparseMatrix_type::scalar_type;
-    auto gko_data     = static_cast<const GinkgoOptData<scalar_type, scalar_type>*>(A.optimizationData);
+    using local_scalar_type = typename SparseMatrix_type::local_scalar_type;
+    using halo_scalar_type  = typename SparseMatrix_type::halo_scalar_type;
+    auto gko_data           = static_cast<const GinkgoOptData<local_scalar_type, halo_scalar_type>*>(A.optimizationData);
     ginkgo_spmv(gko_data->mat.get(), &x, &y);
 
     HPGMP_RANGE_POP(__FUNCTION__);
@@ -104,17 +105,30 @@ int ComputeSPMV_ginkgo(const SparseMatrix_type& A, Vector_type& x, Vector_type& 
 // Available template instantiations
 template class GinkgoMatrix<double, double>;
 template class GinkgoMatrix<float, float>;
+template class GinkgoMatrix<double, float>;
 
-template int ginkgo_interior_spmv<double, double>(
+template int ginkgo_interior_spmv<double, double, double>(
     const GinkgoMatrix<double, double>*, const Vector<double>*, Vector<double>*);
 
-template int ginkgo_interior_spmv<float, float>(
+template int ginkgo_interior_spmv<float, float, float>(
     const GinkgoMatrix<float, float>*, const Vector<float>*, Vector<float>*);
+
+template int ginkgo_interior_spmv<double, float, float>(
+    const GinkgoMatrix<double, float>*, const Vector<float>*, Vector<float>*);
+
+template int ginkgo_interior_spmv<double, float, double>(
+    const GinkgoMatrix<double, float>*, const Vector<double>*, Vector<double>*);
 
 template int ComputeSPMV_ginkgo< SparseMatrix<double>, Vector<double> >(
     const SparseMatrix<double>&, Vector<double>&, Vector<double>&);
 
 template int ComputeSPMV_ginkgo< SparseMatrix<float>, Vector<float> >(
     const SparseMatrix<float>&, Vector<float>&, Vector<float>&);
+
+template int ComputeSPMV_ginkgo< SparseMatrix<double, float>, Vector<float> >(
+    const SparseMatrix<double, float>&, Vector<float>&, Vector<float>&);
+
+template int ComputeSPMV_ginkgo< SparseMatrix<double, float>, Vector<double> >(
+    const SparseMatrix<double, float>&, Vector<double>&, Vector<double>&);
 
 #endif
