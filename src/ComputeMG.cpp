@@ -58,11 +58,11 @@ int ComputeMG(const SparseMatrix_type& A, const Vector_type& r, Vector_type& x,
 
     HPGMP_RANGE_PUSH(__FUNCTION__);
 
-    using scalar_type = typename SparseMatrix_type::scalar_type;
+    using scalar_type       = typename SparseMatrix_type::scalar_type;
     using local_scalar_type = typename SparseMatrix_type::local_scalar_type;
-    using halo_scalar_type = typename SparseMatrix_type::halo_scalar_type;
-    using vec_salar_type = typename Vector_type::scalar_type;
-    const int mpisize = A.geom->size;
+    using halo_scalar_type  = typename SparseMatrix_type::halo_scalar_type;
+    using vec_salar_type    = typename Vector_type::scalar_type;
+    const int mpisize       = A.geom->size;
 
     // Optimized versions of calls
     double t0 = 0.0;
@@ -183,7 +183,7 @@ int ComputeMG(const SparseMatrix_type& A, const Vector_type& r, Vector_type& x,
         const int numberOfPostsmootherSteps = A.mgData->numberOfPostsmootherSteps;
         for (int i = 0; i < numberOfPostsmootherSteps; ++i) {
 #ifdef HPGMP_WITH_GINKGO_AMP
-                // TODO: Use GinkgoSolver
+            // TODO: Use GinkgoSolver
 #else
             ierr += ell_multicolor_gs(symmetric, mat.get(), &r, &x);
 #endif

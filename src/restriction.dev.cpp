@@ -40,24 +40,24 @@
 
 #include "kernel_helpers.hpp.inc"
 
-#define LAUNCH_FUSED_RESTRICT_SPMV(blocksize, width) \
-    {                                                                                                \
-        dim3 blocks((A.mgData->rc->local_length() - 1) / blocksize + 1);                             \
-        dim3 threads(blocksize);                                                                     \
-                                                                                                     \
+#define LAUNCH_FUSED_RESTRICT_SPMV(blocksize, width)                                                                            \
+    {                                                                                                                           \
+        dim3 blocks((A.mgData->rc->local_length() - 1) / blocksize + 1);                                                        \
+        dim3 threads(blocksize);                                                                                                \
+                                                                                                                                \
         kernel_fused_restrict_spmv<blocksize, width, local_scalar_t, vec_scalar_type><<<blocks, threads, 0, stream_interior>>>( \
-            A.mgData->rc->local_length(),                                                            \
-            A.mgData->d_f2cOperator,                                                                 \
-            rf.d_values(),                                                                           \
-            A.localNumberOfRows,                                                                     \
-            A.localNumberOfColumns,                                                                  \
-            mat->get_ld_indices(), mat->get_ld_values(),                                             \
-            mat->get_col_idxs(),                                                                     \
-            mat->get_values(),                                                                       \
-            xf.d_values(),                                                                           \
-            A.mgData->rc->d_values(),                                                                \
-            A.perm,                                                                                  \
-            A.Ac->perm);                                                                             \
+            A.mgData->rc->local_length(),                                                                                       \
+            A.mgData->d_f2cOperator,                                                                                            \
+            rf.d_values(),                                                                                                      \
+            A.localNumberOfRows,                                                                                                \
+            A.localNumberOfColumns,                                                                                             \
+            mat->get_ld_indices(), mat->get_ld_values(),                                                                        \
+            mat->get_col_idxs(),                                                                                                \
+            mat->get_values(),                                                                                                  \
+            xf.d_values(),                                                                                                      \
+            A.mgData->rc->d_values(),                                                                                           \
+            A.perm,                                                                                                             \
+            A.Ac->perm);                                                                                                        \
     }
 
 template<unsigned int BLOCKSIZE, typename local_scalar_t, typename vec_scalar_type>
@@ -225,9 +225,9 @@ int fused_spmv_restriction(const SparseMatrix<local_scalar_t, halo_scalar_t>& A,
         dim3 threads(128);
 
         kernel_fused_restrict_spmv_halo<128, local_scalar_t, halo_scalar_t, vec_scalar_type><<<blocks,
-                                               threads,
-                                               0,
-                                               stream_interior>>>(
+                                                                                               threads,
+                                                                                               0,
+                                                                                               stream_interior>>>(
             mat->get_num_halo_rows(), mat->get_local_num_cols(),
             A.mgData->d_c2fOperator,
             mat->get_ell_width(), mat->get_halo_ld_indices(), mat->get_halo_ld_values(),

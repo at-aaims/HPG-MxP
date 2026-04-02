@@ -124,12 +124,12 @@ int OptimizeProblem_ref(SparseMatrix_type& A, GMRESData_type& data, Vector_type&
             global_int_t nnz       = curLevelMatrix->localNumberOfNonzeros;
             int* h_row_ptr         = (int*)malloc((nrow + 1) * sizeof(int));
             int* h_col_idx         = (int*)malloc(nnz * sizeof(int));
-            scalar_t* h_nzvals      = (scalar_t*)malloc(nnz * sizeof(scalar_t));
+            scalar_t* h_nzvals     = (scalar_t*)malloc(nnz * sizeof(scalar_t));
 
             nnz          = 0;
             h_row_ptr[0] = 0;
             for (local_int_t i = 0; i < nrow; i++) {
-                const scalar_t* const cur_vals     = curLevelMatrix->matrixValues[i];
+                const scalar_t* const cur_vals    = curLevelMatrix->matrixValues[i];
                 const local_int_t* const cur_inds = curLevelMatrix->mtxIndL[i];
 
                 const int cur_nnz = curLevelMatrix->nonzerosInRow[i];
@@ -250,19 +250,19 @@ int OptimizeProblem_ref(SparseMatrix_type& A, GMRESData_type& data, Vector_type&
 #if defined(HPGMP_WITH_CUDA) | defined(HPGMP_WITH_HIP)
             // -------------------------
             // Extract lower/upper-triangular matrix
-            global_int_t nnzU  = nnz - nnzL;
-            int* h_Lrow_ptr    = (int*)malloc((nrow + 1) * sizeof(int));
-            int* h_Lcol_idx    = (int*)malloc(nnzL * sizeof(int));
+            global_int_t nnzU   = nnz - nnzL;
+            int* h_Lrow_ptr     = (int*)malloc((nrow + 1) * sizeof(int));
+            int* h_Lcol_idx     = (int*)malloc(nnzL * sizeof(int));
             scalar_t* h_Lnzvals = (scalar_t*)malloc(nnzL * sizeof(scalar_t));
-            int* h_Urow_ptr    = (int*)malloc((nrow + 1) * sizeof(int));
-            int* h_Ucol_idx    = (int*)malloc(nnzU * sizeof(int));
+            int* h_Urow_ptr     = (int*)malloc((nrow + 1) * sizeof(int));
+            int* h_Ucol_idx     = (int*)malloc(nnzU * sizeof(int));
             scalar_t* h_Unzvals = (scalar_t*)malloc(nnzU * sizeof(scalar_t));
-            nnzL               = 0;
-            nnzU               = 0;
-            h_Lrow_ptr[0]      = 0;
-            h_Urow_ptr[0]      = 0;
+            nnzL                = 0;
+            nnzU                = 0;
+            h_Lrow_ptr[0]       = 0;
+            h_Urow_ptr[0]       = 0;
             for (local_int_t i = 0; i < nrow; i++) {
-                const scalar_t* const cur_vals     = curLevelMatrix->matrixValues[i];
+                const scalar_t* const cur_vals    = curLevelMatrix->matrixValues[i];
                 const local_int_t* const cur_inds = curLevelMatrix->mtxIndL[i];
 
                 const local_int_t cur_nnz = curLevelMatrix->nonzerosInRow[i];
