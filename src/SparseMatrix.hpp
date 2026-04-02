@@ -152,7 +152,7 @@ public:
     local_scalar_t* d_Unzvals = nullptr; //!< values of matrix entries
 
     // workspace vector for reference (vendor library) GS
-    mutable Vector<scalar_t> workx; // nrow
+    mutable Vector<local_scalar_t> workx; // nrow
 #endif
 
 #else // HPGMP_REFERENCE

@@ -124,12 +124,12 @@ int OptimizeProblem_ref(SparseMatrix_type& A, GMRESData_type& data, Vector_type&
             global_int_t nnz       = curLevelMatrix->localNumberOfNonzeros;
             int* h_row_ptr         = (int*)malloc((nrow + 1) * sizeof(int));
             int* h_col_idx         = (int*)malloc(nnz * sizeof(int));
-            scalar_t h_nzvals      = (scalar_t)malloc(nnz * sizeof(scalar_t));
+            scalar_t* h_nzvals      = (scalar_t*)malloc(nnz * sizeof(scalar_t));
 
             nnz          = 0;
             h_row_ptr[0] = 0;
             for (local_int_t i = 0; i < nrow; i++) {
-                const scalar_t const cur_vals     = curLevelMatrix->matrixValues[i];
+                const scalar_t* const cur_vals     = curLevelMatrix->matrixValues[i];
                 const local_int_t* const cur_inds = curLevelMatrix->mtxIndL[i];
 
                 const int cur_nnz = curLevelMatrix->nonzerosInRow[i];
@@ -253,16 +253,16 @@ int OptimizeProblem_ref(SparseMatrix_type& A, GMRESData_type& data, Vector_type&
             global_int_t nnzU  = nnz - nnzL;
             int* h_Lrow_ptr    = (int*)malloc((nrow + 1) * sizeof(int));
             int* h_Lcol_idx    = (int*)malloc(nnzL * sizeof(int));
-            scalar_t h_Lnzvals = (scalar_t)malloc(nnzL * sizeof(scalar_t));
+            scalar_t* h_Lnzvals = (scalar_t*)malloc(nnzL * sizeof(scalar_t));
             int* h_Urow_ptr    = (int*)malloc((nrow + 1) * sizeof(int));
             int* h_Ucol_idx    = (int*)malloc(nnzU * sizeof(int));
-            scalar_t h_Unzvals = (scalar_t)malloc(nnzU * sizeof(scalar_t));
+            scalar_t* h_Unzvals = (scalar_t*)malloc(nnzU * sizeof(scalar_t));
             nnzL               = 0;
             nnzU               = 0;
             h_Lrow_ptr[0]      = 0;
             h_Urow_ptr[0]      = 0;
             for (local_int_t i = 0; i < nrow; i++) {
-                const scalar_t const cur_vals     = curLevelMatrix->matrixValues[i];
+                const scalar_t* const cur_vals     = curLevelMatrix->matrixValues[i];
                 const local_int_t* const cur_inds = curLevelMatrix->mtxIndL[i];
 
                 const local_int_t cur_nnz = curLevelMatrix->nonzerosInRow[i];
@@ -686,7 +686,7 @@ int OptimizeProblem_ref(SparseMatrix_type& A, GMRESData_type& data, Vector_type&
                 const local_int_t nc   = curLevelMatrix->mgData->rc->local_length();
                 h_row_ptr              = (int*)malloc((nc + 1) * sizeof(int));
                 h_col_idx              = (int*)malloc(nc * sizeof(int));
-                h_nzvals               = (scalar_t)malloc(nc * sizeof(scalar_t));
+                h_nzvals               = (scalar_t*)malloc(nc * sizeof(scalar_t));
 
                 h_row_ptr[0] = 0;
                 for (local_int_t i = 0; i < nc; ++i) {
@@ -698,7 +698,7 @@ int OptimizeProblem_ref(SparseMatrix_type& A, GMRESData_type& data, Vector_type&
                 // copy CSR(R) to device
                 curLevelMatrix->mgData->d_row_ptr = (int*)dctx->device_alloc((nc + 1) * sizeof(int));
                 curLevelMatrix->mgData->d_col_idx = (int*)dctx->device_alloc(nc * sizeof(int));
-                curLevelMatrix->mgData->d_nzvals  = (scalar_t)dctx->device_alloc(nc * sizeof(scalar_t));
+                curLevelMatrix->mgData->d_nzvals  = (scalar_t*)dctx->device_alloc(nc * sizeof(scalar_t));
 #if defined(HPGMP_WITH_CUDA)
                 if (cudaSuccess != cudaMemcpy(curLevelMatrix->mgData->d_row_ptr, h_row_ptr,
                                               (nc + 1) * sizeof(int), cudaMemcpyHostToDevice)) {
@@ -891,18 +891,18 @@ double OptimizeProblemMemoryUse(const SparseMatrix_type& A)
  * specializations *
  * --------------- */
 
-template int OptimizeProblem_ref< SparseMatrix<double>, GMRESData<double>, Vector<double> >(
-    SparseMatrix<double>&, GMRESData<double>&, Vector<double>&, Vector<double>&, Vector<double>&);
+template int OptimizeProblem_ref< SparseMatrix<double>, GMRESData<double, double, double>, Vector<double> >(
+    SparseMatrix<double>&, GMRESData<double, double, double>&, Vector<double>&, Vector<double>&, Vector<double>&);
 
 template double OptimizeProblemMemoryUse< SparseMatrix<double> >(SparseMatrix<double> const&);
 
-template int OptimizeProblem_ref< SparseMatrix<float>, GMRESData<float>, Vector<float> >(
-    SparseMatrix<float>&, GMRESData<float>&, Vector<float>&, Vector<float>&, Vector<float>&);
+template int OptimizeProblem_ref< SparseMatrix<float>, GMRESData<float, float, float>, Vector<float> >(
+    SparseMatrix<float>&, GMRESData<float, float, float>&, Vector<float>&, Vector<float>&, Vector<float>&);
 
 template double OptimizeProblemMemoryUse< SparseMatrix<float> >(SparseMatrix<float> const&);
 
 // mixed-precision
-template int OptimizeProblem_ref< SparseMatrix<float>, GMRESData<double>, Vector<double> >(
-    SparseMatrix<float>&, GMRESData<double>&, Vector<double>&, Vector<double>&, Vector<double>&);
+template int OptimizeProblem_ref< SparseMatrix<float>, GMRESData<double, double, double>, Vector<double> >(
+    SparseMatrix<float>&, GMRESData<double, double, double>&, Vector<double>&, Vector<double>&, Vector<double>&);
 
 //#endif // HPGMPG_REFERENCE

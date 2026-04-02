@@ -615,12 +615,14 @@ template int GMRES_IR< SparseMatrix<float>, SparseMatrix<float>, GMRESData<float
 
 
 // mixed
+#ifdef HPGMP_WITH_GINKGO_AMP
 template int GMRES_IR< SparseMatrix<double, double>, SparseMatrix<double, float>, GMRESData<double, double, double>, GMRESData<double, float, float>, Vector<double>>(
     SparseMatrix<double, double> const&, SparseMatrix<double, float> const&, GMRESData<double, double, double>&, GMRESData<double, float, float>&,
     Vector<double> const&, Vector<double>&, const int, const int, double, int&, double&, double&, bool, bool,
     TestGMRESData&);
-
+#else
 template int GMRES_IR< SparseMatrix<double>, SparseMatrix<float>, GMRESData<double, double, double>, GMRESData<float, float, float>, Vector<double>>(
     SparseMatrix<double> const&, SparseMatrix<float> const&, GMRESData<double, double, double>&, GMRESData<float, float, float>&,
     Vector<double> const&, Vector<double>&, const int, const int, double, int&, double&, double&, bool, bool,
     TestGMRESData&);
+#endif

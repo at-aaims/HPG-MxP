@@ -26,9 +26,6 @@ int OptimizeProblem(SparseMatrix_type& A, GMRESData_type& data, Vector_type& b, 
     OptimizeProblem_ref(A, data, b, x, xexact);
 #else
     OptimizeProblemELL(A, data, b, x, xexact);
-#ifdef HPGMP_WITH_GINKGO
-    // Generate Ginkgo AMP matrix, given ELL
-#endif
 #endif
     return 0;
 }
@@ -42,9 +39,11 @@ template int OptimizeProblem(
 template int OptimizeProblem(
     SparseMatrix<float>&, GMRESData<double, double, double>&, Vector<double>&, Vector<double>&,
     Vector<double>&);
+#ifdef HPGMP_WITH_GINKGO_AMP
 template int OptimizeProblem(
     SparseMatrix<double, float>&, GMRESData<double, float, float>&, Vector<float>&, Vector<float>&,
     Vector<float>&);
 template int OptimizeProblem(
     SparseMatrix<double, float>&, GMRESData<double, double, double>&, Vector<double>&, Vector<double>&,
     Vector<double>&);
+#endif
