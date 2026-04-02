@@ -71,11 +71,11 @@ int GMRES_IR(const SparseMatrix_type& A, const SparseMatrix_type2& A_lo,
     HPGMP_RANGE_PUSH(__FUNCTION__);
 
     // (working) precision for outer loop
-    typedef typename SparseMatrix_type::scalar_type scalar_type;
+    typedef typename SparseMatrix_type::halo_scalar_type scalar_type;
     typedef MultiVector<scalar_type> MultiVector_type;
     //typedef SerialDenseMatrix<scalar_type> SerialDenseMatrix_type;
     // (lower) precision for inner loop
-    typedef typename SparseMatrix_type2::scalar_type scalar_type2;
+    typedef typename SparseMatrix_type2::halo_scalar_type scalar_type2;
     typedef MultiVector<scalar_type2> MultiVector_type2;
     //typedef SerialDenseMatrix<scalar_type2> SerialDenseMatrix_type;
     typedef Vector<scalar_type2> Vector_type2;
@@ -603,19 +603,24 @@ int GMRES_IR(const SparseMatrix_type& A, const SparseMatrix_type2& A_lo,
  * --------------- */
 
 // uniform
-template int GMRES_IR< SparseMatrix<double>, SparseMatrix<double>, GMRESData<double>, GMRESData<double>, Vector<double>>(
-    SparseMatrix<double> const&, SparseMatrix<double> const&, GMRESData<double>&, GMRESData<double>&,
+template int GMRES_IR< SparseMatrix<double>, SparseMatrix<double>, GMRESData<double, double, double>, GMRESData<double, double, double>, Vector<double>>(
+    SparseMatrix<double> const&, SparseMatrix<double> const&, GMRESData<double, double, double>&, GMRESData<double, double, double>&,
     Vector<double> const&, Vector<double>&, const int, const int, double, int&, double&, double&, bool, bool,
     TestGMRESData&);
 
-template int GMRES_IR< SparseMatrix<float>, SparseMatrix<float>, GMRESData<float>, GMRESData<float>, Vector<float>>(
-    SparseMatrix<float> const&, SparseMatrix<float> const&, GMRESData<float>&, GMRESData<float>&,
+template int GMRES_IR< SparseMatrix<float>, SparseMatrix<float>, GMRESData<float, float, float>, GMRESData<float, float, float>, Vector<float>>(
+    SparseMatrix<float> const&, SparseMatrix<float> const&, GMRESData<float, float, float>&, GMRESData<float, float, float>&,
     Vector<float> const&, Vector<float>&, const int, const int, float, int&, float&, float&, bool, bool,
     TestGMRESData&);
 
 
 // mixed
-template int GMRES_IR< SparseMatrix<double>, SparseMatrix<float>, GMRESData<double>, GMRESData<float>, Vector<double>>(
-    SparseMatrix<double> const&, SparseMatrix<float> const&, GMRESData<double>&, GMRESData<float>&,
+template int GMRES_IR< SparseMatrix<double, double>, SparseMatrix<double, float>, GMRESData<double, double, double>, GMRESData<double, float, float>, Vector<double>>(
+    SparseMatrix<double, double> const&, SparseMatrix<double, float> const&, GMRESData<double, double, double>&, GMRESData<double, float, float>&,
+    Vector<double> const&, Vector<double>&, const int, const int, double, int&, double&, double&, bool, bool,
+    TestGMRESData&);
+
+template int GMRES_IR< SparseMatrix<double>, SparseMatrix<float>, GMRESData<double, double, double>, GMRESData<float, float, float>, Vector<double>>(
+    SparseMatrix<double> const&, SparseMatrix<float> const&, GMRESData<double, double, double>&, GMRESData<float, float, float>&,
     Vector<double> const&, Vector<double>&, const int, const int, double, int&, double&, double&, bool, bool,
     TestGMRESData&);

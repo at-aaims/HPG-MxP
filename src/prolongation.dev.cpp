@@ -71,8 +71,8 @@ __launch_bounds__(BLOCKSIZE)
  *
  * @return Returns zero on success and a non-zero value otherwise.
  */
-template<typename mat_scalar_type, typename vec_scalar_type>
-int prolongation(const SparseMatrix<mat_scalar_type>& Af, Vector<vec_scalar_type>& xf)
+template<typename local_scalar_t, typename halo_scalar_t, typename vec_scalar_type>
+int prolongation(const SparseMatrix<local_scalar_t, halo_scalar_t>& Af, Vector<vec_scalar_type>& xf)
 {
     auto stream_interior = Af.dctx->get_compute_stream();
     dim3 blocks((Af.mgData->rc->local_length() - 1) / 128 + 1);
@@ -91,5 +91,6 @@ int prolongation(const SparseMatrix<mat_scalar_type>& Af, Vector<vec_scalar_type
 }
 
 template int prolongation(const SparseMatrix<double>& Af, Vector<double>& xf);
-
 template int prolongation(const SparseMatrix<float>& Af, Vector<float>& xf);
+template int prolongation(const SparseMatrix<double, float>& Af, Vector<float>& xf);
+template int prolongation(const SparseMatrix<double, float>& Af, Vector<double>& xf);

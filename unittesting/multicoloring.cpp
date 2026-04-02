@@ -17,7 +17,7 @@
 using scalar      = float;
 using vector_t    = Vector<scalar>;
 using spMatrix_t  = SparseMatrix<scalar>;
-using gmresData_t = GMRESData<scalar>;
+using gmresData_t = GMRESData<scalar, scalar, scalar>;
 
 int run_all_tests(comm_type comm, const HPGMP_Params& params)
 {

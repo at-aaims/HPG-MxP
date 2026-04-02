@@ -52,7 +52,7 @@ template<class SparseMatrix_type>
 void SetupHalo_ref(SparseMatrix_type& A)
 {
 
-    typedef typename SparseMatrix_type::scalar_type scalar_type;
+    typedef typename SparseMatrix_type::halo_scalar_type scalar_type;
     const local_int_t maxNumberOfNonzerosPerRow = 27; // We are approximating a 27-point finite element/volume/difference 3D stencil
 
     // Extract Matrix pieces
@@ -211,5 +211,5 @@ void SetupHalo_ref(SparseMatrix_type& A)
  * --------------- */
 
 template void SetupHalo_ref< SparseMatrix<double> >(SparseMatrix<double>&);
-
 template void SetupHalo_ref< SparseMatrix<float> >(SparseMatrix<float>&);
+template void SetupHalo_ref< SparseMatrix<double, float> >(SparseMatrix<double, float>&);

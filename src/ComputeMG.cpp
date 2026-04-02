@@ -90,7 +90,11 @@ int ComputeMG(const SparseMatrix_type& A, const Vector_type& r, Vector_type& x,
 
         for (int i = 0; i < numberOfPresmootherSteps; ++i) {
             if (i == 0) {
+#ifdef HPGMP_WITH_GINKGO
+                // TODO: Use GinkgoSolver
+#else
                 ierr += ell_multicolor_gs_zero_initial(symmetric, mat.get(), &r, &x);
+#endif
                 //ft.mg_gs.flops[0] += A.totalNumberOfNonzeros;
                 ft.mg_gs.add_flops<scalar_type>(A.totalNumberOfNonzeros);
                 // the first color is treated differently:
@@ -100,7 +104,11 @@ int ComputeMG(const SparseMatrix_type& A, const Vector_type& r, Vector_type& x,
                     1 + 2 * A.totalNumberOfRows);
                 ft.mg_gs.add_memory_traffic<int>(7.0 / 8 * A.totalNumberOfNonzeros);
             } else {
+#ifdef HPGMP_WITH_GINKGO
+                // TODO: Use GinkgoSolver
+#else
                 ierr += ell_multicolor_gs(symmetric, mat.get(), &r, &x);
+#endif
                 //ft.mg_gs.flops[0] += 2*A.totalNumberOfNonzeros;
                 ft.mg_gs.add_flops<scalar_type>(2 * A.totalNumberOfNonzeros);
                 ft.mg_gs.add_memory_traffic<scalar_type>(A.totalNumberOfNonzeros + 2 * A.totalNumberOfRows);
@@ -171,7 +179,11 @@ int ComputeMG(const SparseMatrix_type& A, const Vector_type& r, Vector_type& x,
 
         const int numberOfPostsmootherSteps = A.mgData->numberOfPostsmootherSteps;
         for (int i = 0; i < numberOfPostsmootherSteps; ++i) {
+#ifdef HPGMP_WITH_GINKGO
+                // TODO: Use GinkgoSolver
+#else
             ierr += ell_multicolor_gs(symmetric, mat.get(), &r, &x);
+#endif
             //ft.mg_gs.flops[0] += 2*A.totalNumberOfNonzeros;
             ft.mg_gs.add_flops<scalar_type>(2 * A.totalNumberOfNonzeros);
             ft.mg_gs.add_memory_traffic<scalar_type>(A.totalNumberOfNonzeros + 2 * A.totalNumberOfRows);
@@ -192,8 +204,11 @@ int ComputeMG(const SparseMatrix_type& A, const Vector_type& r, Vector_type& x,
         x.time2_           = 0.0;
         HPGMP_RANGE_PUSH("ell_multicolor_gs");
         TICK();
-
+#ifdef HPGMP_WITH_GINKGO
+        // TODO: Use GinkgoSolver
+#else
         ierr += ell_multicolor_gs(symmetric, mat.get(), &r, &x);
+#endif
 
         x.time1_ = 0.0; // Apparently no one cares about GS comm time
         // restore GS time so far
@@ -225,3 +240,6 @@ template int ComputeMG(
 
 template int ComputeMG(
     SparseMatrix<float> const&, Vector<float> const&, Vector<float>&, bool, perf_counters&);
+
+template int ComputeMG(
+    SparseMatrix<double, float> const&, Vector<float> const&, Vector<float>&, bool, perf_counters&);

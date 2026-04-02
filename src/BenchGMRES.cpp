@@ -52,17 +52,30 @@ void test_mg_spmv(comm_type comm, DeviceCtx* dctx, const Geometry* const geom,
                   const SparseMatrixType& A, TestGMRESData& test_data);
 
 // Get number of iterations to fill the required time
-template<typename scalar_type, typename scalar_type2>
+#ifdef HPGMP_WITH_GINKGO // TODO: Improve this implementation
+template<typename scalar_type, typename scalar_type2, class GMRESData_type, class GMRESData_type2>
 inline int get_num_iterations(comm_type comm,
-                              const SparseMatrix<scalar_type>& A, const SparseMatrix<scalar_type2>& A_lo,
-                              GMRESData<scalar_type>& data, GMRESData<scalar_type2>& data_lo,
+                              const SparseMatrix<scalar_type, scalar_type>& A,
+                              const SparseMatrix<scalar_type, scalar_type2>& A_lo,
+                              GMRESData_type& data, GMRESData_type2& data_lo,
                               const Vector<scalar_type>& b, Vector<scalar_type>& x, int max_iters,
                               const int restart_length, const bool verbose,
                               const double runTime, const double minOfficialTime, const run_t run_type)
+#else
+template<typename scalar_type, typename scalar_type2, class GMRESData_type, class GMRESData_type2>
+inline int get_num_iterations(comm_type comm,
+                              const SparseMatrix<scalar_type, scalar_type>& A,
+                              const SparseMatrix<scalar_type2, scalar_type2>& A_lo,
+                              GMRESData_type& data, GMRESData_type2& data_lo,
+                              const Vector<scalar_type>& b, Vector<scalar_type>& x, int max_iters,
+                              const int restart_length, const bool verbose,
+                              const double runTime, const double minOfficialTime, const run_t run_type)
+#endif
 {
     if (run_type == run_t::benchmark || run_type == run_t::benchmark_no_ref) {
-        const double avg_run_time    = estimate_run_time(comm, A, A_lo, data, data_lo, b, x,
-                                                         max_iters, restart_length, verbose);
+        const double avg_run_time = estimate_run_time(
+            comm, A, A_lo, data, data_lo, b, x,
+            max_iters, restart_length, verbose);
         const int numberOfGmresCalls = runTime >= 0.0 ? ceil(runTime / avg_run_time) : ceil(minOfficialTime / avg_run_time);
         return numberOfGmresCalls;
     } else {
@@ -92,11 +105,16 @@ int BenchGMRES(int argc, char** argv, comm_type comm, DeviceCtx* const dctx, int
     HPGMP_RANGE_PUSH(__FUNCTION__);
     typedef Vector<scalar_type> Vector_type;
     typedef SparseMatrix<scalar_type> SparseMatrix_type;
-    typedef GMRESData<scalar_type> GMRESData_type;
+    typedef GMRESData<scalar_type, scalar_type, scalar_type> GMRESData_type;
 
     typedef Vector<scalar_type2> Vector_type2;
+#ifdef HPGMP_WITH_GINKGO
+    typedef SparseMatrix<scalar_type, scalar_type2> SparseMatrix_type2;
+    typedef GMRESData<scalar_type, scalar_type2, project_type> GMRESData_type2;
+#else
     typedef SparseMatrix<scalar_type2> SparseMatrix_type2;
-    typedef GMRESData<scalar_type2, project_type> GMRESData_type2;
+    typedef GMRESData<scalar_type2, scalar_type2, project_type> GMRESData_type2;
+#endif
 
     const double benchmark_begin_time = mytimer();
 
