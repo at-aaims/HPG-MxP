@@ -56,13 +56,8 @@ typedef SparseMatrix<scalar_type> SparseMatrix_type;
 typedef GMRESData<scalar_type, scalar_type, scalar_type> GMRESData_type;
 
 typedef Vector<scalar_type2> Vector_type2;
-#ifdef HPGMP_WITH_GINKGO_AMP
-typedef SparseMatrix<scalar_type, scalar_type2> SparseMatrix_type2;
-typedef GMRESData<scalar_type, scalar_type2, project_type> GMRESData_type2;
-#else
 typedef SparseMatrix<scalar_type2> SparseMatrix_type2;
 typedef GMRESData<scalar_type2, scalar_type2, project_type> GMRESData_type2;
-#endif
 
 /*!
   Main driver program: Construct synthetic problem, run V&V tests, compute benchmark parameters, run benchmark, report results.

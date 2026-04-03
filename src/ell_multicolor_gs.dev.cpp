@@ -319,7 +319,7 @@ int ell_multicolor_gs(const bool symmetric, const ELLMatrix<mat_scalar_type, mat
 
     local_int_t i = 0;
 
-#ifndef HPCG_NO_MPI
+#ifndef HPGMP_NO_MPI
     if (A->get_geometry()->size > 1)
     {
         x->update_halos_pack_send_buffer(A);
