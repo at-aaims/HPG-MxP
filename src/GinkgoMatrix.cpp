@@ -1,6 +1,6 @@
 #ifdef HPGMP_WITH_GINKGO
 
-#include "GinkgoMatrix.hpp"
+#include "GinkgoOptData.hpp"
 #include "Profiling.hpp"
 
 template<typename local_scalar_t, typename halo_scalar_t>

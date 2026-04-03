@@ -4,14 +4,14 @@
 #include "GinkgoInterface.hpp"
 #include "GinkgoMatrix.hpp"
 
-template<typename hiscalar, typename loscalar>
+template<typename local_scalar_t, typename halo_scalar_t>
 class GinkgoSolver
 {
 public:
-    using scalar_type = hiscalar;
-    using solver_type = gko::solver::FwdGaussSeidel<scalar_type, local_int_t>;
+    using scalar_type = local_scalar_t;
+    using solver_type = gko::solver::FwdGaussSeidel<local_scalar_t, local_int_t>;
 
-    GinkgoSolver(const GinkgoMatrix<scalar_type, scalar_type>* mat);
+    GinkgoSolver(const GinkgoMatrix<local_scalar_t, halo_scalar_t>* mat);
 
     ~GinkgoSolver()
     { }
@@ -22,14 +22,14 @@ protected:
     std::shared_ptr<solver_type> solver_;
 };
 
-template<typename mat_scalar_type, typename vec_scalar_type>
-int ginkgo_multicolor_gs_interior(const GinkgoSolver<mat_scalar_type, mat_scalar_type>* interior_solver,
-                                  const GinkgoMatrix<mat_scalar_type, mat_scalar_type>* mat,
+template<typename local_scalar_t, typename halo_scalar_t, typename vec_scalar_type>
+int ginkgo_multicolor_gs_interior(const GinkgoSolver<local_scalar_t, halo_scalar_t>* interior_solver,
+                                  const GinkgoMatrix<local_scalar_t, halo_scalar_t>* mat,
                                   const Vector<vec_scalar_type>* r, Vector<vec_scalar_type>* x);
 
-template<typename mat_scalar_type, typename vec_scalar_type>
-int ginkgo_multicolor_gs(const GinkgoSolver<mat_scalar_type, mat_scalar_type>* interior_solver,
-                         const GinkgoMatrix<mat_scalar_type, mat_scalar_type>* mat,
+template<typename local_scalar_t, typename halo_scalar_t, typename vec_scalar_type>
+int ginkgo_multicolor_gs(const GinkgoSolver<local_scalar_t, halo_scalar_t>* interior_solver,
+                         const GinkgoMatrix<local_scalar_t, halo_scalar_t>* mat,
                          const Vector<vec_scalar_type>* r, Vector<vec_scalar_type>* x);
 
 #endif

@@ -39,7 +39,7 @@
 #include "multicoloring.hpp"
 
 #ifdef HPGMP_WITH_GINKGO
-#include "GinkgoMatrix.hpp"
+#include "GinkgoOptData.hpp"
 #endif
 
 /*!
@@ -97,7 +97,9 @@ int OptimizeProblemELL(SparseMatrix<local_scalar_t, halo_scalar_t>& A, GMRESData
 #endif
 #ifdef HPGMP_WITH_GINKGO
         auto moptdata       = new GinkgoOptData<local_scalar_t, halo_scalar_t>;
-        moptdata->mat       = std::make_shared<GinkgoMatrix<local_scalar_t, halo_scalar_t>>(*M);
+        auto mat            = std::make_shared<GinkgoMatrix<local_scalar_t, halo_scalar_t>>(*M);
+        moptdata->mat       = mat;
+        moptdata->solver    = std::make_shared<GinkgoSolver<local_scalar_t, halo_scalar_t>>(mat.get());
         M->optimizationData = moptdata;
 #else
         auto moptdata       = new EllOptData<local_scalar_t, halo_scalar_t>;

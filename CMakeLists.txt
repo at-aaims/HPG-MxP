@@ -94,6 +94,7 @@ if(HPGMP_ENABLE_HIP OR HPGMP_ENABLE_CUDA)
             src/ell_matrix.dev.cpp
             src/ell_multicolor_gs.dev.cpp
             src/GinkgoMatrix.cpp
+            src/GinkgoOptData.cpp
             src/GinkgoSolver.cpp
             src/multicoloring.dev.cpp
             src/permute.dev.cpp

@@ -58,13 +58,6 @@ protected:
     std::shared_ptr<gko_mat_type> gko_mat_;
 };
 
-template<typename local_scalar_t, typename halo_scalar_t>
-struct GinkgoOptData : public EllOptData<local_scalar_t, halo_scalar_t>
-{
-    using matrix_type = GinkgoMatrix<local_scalar_t, halo_scalar_t>;
-    std::shared_ptr<matrix_type> mat;
-};
-
 template<typename local_scalar_t, typename halo_scalar_t, typename vec_scalar_type>
 int ginkgo_interior_spmv(const GinkgoMatrix<local_scalar_t, halo_scalar_t>* mat,
                          const Vector<vec_scalar_type>* x, Vector<vec_scalar_type>* y);
