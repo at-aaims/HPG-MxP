@@ -99,7 +99,7 @@ int OptimizeProblemELL(SparseMatrix<local_scalar_t, halo_scalar_t>& A, GMRESData
         auto moptdata       = new GinkgoOptData<local_scalar_t, halo_scalar_t>;
         auto mat            = std::make_shared<GinkgoMatrix<local_scalar_t, halo_scalar_t>>(*M);
         moptdata->mat       = mat;
-        moptdata->solver    = std::make_shared<GinkgoSmoother<local_scalar_t, halo_scalar_t>>(mat.get());
+        moptdata->smoother  = std::make_shared<GinkgoSmoother<local_scalar_t, halo_scalar_t>>(mat.get());
         M->optimizationData = moptdata;
 #else
         auto moptdata       = new EllOptData<local_scalar_t, halo_scalar_t>;

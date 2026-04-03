@@ -52,7 +52,7 @@ public:
     ~GinkgoMatrix()
     { }
 
-    auto get_gko_mat() const { return gko_mat_; }
+    std::shared_ptr<const gko_mat_type> get_gko_mat() const { return gko_mat_; }
 
 protected:
     std::shared_ptr<gko_mat_type> gko_mat_;

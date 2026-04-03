@@ -73,8 +73,8 @@ int ComputeMG(const SparseMatrix_type& A, const Vector_type& r, Vector_type& x,
 #ifdef HPGMP_WITH_GINKGO
     std::shared_ptr<const GinkgoMatrix<local_scalar_type, halo_scalar_type>> mat =
         dynamic_cast<GinkgoOptData<local_scalar_type, halo_scalar_type>*>(A.optimizationData)->mat;
-    std::shared_ptr<const GinkgoSmoother<local_scalar_type, halo_scalar_type>> solver =
-        dynamic_cast<GinkgoOptData<local_scalar_type, halo_scalar_type>*>(A.optimizationData)->solver;
+    std::shared_ptr<const GinkgoSmoother<local_scalar_type, halo_scalar_type>> smoother =
+        dynamic_cast<GinkgoOptData<local_scalar_type, halo_scalar_type>*>(A.optimizationData)->smoother;
 #else
     std::shared_ptr<const ELLMatrix<local_scalar_type, halo_scalar_type>> mat =
         dynamic_cast<EllOptData<local_scalar_type, halo_scalar_type>*>(A.optimizationData)->mat;
@@ -96,7 +96,7 @@ int ComputeMG(const SparseMatrix_type& A, const Vector_type& r, Vector_type& x,
         for (int i = 0; i < numberOfPresmootherSteps; ++i) {
             if (i == 0) {
 #ifdef HPGMP_WITH_GINKGO_AMP
-                ierr += ginkgo_multicolor_gs(solver.get(), mat.get(), &r, &x);
+                ierr += ginkgo_multicolor_gs(smoother.get(), mat.get(), &r, &x);
 #else
                 ierr += ell_multicolor_gs_zero_initial(symmetric, mat.get(), &r, &x);
 #endif
@@ -110,7 +110,7 @@ int ComputeMG(const SparseMatrix_type& A, const Vector_type& r, Vector_type& x,
                 ft.mg_gs.add_memory_traffic<int>(7.0 / 8 * A.totalNumberOfNonzeros);
             } else {
 #ifdef HPGMP_WITH_GINKGO_AMP
-                ierr += ginkgo_multicolor_gs(solver.get(), mat.get(), &r, &x);
+                ierr += ginkgo_multicolor_gs(smoother.get(), mat.get(), &r, &x);
 #else
                 ierr += ell_multicolor_gs(symmetric, mat.get(), &r, &x);
 #endif
@@ -185,7 +185,7 @@ int ComputeMG(const SparseMatrix_type& A, const Vector_type& r, Vector_type& x,
         const int numberOfPostsmootherSteps = A.mgData->numberOfPostsmootherSteps;
         for (int i = 0; i < numberOfPostsmootherSteps; ++i) {
 #ifdef HPGMP_WITH_GINKGO_AMP
-            ierr += ginkgo_multicolor_gs(solver.get(), mat.get(), &r, &x);
+            ierr += ginkgo_multicolor_gs(smoother.get(), mat.get(), &r, &x);
 #else
             ierr += ell_multicolor_gs(symmetric, mat.get(), &r, &x);
 #endif
@@ -210,7 +210,7 @@ int ComputeMG(const SparseMatrix_type& A, const Vector_type& r, Vector_type& x,
         HPGMP_RANGE_PUSH("ell_multicolor_gs");
         TICK();
 #ifdef HPGMP_WITH_GINKGO_AMP
-        ierr += ginkgo_multicolor_gs(solver.get(), mat.get(), &r, &x);
+        ierr += ginkgo_multicolor_gs(smoother.get(), mat.get(), &r, &x);
 #else
         ierr += ell_multicolor_gs(symmetric, mat.get(), &r, &x);
 #endif
