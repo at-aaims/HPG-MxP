@@ -249,4 +249,6 @@ template int ComputeMG(
 #ifdef HPGMP_WITH_GINKGO_AMP
 template int ComputeMG(
     SparseMatrix<double, float> const&, Vector<float> const&, Vector<float>&, bool, perf_counters&);
+template int ComputeMG(
+    SparseMatrix<double, float> const&, Vector<double> const&, Vector<double>&, bool, perf_counters&);
 #endif

@@ -41,9 +41,6 @@ template int OptimizeProblem(
     Vector<double>&);
 #ifdef HPGMP_WITH_GINKGO_AMP
 template int OptimizeProblem(
-    SparseMatrix<double, float>&, GMRESData<double, float, float>&, Vector<float>&, Vector<float>&,
-    Vector<float>&);
-template int OptimizeProblem(
     SparseMatrix<double, float>&, GMRESData<double, double, double>&, Vector<double>&, Vector<double>&,
     Vector<double>&);
 #endif

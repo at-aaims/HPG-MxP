@@ -241,5 +241,5 @@ template int ValidGMRES<float, float, float >(
     int, char**, validation_t, comm_type, DeviceCtx*, int, bool, TestGMRESData&);
 
 // mixed version
-template int ValidGMRES<double, float, float >(
+template int ValidGMRES<double, float, double >(
     int, char**, validation_t, comm_type, DeviceCtx*, int, bool, TestGMRESData&);

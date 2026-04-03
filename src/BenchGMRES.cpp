@@ -410,7 +410,7 @@ template int BenchGMRES<float, float, float >(int, char**, comm_type, DeviceCtx*
 
 
 // mixed version
-template int BenchGMRES<double, float, float >(int, char**, comm_type, DeviceCtx*, int, bool, bool,
+template int BenchGMRES<double, float, double >(int, char**, comm_type, DeviceCtx*, int, bool, bool,
                                                const HPGMP_gen_opts&, TestGMRESData&);
 
 
