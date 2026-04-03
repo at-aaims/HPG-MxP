@@ -57,9 +57,9 @@
   @see GenerateGeometry
   @see GenerateProblem
 */
-template<typename local_scalar_t, typename halo_scalar_t, class GMRESData_type, typename vec_scalar_type>
+template<typename local_scalar_t, typename halo_scalar_t, class GMRESData_type, typename vec_scalar_t>
 int OptimizeProblemELL(SparseMatrix<local_scalar_t, halo_scalar_t>& A, GMRESData_type& data,
-                       Vector<vec_scalar_type>& b, Vector<vec_scalar_type>& x, Vector<vec_scalar_type>& xexact)
+                       Vector<vec_scalar_t>& b, Vector<vec_scalar_t>& x, Vector<vec_scalar_t>& xexact)
 {
     b.update_device_data();
     xexact.update_device_data();
@@ -99,7 +99,7 @@ int OptimizeProblemELL(SparseMatrix<local_scalar_t, halo_scalar_t>& A, GMRESData
         auto moptdata       = new GinkgoOptData<local_scalar_t, halo_scalar_t>;
         auto mat            = std::make_shared<GinkgoMatrix<local_scalar_t, halo_scalar_t>>(*M);
         moptdata->mat       = mat;
-        moptdata->solver    = std::make_shared<GinkgoSolver<local_scalar_t, halo_scalar_t>>(mat.get());
+        moptdata->solver    = std::make_shared<GinkgoSmoother<local_scalar_t, halo_scalar_t>>(mat.get());
         M->optimizationData = moptdata;
 #else
         auto moptdata       = new EllOptData<local_scalar_t, halo_scalar_t>;

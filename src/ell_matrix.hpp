@@ -81,14 +81,14 @@ protected:
     void convert_from_csr(const SparseMatrix<local_scalar_t, halo_scalar_t>& A);
 };
 
-//template <typename local_scalar_t, typename halo_scalar_t, typename vec_scalar_type>
-//void ell_spmv(const ELLMatrix<local_scalar_t, halo_scalar_t>* mat, const Vector<vec_scalar_type> *x, Vector<vec_scalar_type>* y);
+//template <typename local_scalar_t, typename halo_scalar_t, typename vec_scalar_t>
+//void ell_spmv(const ELLMatrix<local_scalar_t, halo_scalar_t>* mat, const Vector<vec_scalar_t> *x, Vector<vec_scalar_t>* y);
 
-template<typename local_scalar_t, typename halo_scalar_t, typename vec_scalar_type>
-void ell_halo_spmv(const ELLMatrix<local_scalar_t, halo_scalar_t>* mat, const Vector<vec_scalar_type>* x, Vector<vec_scalar_type>* y);
+template<typename local_scalar_t, typename halo_scalar_t, typename vec_scalar_t>
+void ell_halo_spmv(const ELLMatrix<local_scalar_t, halo_scalar_t>* mat, const Vector<vec_scalar_t>* x, Vector<vec_scalar_t>* y);
 
-template<typename local_scalar_t, typename halo_scalar_t, typename vec_scalar_type>
-void ell_interior_spmv(const ELLMatrix<local_scalar_t, halo_scalar_t>* mat, const Vector<vec_scalar_type>* x, Vector<vec_scalar_type>* y);
+template<typename local_scalar_t, typename halo_scalar_t, typename vec_scalar_t>
+void ell_interior_spmv(const ELLMatrix<local_scalar_t, halo_scalar_t>* mat, const Vector<vec_scalar_t>* x, Vector<vec_scalar_t>* y);
 
 template<typename local_scalar_t, typename halo_scalar_t>
 struct EllOptData : public OptimizationData

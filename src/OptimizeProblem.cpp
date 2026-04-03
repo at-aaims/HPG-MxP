@@ -10,9 +10,9 @@
 #include "Vector.hpp"
 #include "GMRESData.hpp"
 
-template<typename local_scalar_type, typename halo_scalar_t, typename GMRESData_type, typename vec_scalar_type>
+template<typename local_scalar_type, typename halo_scalar_t, typename GMRESData_type, typename vec_scalar_t>
 int OptimizeProblemELL(SparseMatrix<local_scalar_type, halo_scalar_t>& A, GMRESData_type& data,
-                       Vector<vec_scalar_type>& b, Vector<vec_scalar_type>& x, Vector<vec_scalar_type>& xexact);
+                       Vector<vec_scalar_t>& b, Vector<vec_scalar_t>& x, Vector<vec_scalar_t>& xexact);
 
 template<typename SparseMatrix_type, typename GMRESData_type, typename Vector_type>
 int OptimizeProblem_ref(SparseMatrix_type& A, GMRESData_type& data,

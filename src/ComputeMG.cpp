@@ -73,7 +73,7 @@ int ComputeMG(const SparseMatrix_type& A, const Vector_type& r, Vector_type& x,
 #ifdef HPGMP_WITH_GINKGO
     std::shared_ptr<const GinkgoMatrix<local_scalar_type, halo_scalar_type>> mat =
         dynamic_cast<GinkgoOptData<local_scalar_type, halo_scalar_type>*>(A.optimizationData)->mat;
-    std::shared_ptr<const GinkgoSolver<local_scalar_type, halo_scalar_type>> solver =
+    std::shared_ptr<const GinkgoSmoother<local_scalar_type, halo_scalar_type>> solver =
         dynamic_cast<GinkgoOptData<local_scalar_type, halo_scalar_type>*>(A.optimizationData)->solver;
 #else
     std::shared_ptr<const ELLMatrix<local_scalar_type, halo_scalar_type>> mat =

@@ -13,12 +13,12 @@ GinkgoMatrix<local_scalar_t, halo_scalar_t>::GinkgoMatrix(const SparseMatrix<loc
         gko::share(gko_ell_type::create(gko_exec,
                                         gko::dim<2>{static_cast<gko::size_type>(this->local_nrows_),
                                                     static_cast<gko::size_type>(this->local_ncols_)},
-                                        gko::make_array_view(gko_exec,
-                                                             this->ldv_ * this->ell_width_,
-                                                             this->values_),
-                                        gko::make_array_view(gko_exec,
-                                                             this->ldi_ * this->ell_width_,
-                                                             this->col_idxs_),
+                                        std::move(gko::make_array_view(gko_exec,
+                                                                       this->ldv_ * this->ell_width_,
+                                                                       this->values_)),
+                                        std::move(gko::make_array_view(gko_exec,
+                                                                       this->ldi_ * this->ell_width_,
+                                                                       this->col_idxs_)),
                                         this->ell_width_,
                                         this->ldv_));
 
@@ -38,11 +38,11 @@ GinkgoMatrix<local_scalar_t, halo_scalar_t>::GinkgoMatrix(const SparseMatrix<loc
     }
 }
 
-template<typename local_scalar_t, typename halo_scalar_t, typename vec_scalar_type>
+template<typename local_scalar_t, typename halo_scalar_t, typename vec_scalar_t>
 int ginkgo_interior_spmv(const GinkgoMatrix<local_scalar_t, halo_scalar_t>* mat,
-                         const Vector<vec_scalar_type>* x, Vector<vec_scalar_type>* y)
+                         const Vector<vec_scalar_t>* x, Vector<vec_scalar_t>* y)
 {
-    using gko_vec_type = gko::matrix::Dense<vec_scalar_type>;
+    using gko_vec_type = gko::matrix::Dense<vec_scalar_t>;
     auto gko_exec      = mat->get_gko_mat()->get_executor();
     auto gko_x =
         gko_vec_type::create_const(gko_exec,
@@ -54,9 +54,9 @@ int ginkgo_interior_spmv(const GinkgoMatrix<local_scalar_t, halo_scalar_t>* mat,
     auto gko_y =
         gko_vec_type::create(gko_exec,
                              gko::dim<2>{static_cast<gko::size_type>(y->local_length()), 1},
-                             gko::make_array_view(gko_exec,
-                                                  y->local_length(),
-                                                  y->d_values()),
+                             std::move(gko::make_array_view(gko_exec,
+                                                            y->local_length(),
+                                                            y->d_values())),
                              1);
 
     mat->get_gko_mat()->apply(gko_x, gko_y);
@@ -64,9 +64,9 @@ int ginkgo_interior_spmv(const GinkgoMatrix<local_scalar_t, halo_scalar_t>* mat,
     return 0;
 }
 
-template<typename local_scalar_t, typename halo_scalar_t, typename vec_scalar_type>
+template<typename local_scalar_t, typename halo_scalar_t, typename vec_scalar_t>
 void ginkgo_spmv(const GinkgoMatrix<local_scalar_t, halo_scalar_t>* mat,
-                 const Vector<vec_scalar_type>* x, Vector<vec_scalar_type>* y)
+                 const Vector<vec_scalar_t>* x, Vector<vec_scalar_t>* y)
 {
     auto dctx = x->get_device_context();
 
@@ -74,13 +74,13 @@ void ginkgo_spmv(const GinkgoMatrix<local_scalar_t, halo_scalar_t>* mat,
     x->update_halos_pack_send_buffer(mat);
 
     //std::cout << "Using Ginkgo SPMV.\n";
-    ginkgo_interior_spmv<local_scalar_t, halo_scalar_t, vec_scalar_type>(mat, x, y);
+    ginkgo_interior_spmv<local_scalar_t, halo_scalar_t, vec_scalar_t>(mat, x, y);
 
     // wait for comms to complete
     x->update_halos_send_receive(mat);
     x->update_halos_finalize(mat);
 
-    ell_halo_spmv<local_scalar_t, halo_scalar_t, vec_scalar_type>(mat, x, y);
+    ell_halo_spmv<local_scalar_t, halo_scalar_t, vec_scalar_t>(mat, x, y);
 
     dctx->synchronize_halo_stream();
     dctx->synchronize_compute_stream();
@@ -92,9 +92,9 @@ int ComputeSPMV_ginkgo(const SparseMatrix_type& A, Vector_type& x, Vector_type& 
 
     HPGMP_RANGE_PUSH(__FUNCTION__);
 
-    using local_scalar_type = typename SparseMatrix_type::local_scalar_type;
-    using halo_scalar_type  = typename SparseMatrix_type::halo_scalar_type;
-    auto gko_data           = static_cast<const GinkgoOptData<local_scalar_type, halo_scalar_type>*>(A.optimizationData);
+    using local_scalar_t = typename SparseMatrix_type::local_scalar_type;
+    using halo_scalar_t  = typename SparseMatrix_type::halo_scalar_type;
+    auto gko_data        = static_cast<const GinkgoOptData<local_scalar_t, halo_scalar_t>*>(A.optimizationData);
     ginkgo_spmv(gko_data->mat.get(), &x, &y);
 
     HPGMP_RANGE_POP(__FUNCTION__);

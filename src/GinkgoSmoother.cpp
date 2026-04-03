@@ -3,7 +3,7 @@
 #include "GinkgoOptData.hpp"
 
 template<typename local_scalar_t, typename halo_scalar_t>
-GinkgoSolver<local_scalar_t, halo_scalar_t>::GinkgoSolver(const GinkgoMatrix<local_scalar_t, halo_scalar_t>* mat)
+GinkgoSmoother<local_scalar_t, halo_scalar_t>::GinkgoSmoother(const GinkgoMatrix<local_scalar_t, halo_scalar_t>* mat)
 {
     auto gko_mat    = mat->get_gko_mat();
     auto gko_exec   = gko_mat->get_executor();
@@ -22,12 +22,12 @@ GinkgoSolver<local_scalar_t, halo_scalar_t>::GinkgoSolver(const GinkgoMatrix<loc
     //std::cout << "Using Ginkgo (FwdGaussSeidel) solver.\n";
 }
 
-template<typename local_scalar_t, typename halo_scalar_t, typename vec_scalar_type>
-int ginkgo_multicolor_gs_interior(const GinkgoSolver<local_scalar_t, halo_scalar_t>* interior_solver,
+template<typename local_scalar_t, typename halo_scalar_t, typename vec_scalar_t>
+int ginkgo_multicolor_gs_interior(const GinkgoSmoother<local_scalar_t, halo_scalar_t>* interior_solver,
                                   const GinkgoMatrix<local_scalar_t, halo_scalar_t>* mat,
-                                  const Vector<vec_scalar_type>* r, Vector<vec_scalar_type>* x)
+                                  const Vector<vec_scalar_t>* r, Vector<vec_scalar_t>* x)
 {
-    using gko_vec_type = gko::matrix::Dense<vec_scalar_type>;
+    using gko_vec_type = gko::matrix::Dense<vec_scalar_t>;
     auto gko_solver    = interior_solver->get_solver();
     auto gko_exec      = mat->get_gko_mat()->get_executor();
     auto gko_r =
@@ -40,9 +40,9 @@ int ginkgo_multicolor_gs_interior(const GinkgoSolver<local_scalar_t, halo_scalar
     auto gko_x =
         gko_vec_type::create(gko_exec,
                              gko::dim<2>{static_cast<gko::size_type>(x->local_length()), 1},
-                             gko::make_array_view(gko_exec,
-                                                  x->local_length(),
-                                                  x->d_values()),
+                             std::move(gko::make_array_view(gko_exec,
+                                                            x->local_length(),
+                                                            x->d_values())),
                              1);
 
     gko_solver->apply(gko_r, gko_x);
@@ -50,35 +50,35 @@ int ginkgo_multicolor_gs_interior(const GinkgoSolver<local_scalar_t, halo_scalar
     return 0;
 }
 
-template<typename local_scalar_t, typename halo_scalar_t, typename vec_scalar_type>
-int ginkgo_multicolor_gs(const GinkgoSolver<local_scalar_t, halo_scalar_t>* interior_solver,
+template<typename local_scalar_t, typename halo_scalar_t, typename vec_scalar_t>
+int ginkgo_multicolor_gs(const GinkgoSmoother<local_scalar_t, halo_scalar_t>* interior_solver,
                          const GinkgoMatrix<local_scalar_t, halo_scalar_t>* mat,
-                         const Vector<vec_scalar_type>* r, Vector<vec_scalar_type>* x)
+                         const Vector<vec_scalar_t>* r, Vector<vec_scalar_t>* x)
 {
     int ierr = ginkgo_multicolor_gs_interior(interior_solver, mat, r, x);
     return 0;
 }
 
 // Available template instantiations
-template class GinkgoSolver<double, double>;
-template class GinkgoSolver<float, float>;
-template class GinkgoSolver<double, float>;
+template class GinkgoSmoother<double, double>;
+template class GinkgoSmoother<float, float>;
+template class GinkgoSmoother<double, float>;
 
-template int ginkgo_multicolor_gs_interior(const GinkgoSolver<double, double>* interior_solver, const GinkgoMatrix<double, double>* mat,
+template int ginkgo_multicolor_gs_interior(const GinkgoSmoother<double, double>* interior_solver, const GinkgoMatrix<double, double>* mat,
                                            const Vector<double>* r, Vector<double>* x);
-template int ginkgo_multicolor_gs_interior(const GinkgoSolver<float, float>* interior_solver, const GinkgoMatrix<float, float>* mat,
+template int ginkgo_multicolor_gs_interior(const GinkgoSmoother<float, float>* interior_solver, const GinkgoMatrix<float, float>* mat,
                                            const Vector<float>* r, Vector<float>* x);
-template int ginkgo_multicolor_gs_interior(const GinkgoSolver<double, float>* interior_solver, const GinkgoMatrix<double, float>* mat,
+template int ginkgo_multicolor_gs_interior(const GinkgoSmoother<double, float>* interior_solver, const GinkgoMatrix<double, float>* mat,
                                            const Vector<float>* r, Vector<float>* x);
-template int ginkgo_multicolor_gs_interior(const GinkgoSolver<double, float>* interior_solver, const GinkgoMatrix<double, float>* mat,
+template int ginkgo_multicolor_gs_interior(const GinkgoSmoother<double, float>* interior_solver, const GinkgoMatrix<double, float>* mat,
                                            const Vector<double>* r, Vector<double>* x);
 
-template int ginkgo_multicolor_gs(const GinkgoSolver<double, double>* interior_solver, const GinkgoMatrix<double, double>* mat,
+template int ginkgo_multicolor_gs(const GinkgoSmoother<double, double>* interior_solver, const GinkgoMatrix<double, double>* mat,
                                   const Vector<double>* r, Vector<double>* x);
-template int ginkgo_multicolor_gs(const GinkgoSolver<float, float>* interior_solver, const GinkgoMatrix<float, float>* mat,
+template int ginkgo_multicolor_gs(const GinkgoSmoother<float, float>* interior_solver, const GinkgoMatrix<float, float>* mat,
                                   const Vector<float>* r, Vector<float>* x);
-template int ginkgo_multicolor_gs(const GinkgoSolver<double, float>* interior_solver, const GinkgoMatrix<double, float>* mat,
+template int ginkgo_multicolor_gs(const GinkgoSmoother<double, float>* interior_solver, const GinkgoMatrix<double, float>* mat,
                                   const Vector<float>* r, Vector<float>* x);
-template int ginkgo_multicolor_gs(const GinkgoSolver<double, float>* interior_solver, const GinkgoMatrix<double, float>* mat,
+template int ginkgo_multicolor_gs(const GinkgoSmoother<double, float>* interior_solver, const GinkgoMatrix<double, float>* mat,
                                   const Vector<double>* r, Vector<double>* x);
 #endif

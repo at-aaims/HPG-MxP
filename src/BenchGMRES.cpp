@@ -52,25 +52,18 @@ void test_mg_spmv(comm_type comm, DeviceCtx* dctx, const Geometry* const geom,
                   const SparseMatrixType& A, TestGMRESData& test_data);
 
 // Get number of iterations to fill the required time
-#ifdef HPGMP_WITH_GINKGO_AMP // TODO: Improve this implementation
 template<typename scalar_type, typename scalar_type2, class GMRESData_type, class GMRESData_type2>
 inline int get_num_iterations(comm_type comm,
                               const SparseMatrix<scalar_type, scalar_type>& A,
+#ifdef HPGMP_WITH_GINKGO_AMP
                               const SparseMatrix<scalar_type, scalar_type2>& A_lo,
-                              GMRESData_type& data, GMRESData_type2& data_lo,
-                              const Vector<scalar_type>& b, Vector<scalar_type>& x, int max_iters,
-                              const int restart_length, const bool verbose,
-                              const double runTime, const double minOfficialTime, const run_t run_type)
 #else
-template<typename scalar_type, typename scalar_type2, class GMRESData_type, class GMRESData_type2>
-inline int get_num_iterations(comm_type comm,
-                              const SparseMatrix<scalar_type, scalar_type>& A,
                               const SparseMatrix<scalar_type2, scalar_type2>& A_lo,
+#endif
                               GMRESData_type& data, GMRESData_type2& data_lo,
                               const Vector<scalar_type>& b, Vector<scalar_type>& x, int max_iters,
                               const int restart_length, const bool verbose,
                               const double runTime, const double minOfficialTime, const run_t run_type)
-#endif
 {
     if (run_type == run_t::benchmark || run_type == run_t::benchmark_no_ref) {
         const double avg_run_time = estimate_run_time(

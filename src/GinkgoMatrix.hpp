@@ -58,9 +58,9 @@ protected:
     std::shared_ptr<gko_mat_type> gko_mat_;
 };
 
-template<typename local_scalar_t, typename halo_scalar_t, typename vec_scalar_type>
+template<typename local_scalar_t, typename halo_scalar_t, typename vec_scalar_t>
 int ginkgo_interior_spmv(const GinkgoMatrix<local_scalar_t, halo_scalar_t>* mat,
-                         const Vector<vec_scalar_type>* x, Vector<vec_scalar_type>* y);
+                         const Vector<vec_scalar_t>* x, Vector<vec_scalar_t>* y);
 
 template<class SparseMatrix_type, class Vector_type>
 int ComputeSPMV_ginkgo(const SparseMatrix_type& A, Vector_type& x, Vector_type& y);
