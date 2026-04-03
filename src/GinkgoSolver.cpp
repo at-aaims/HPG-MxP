@@ -10,7 +10,7 @@ GinkgoSolver<local_scalar_t, halo_scalar_t>::GinkgoSolver(const GinkgoMatrix<loc
     auto color_ptrs = mat->get_independent_set_offsets();
 
     // TODO: make the interface take in the data pointer or a const array
-    std::vector<local_int_t> color_ptrs_vector(color_ptrs, color_ptrs + mat->get_num_independent_sets());
+    std::vector<local_int_t> color_ptrs_vector(color_ptrs, color_ptrs + mat->get_num_independent_sets() + 1);
 
     auto solver_factory = solver_type::build()
                               .with_criteria(gko::stop::Iteration::build().with_max_iters(1u))
