@@ -92,7 +92,7 @@ public:
     void* buffer_R = nullptr;
     void* buffer_P = nullptr;
 #if defined(HPGMP_WITH_CUDA) | defined(HPGMP_WITH_HIP)
-    // to store the restrictiion as CDR matrix on device
+    // to store the restrictiion as CSR matrix on device
     int* d_row_ptr     = nullptr;
     int* d_col_idx     = nullptr;
     scalar_t* d_nzvals = nullptr; //!< values of matrix entries

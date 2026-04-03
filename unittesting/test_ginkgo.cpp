@@ -276,18 +276,18 @@ int main(int argc, char* argv[])
                                               mat_ptr->get_ell_width(),
                                               mat_ptr->get_ld_values()));
     auto rhs =
-        gko_vec_type::create(gko_exec,
-                             gko::dim<2>{static_cast<gko::size_type>(b.local_length()), 1},
-                             gko::make_array_view(gko_exec,
-                                                  b.local_length(),
-                                                  b.d_values()),
-                             1);
+        gko_vec_type::create_const(gko_exec,
+                                   gko::dim<2>{static_cast<gko::size_type>(b.local_length()), 1},
+                                   gko::make_const_array_view(gko_exec,
+                                                              b.local_length(),
+                                                              b.d_values()),
+                                   1);
     auto u =
         gko_vec_type::create(gko_exec,
                              gko::dim<2>{static_cast<gko::size_type>(x.local_length()), 1},
-                             gko::make_array_view(gko_exec,
+                             std::move(gko::make_array_view(gko_exec,
                                                   x.local_length(),
-                                                  x.d_values()),
+                                                  x.d_values())),
                              1);
 
 #endif // HPGMP_REFERENCE
@@ -337,8 +337,8 @@ int main(int argc, char* argv[])
         status = 1;
     }
 
-    // Quick test for GinkgoSolver (Gauss Seidel) constructor
-    auto gko_gs = GinkgoSolver<scalar_type, scalar_type>(mat_ptr);
+    // Quick test for GinkgoSmoother (Gauss Seidel) constructor
+    auto gko_gs = GinkgoSmoother<scalar_type, scalar_type>(mat_ptr);
 
     // free
     DeleteMatrix(A);
