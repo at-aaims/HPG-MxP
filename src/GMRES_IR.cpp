@@ -71,11 +71,11 @@ int GMRES_IR(const SparseMatrix_type& A, const SparseMatrix_type2& A_lo,
     HPGMP_RANGE_PUSH(__FUNCTION__);
 
     // (working) precision for outer loop
-    typedef typename SparseMatrix_type::halo_scalar_type scalar_type;
+    typedef typename SparseMatrix_type::local_scalar_type scalar_type;
     typedef MultiVector<scalar_type> MultiVector_type;
     //typedef SerialDenseMatrix<scalar_type> SerialDenseMatrix_type;
     // (lower) precision for inner loop
-    typedef typename SparseMatrix_type2::halo_scalar_type scalar_type2;
+    typedef typename SparseMatrix_type2::local_scalar_type scalar_type2;
     typedef MultiVector<scalar_type2> MultiVector_type2;
     //typedef SerialDenseMatrix<scalar_type2> SerialDenseMatrix_type;
     typedef Vector<scalar_type2> Vector_type2;
@@ -613,11 +613,10 @@ template int GMRES_IR< SparseMatrix<float>, SparseMatrix<float>, GMRESData<float
     Vector<float> const&, Vector<float>&, const int, const int, float, int&, float&, float&, bool, bool,
     TestGMRESData&);
 
-
 // mixed
 #ifdef HPGMP_WITH_GINKGO_AMP
-template int GMRES_IR< SparseMatrix<double, double>, SparseMatrix<double, float>, GMRESData<double, double, double>, GMRESData<double, float, float>, Vector<double>>(
-    SparseMatrix<double, double> const&, SparseMatrix<double, float> const&, GMRESData<double, double, double>&, GMRESData<double, float, float>&,
+template int GMRES_IR< SparseMatrix<double, double>, SparseMatrix<double, float>, GMRESData<double, double, double>, GMRESData<double, float, double>, Vector<double>>(
+    SparseMatrix<double, double> const&, SparseMatrix<double, float> const&, GMRESData<double, double, double>&, GMRESData<double, float, double>&,
     Vector<double> const&, Vector<double>&, const int, const int, double, int&, double&, double&, bool, bool,
     TestGMRESData&);
 #else

@@ -144,7 +144,7 @@ template int OptimizeProblemELL(SparseMatrix<float>& A, GMRESData<float, float, 
 template int OptimizeProblemELL(SparseMatrix<float>& A, GMRESData<double, double, double>& data,
                                 Vector<double>& b, Vector<double>& x, Vector<double>& xexact);
 
-template int OptimizeProblemELL(SparseMatrix<double, float>& A, GMRESData<double, float, float>& data,
+template int OptimizeProblemELL(SparseMatrix<double, float>& A, GMRESData<double, float, double>& data,
                                 Vector<float>& b, Vector<float>& x, Vector<float>& xexact);
 
 template int OptimizeProblemELL(SparseMatrix<double, float>& A, GMRESData<double, double, double>& data,

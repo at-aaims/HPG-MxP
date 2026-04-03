@@ -262,10 +262,10 @@ template int TestGMRES< SparseMatrix<float>,
 template int TestGMRES< SparseMatrix<double>,
                         SparseMatrix<double, float>,
                         GMRESData<double, double, double>,
-                        GMRESData<double, float, float>,
+                        GMRESData<double, float, double>,
                         Vector<double>>(
     SparseMatrix<double>&, SparseMatrix<double, float>&,
-    GMRESData<double, double, double>&, GMRESData<double, float, float>&,
+    GMRESData<double, double, double>&, GMRESData<double, float, double>&,
     Vector<double>&, Vector<double>&, bool, bool, TestGMRESData&);
 #else
 template int TestGMRES< SparseMatrix<double>,

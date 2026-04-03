@@ -106,9 +106,9 @@ template void SetupMatrix< SparseMatrix<float>, GMRESData<float, float, float>, 
 
 
 // mixed
-template void SetupMatrix< SparseMatrix<double, float>, GMRESData<double, float, float>, class Vector<double> >(
+template void SetupMatrix< SparseMatrix<double, float>, GMRESData<double, float, double>, class Vector<double> >(
     DeviceCtx* dctx, int numberOfMgLevels, SparseMatrix<double, float>& A, Geometry* geom,
-    GMRESData<double, float, float>& data, Vector<double>* b, Vector<double>* x, Vector<double>* xexact,
+    GMRESData<double, float, double>& data, Vector<double>* b, Vector<double>* x, Vector<double>* xexact,
     bool init_vect, comm_type comm);
 
 template void SetupMatrix< SparseMatrix<float>, GMRESData<float, float, float>, class Vector<double> >(
