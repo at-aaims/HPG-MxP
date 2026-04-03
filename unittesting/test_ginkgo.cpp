@@ -286,8 +286,8 @@ int main(int argc, char* argv[])
         gko_vec_type::create(gko_exec,
                              gko::dim<2>{static_cast<gko::size_type>(x.local_length()), 1},
                              std::move(gko::make_array_view(gko_exec,
-                                                  x.local_length(),
-                                                  x.d_values())),
+                                                            x.local_length(),
+                                                            x.d_values())),
                              1);
 
 #endif // HPGMP_REFERENCE
