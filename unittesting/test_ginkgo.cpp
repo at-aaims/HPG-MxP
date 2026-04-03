@@ -337,6 +337,9 @@ int main(int argc, char* argv[])
         status = 1;
     }
 
+    // Quick test for GinkgoSolver (Gauss Seidel) constructor
+    auto gko_gs = GinkgoSolver<scalar_type, scalar_type>(mat_ptr);
+
     // free
     DeleteMatrix(A);
     delete geom;

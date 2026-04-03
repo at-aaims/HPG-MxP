@@ -1,6 +1,6 @@
 include_directories(${CMAKE_SOURCE_DIR}/src)
 
-if(NOT HPGMP_BUILD_REFERENCE)
+if(NOT HPGMP_BUILD_REFERENCE AND NOT HPGMP_ENABLE_GINKGO)
     add_library(basic_main basic_main.cpp)
     target_link_libraries(basic_main PUBLIC hpgmp hpgmp_device)
 

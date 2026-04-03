@@ -204,7 +204,7 @@ int fused_spmv_restriction(const SparseMatrix<local_scalar_t, halo_scalar_t>& A,
         dynamic_cast<EllOptData<local_scalar_t, halo_scalar_t>*>(A.optimizationData)->mat;
 #endif
     auto stream_interior = mat->get_device_context()->get_compute_stream();
-#ifndef HPCG_NO_MPI
+#ifndef HPGMP_NO_MPI
     if (A.geom->size > 1)
     {
         xf.update_halos_pack_send_buffer(mat.get());
@@ -215,7 +215,7 @@ int fused_spmv_restriction(const SparseMatrix<local_scalar_t, halo_scalar_t>& A,
         LAUNCH_FUSED_RESTRICT_SPMV(1024, 27);
     }
 
-#ifndef HPCG_NO_MPI
+#ifndef HPGMP_NO_MPI
     if (A.geom->size > 1)
     {
         xf.update_halos_send_receive(mat.get());

@@ -30,9 +30,6 @@
 #include "GMRESData.hpp"
 #include "ell_multicolor_gs.hpp"
 #include "simulate_halos.hpp"
-#ifdef HPGMP_WITH_GINKGO
-#include "GinkgoOptData.hpp"
-#endif
 
 typedef double scalar_type;
 //typedef float  scalar_type;
@@ -44,13 +41,8 @@ typedef GMRESData<scalar_type, scalar_type, scalar_type> GMRESData_type;
 typedef float scalar_type2;
 typedef float project_type;
 typedef Vector<scalar_type2> Vector_type2;
-#ifdef HPGMP_WITH_GINKGO_AMP
-typedef SparseMatrix<scalar_type, scalar_type2> SparseMatrix_type2;
-typedef GMRESData<scalar_type, scalar_type2, project_type> GMRESData_type2;
-#else
 typedef SparseMatrix<scalar_type2> SparseMatrix_type2;
 typedef GMRESData<scalar_type2, scalar_type2, project_type> GMRESData_type2;
-#endif
 
 /*!
   Main driver program: Construct synthetic problem, run V&V tests, compute benchmark parameters, run benchmark, report results.
@@ -144,17 +136,9 @@ int main(int argc, char* argv[])
     Vector_type xl;
     xl.initialize(A.localNumberOfColumns, A.comm, dctx.get());
 
-#ifdef HPGMP_WITH_GINKGO
-    std::shared_ptr<const GinkgoMatrix<scalar_type, scalar_type>> mat =
-        dynamic_cast<GinkgoOptData<scalar_type, scalar_type>*>(A.optimizationData)->mat;
-    std::shared_ptr<const GinkgoSolver<scalar_type, scalar_type>> solver =
-        dynamic_cast<GinkgoOptData<scalar_type, scalar_type>*>(A.optimizationData)->solver;
-    ierr = ginkgo_multicolor_gs(solver.get(), mat.get(), &b, &xl);
-#else
     std::shared_ptr<const ELLMatrix<scalar_type, scalar_type>> mat =
         dynamic_cast<EllOptData<scalar_type, scalar_type>*>(A.optimizationData)->mat;
     ierr = ell_multicolor_gs(false, mat.get(), &b, &xl);
-#endif
 
     assert(ierr == 0);
 
