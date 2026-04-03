@@ -1,20 +1,24 @@
 include_directories(${CMAKE_SOURCE_DIR}/src)
 
-if(NOT HPGMP_BUILD_REFERENCE AND NOT HPGMP_ENABLE_GINKGO)
+if(NOT HPGMP_BUILD_REFERENCE AND NOT HPGMP_ENABLE_GINKGO_AMP)
     add_library(basic_main basic_main.cpp)
     target_link_libraries(basic_main PUBLIC hpgmp hpgmp_device)
 
-    add_executable(test_spmv test_spmv.cpp)
-    target_link_libraries(test_spmv hpgmp hpgmp_device)
-    add_test(NAME spmv COMMAND test_spmv)
+    if(NOT HPGMP_ENABLE_GINKGO) # simulate_halos sets non-square matrices
+        add_executable(test_spmv test_spmv.cpp)
+        target_link_libraries(test_spmv hpgmp hpgmp_device)
+        add_test(NAME spmv COMMAND test_spmv)
+    endif()
 
     add_executable(test_multicoloring multicoloring.cpp)
     target_link_libraries(test_multicoloring PRIVATE basic_main hpgmp_device)
     add_test(NAME multicolor_reordering COMMAND test_multicoloring)
 
-    add_executable(test_gs_multicolor gs_multicolor.cpp)
-    target_link_libraries(test_gs_multicolor hpgmp hpgmp_device)
-    add_test(NAME gs_ell_multicolor COMMAND test_gs_multicolor)
+    if(NOT HPGMP_ENABLE_GINKGO) # simulate_halos sets non-square matrices
+        add_executable(test_gs_multicolor gs_multicolor.cpp)
+        target_link_libraries(test_gs_multicolor hpgmp hpgmp_device)
+        add_test(NAME gs_ell_multicolor COMMAND test_gs_multicolor)
+    endif()
 
     add_executable(test_dot dot.cpp)
     target_link_libraries(test_dot hpgmp hpgmp_device)
