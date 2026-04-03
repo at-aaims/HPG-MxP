@@ -23,7 +23,7 @@ GinkgoSolver<local_scalar_t, halo_scalar_t>::GinkgoSolver(const GinkgoMatrix<loc
 }
 
 template<typename local_scalar_t, typename halo_scalar_t, typename vec_scalar_type>
-int ginkgo_multicolor_gs_interior(const GinkgoSolver<local_scalar_t, halo_scalar_t>* interior_solver, 
+int ginkgo_multicolor_gs_interior(const GinkgoSolver<local_scalar_t, halo_scalar_t>* interior_solver,
                                   const GinkgoMatrix<local_scalar_t, halo_scalar_t>* mat,
                                   const Vector<vec_scalar_type>* r, Vector<vec_scalar_type>* x)
 {
@@ -51,7 +51,7 @@ int ginkgo_multicolor_gs_interior(const GinkgoSolver<local_scalar_t, halo_scalar
 }
 
 template<typename local_scalar_t, typename halo_scalar_t, typename vec_scalar_type>
-int ginkgo_multicolor_gs(const GinkgoSolver<local_scalar_t, halo_scalar_t>* interior_solver, 
+int ginkgo_multicolor_gs(const GinkgoSolver<local_scalar_t, halo_scalar_t>* interior_solver,
                          const GinkgoMatrix<local_scalar_t, halo_scalar_t>* mat,
                          const Vector<vec_scalar_type>* r, Vector<vec_scalar_type>* x)
 {
