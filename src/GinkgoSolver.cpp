@@ -1,9 +1,9 @@
 #ifdef HPGMP_WITH_GINKGO
 
-#include "GinkgoSolver.hpp"
+#include "GinkgoOptData.hpp"
 
-template<typename hiscalar, typename loscalar>
-GinkgoSolver<hiscalar, loscalar>::GinkgoSolver(const GinkgoMatrix<hiscalar, hiscalar>* mat)
+template<typename local_scalar_t, typename halo_scalar_t>
+GinkgoSolver<local_scalar_t, halo_scalar_t>::GinkgoSolver(const GinkgoMatrix<local_scalar_t, halo_scalar_t>* mat)
 {
     auto gko_mat    = mat->get_gko_mat();
     auto gko_exec   = gko_mat->get_executor();
@@ -22,8 +22,9 @@ GinkgoSolver<hiscalar, loscalar>::GinkgoSolver(const GinkgoMatrix<hiscalar, hisc
     std::cout << "Using Ginkgo (FwdGaussSeidel) solver.\n";
 }
 
-template<typename mat_scalar_type, typename vec_scalar_type>
-int ginkgo_multicolor_gs_interior(const GinkgoSolver<mat_scalar_type, mat_scalar_type>* interior_solver, const GinkgoMatrix<mat_scalar_type, mat_scalar_type>* mat,
+template<typename local_scalar_t, typename halo_scalar_t, typename vec_scalar_type>
+int ginkgo_multicolor_gs_interior(const GinkgoSolver<local_scalar_t, halo_scalar_t>* interior_solver, 
+                                  const GinkgoMatrix<local_scalar_t, halo_scalar_t>* mat,
                                   const Vector<vec_scalar_type>* r, Vector<vec_scalar_type>* x)
 {
     using gko_vec_type = gko::matrix::Dense<vec_scalar_type>;
@@ -49,8 +50,9 @@ int ginkgo_multicolor_gs_interior(const GinkgoSolver<mat_scalar_type, mat_scalar
     return 0;
 }
 
-template<typename mat_scalar_type, typename vec_scalar_type>
-int ginkgo_multicolor_gs(const GinkgoSolver<mat_scalar_type, mat_scalar_type>* interior_solver, const GinkgoMatrix<mat_scalar_type, mat_scalar_type>* mat,
+template<typename local_scalar_t, typename halo_scalar_t, typename vec_scalar_type>
+int ginkgo_multicolor_gs(const GinkgoSolver<local_scalar_t, halo_scalar_t>* interior_solver, 
+                         const GinkgoMatrix<local_scalar_t, halo_scalar_t>* mat,
                          const Vector<vec_scalar_type>* r, Vector<vec_scalar_type>* x)
 {
     int ierr = ginkgo_multicolor_gs_interior(interior_solver, mat, r, x);
@@ -60,14 +62,23 @@ int ginkgo_multicolor_gs(const GinkgoSolver<mat_scalar_type, mat_scalar_type>* i
 // Available template instantiations
 template class GinkgoSolver<double, double>;
 template class GinkgoSolver<float, float>;
+template class GinkgoSolver<double, float>;
 
 template int ginkgo_multicolor_gs_interior(const GinkgoSolver<double, double>* interior_solver, const GinkgoMatrix<double, double>* mat,
                                            const Vector<double>* r, Vector<double>* x);
 template int ginkgo_multicolor_gs_interior(const GinkgoSolver<float, float>* interior_solver, const GinkgoMatrix<float, float>* mat,
                                            const Vector<float>* r, Vector<float>* x);
+template int ginkgo_multicolor_gs_interior(const GinkgoSolver<double, float>* interior_solver, const GinkgoMatrix<double, float>* mat,
+                                           const Vector<float>* r, Vector<float>* x);
+template int ginkgo_multicolor_gs_interior(const GinkgoSolver<double, float>* interior_solver, const GinkgoMatrix<double, float>* mat,
+                                           const Vector<double>* r, Vector<double>* x);
 
 template int ginkgo_multicolor_gs(const GinkgoSolver<double, double>* interior_solver, const GinkgoMatrix<double, double>* mat,
                                   const Vector<double>* r, Vector<double>* x);
 template int ginkgo_multicolor_gs(const GinkgoSolver<float, float>* interior_solver, const GinkgoMatrix<float, float>* mat,
                                   const Vector<float>* r, Vector<float>* x);
+template int ginkgo_multicolor_gs(const GinkgoSolver<double, float>* interior_solver, const GinkgoMatrix<double, float>* mat,
+                                  const Vector<float>* r, Vector<float>* x);
+template int ginkgo_multicolor_gs(const GinkgoSolver<double, float>* interior_solver, const GinkgoMatrix<double, float>* mat,
+                                  const Vector<double>* r, Vector<double>* x);
 #endif

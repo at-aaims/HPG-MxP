@@ -35,7 +35,7 @@
 #include "ell_matrix.hpp"
 
 #ifdef HPGMP_WITH_GINKGO
-#include "GinkgoMatrix.hpp"
+#include "GinkgoOptData.hpp"
 #endif
 
 #include "kernel_helpers.hpp.inc"

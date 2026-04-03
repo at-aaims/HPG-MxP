@@ -31,7 +31,7 @@
 #include "ell_multicolor_gs.hpp"
 #include "simulate_halos.hpp"
 #ifdef HPGMP_WITH_GINKGO
-#include "GinkgoMatrix.hpp"
+#include "GinkgoOptData.hpp"
 #endif
 
 typedef double scalar_type;
@@ -147,11 +147,14 @@ int main(int argc, char* argv[])
 #ifdef HPGMP_WITH_GINKGO
     std::shared_ptr<const GinkgoMatrix<scalar_type, scalar_type>> mat =
         dynamic_cast<GinkgoOptData<scalar_type, scalar_type>*>(A.optimizationData)->mat;
+    std::shared_ptr<const GinkgoSolver<scalar_type, scalar_type>> solver =
+        dynamic_cast<GinkgoOptData<scalar_type, scalar_type>*>(A.optimizationData)->solver;
+    ierr = ginkgo_multicolor_gs(solver.get(), mat.get(), &b, &xl);
 #else
     std::shared_ptr<const ELLMatrix<scalar_type, scalar_type>> mat =
         dynamic_cast<EllOptData<scalar_type, scalar_type>*>(A.optimizationData)->mat;
-#endif
     ierr = ell_multicolor_gs(false, mat.get(), &b, &xl);
+#endif
 
     assert(ierr == 0);
 
