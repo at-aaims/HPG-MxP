@@ -30,8 +30,8 @@ GinkgoMatrix<local_scalar_t, halo_scalar_t>::GinkgoMatrix(const SparseMatrix<loc
         auto amp_mat =
             gko::share(gko_amp_type::build().with_tolerance(1e-8).on(gko_exec)->generate(std::move(ell_mat)));
         gko_mat_ = amp_mat;
-        std::cout << "Using Ginkgo AMP matrix.\n";
-        std::cout << "amp_mat->num_precisions:" << amp_mat->num_precisions << "\n";
+        //std::cout << "Using Ginkgo AMP matrix.\n";
+        //std::cout << "amp_mat->num_precisions:" << amp_mat->num_precisions << "\n";
     } else
     {
         throw std::runtime_error("Unsupported gko_mat_type in GinkgoMatrix!");
@@ -73,7 +73,7 @@ void ginkgo_spmv(const GinkgoMatrix<local_scalar_t, halo_scalar_t>* mat,
     // On halo stream: pack send buffer and copy to host if needed
     x->update_halos_pack_send_buffer(mat);
 
-    std::cout << "Using Ginkgo SPMV.\n";
+    //std::cout << "Using Ginkgo SPMV.\n";
     ginkgo_interior_spmv<local_scalar_t, halo_scalar_t, vec_scalar_type>(mat, x, y);
 
     // wait for comms to complete

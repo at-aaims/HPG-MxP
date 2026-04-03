@@ -19,7 +19,7 @@ GinkgoSolver<local_scalar_t, halo_scalar_t>::GinkgoSolver(const GinkgoMatrix<loc
 
     solver_ = gko::share(solver_factory->generate(gko_mat));
 
-    std::cout << "Using Ginkgo (FwdGaussSeidel) solver.\n";
+    //std::cout << "Using Ginkgo (FwdGaussSeidel) solver.\n";
 }
 
 template<typename local_scalar_t, typename halo_scalar_t, typename vec_scalar_type>
