@@ -38,11 +38,11 @@
 
 #include "kernel_helpers.hpp.inc"
 
-template<unsigned int BLOCKSIZE, typename mat_scalar_type, typename vec_scalar_t>
+template<unsigned int BLOCKSIZE, typename local_scalar_t, typename halo_scalar_t, typename vec_scalar_t>
 __launch_bounds__(BLOCKSIZE)
     __global__ void kernel_prolongation(const local_int_t size,
                                         const local_int_t* __restrict__ f2cOperator,
-                                        const mat_scalar_type* __restrict__ coarse,
+                                        const local_scalar_t* __restrict__ coarse,
                                         vec_scalar_t* __restrict__ fine,
                                         const local_int_t* __restrict__ perm_fine,
                                         const local_int_t* __restrict__ perm_coarse)
@@ -78,13 +78,14 @@ int prolongation(const SparseMatrix<local_scalar_t, halo_scalar_t>& Af, Vector<v
     dim3 blocks((Af.mgData->rc->local_length() - 1) / 128 + 1);
     dim3 threads(128);
 
-    kernel_prolongation<128><<<blocks, threads, 0, stream_interior>>>(
-        Af.mgData->rc->local_length(),
-        Af.mgData->d_f2cOperator,
-        Af.mgData->xc->d_values(),
-        xf.d_values(),
-        Af.perm,
-        Af.Ac->perm);
+    kernel_prolongation<128, local_scalar_t, halo_scalar_t, vec_scalar_t>
+        <<<blocks, threads, 0, stream_interior>>>(
+            Af.mgData->rc->local_length(),
+            Af.mgData->d_f2cOperator,
+            Af.mgData->xc->d_values(),
+            xf.d_values(),
+            Af.perm,
+            Af.Ac->perm);
 
     Af.dctx->synchronize_compute_stream();
     return 0;
