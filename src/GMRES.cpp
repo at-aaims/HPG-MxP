@@ -436,10 +436,10 @@ int GMRES(const SparseMatrix_type& A, GMRESData_type& data, const Vector_type& b
  * specializations *
  * --------------- */
 
-template int GMRES< SparseMatrix<double>, GMRESData<double>, Vector<double>>(
-    SparseMatrix<double> const&, GMRESData<double>&, Vector<double> const&, Vector<double>&,
+template int GMRES< SparseMatrix<double>, GMRESData<double, double, double>, Vector<double>>(
+    SparseMatrix<double> const&, GMRESData<double, double, double>&, Vector<double> const&, Vector<double>&,
     const int, const int, double, int&, double&, double&, bool, bool, TestGMRESData&);
 
-template int GMRES< SparseMatrix<float>, GMRESData<float>, Vector<float>>(
-    SparseMatrix<float> const&, GMRESData<float>&, Vector<float> const&, Vector<float>&,
+template int GMRES< SparseMatrix<float>, GMRESData<float, float, float>, Vector<float>>(
+    SparseMatrix<float> const&, GMRESData<float, float, float>&, Vector<float> const&, Vector<float>&,
     const int, const int, float, int&, float&, float&, bool, bool, TestGMRESData&);

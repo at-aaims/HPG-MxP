@@ -74,5 +74,8 @@ template void GenerateNonsymProblem< SparseMatrix<float>, Vector<float> >(
 
 
 // mixed
+template void GenerateNonsymProblem< SparseMatrix<double, float>, Vector<double> >(
+    DeviceCtx*, SparseMatrix<double, float>&, Vector<double>*, Vector<double>*, Vector<double>*, bool);
+
 template void GenerateNonsymProblem< SparseMatrix<float>, Vector<double> >(
     DeviceCtx*, SparseMatrix<float>&, Vector<double>*, Vector<double>*, Vector<double>*, bool);

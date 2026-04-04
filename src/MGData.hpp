@@ -28,16 +28,16 @@
 #include "SparseMatrix.hpp"
 #include "Vector.hpp"
 
-template<class SC>
+template<typename scalar_t>
 class MGData
 {
 public:
-    typedef Vector<SC> Vector_type;
+    typedef Vector<scalar_t> Vector_type;
 
     MGData(DeviceCtx* const dctx, local_int_t* f2c_operator, local_int_t* d_f2c_operator,
            local_int_t* d_c2f_operator,
-           Vector<SC>* rvec, Vector<SC>* xvec,
-           Vector<SC>* axfvec)
+           Vector<scalar_t>* rvec, Vector<scalar_t>* xvec,
+           Vector<scalar_t>* axfvec)
     {
         initialize(dctx, f2c_operator, d_f2c_operator, d_c2f_operator, rvec, xvec, axfvec);
     }
@@ -49,8 +49,8 @@ public:
    */
     void initialize(DeviceCtx* const dctx, local_int_t* f2c_operator,
                     local_int_t* d_f2c_operator, local_int_t* d_c2f_operator,
-                    Vector<SC>* rvec, Vector<SC>* xvec,
-                    Vector<SC>* axfvec)
+                    Vector<scalar_t>* rvec, Vector<scalar_t>* xvec,
+                    Vector<scalar_t>* axfvec)
     {
         dctx_         = dctx;
         f2cOperator   = f2c_operator;
@@ -83,19 +83,19 @@ public:
     Vector_type* xc               = nullptr; // coarse grid solution vector
     Vector_type* Axf              = nullptr; // fine grid residual vector
     /*!
-   This is for storing optimized data structres created in OptimizeProblem and
-   used inside optimized ComputeSPMV().
-   */
+       This is for storing optimized data structres created in OptimizeProblem and
+       used inside optimized ComputeSPMV().
+     */
     void* optimizationData = nullptr;
     size_t buffer_size_R{};
     size_t buffer_size_P{};
     void* buffer_R = nullptr;
     void* buffer_P = nullptr;
 #if defined(HPGMP_WITH_CUDA) | defined(HPGMP_WITH_HIP)
-    // to store the restrictiion as CRS matrix on device
-    int* d_row_ptr = nullptr;
-    int* d_col_idx = nullptr;
-    SC* d_nzvals   = nullptr; //!< values of matrix entries
+    // to store the restrictiion as CSR matrix on device
+    int* d_row_ptr     = nullptr;
+    int* d_col_idx     = nullptr;
+    scalar_t* d_nzvals = nullptr; //!< values of matrix entries
 #if defined(HPGMP_WITH_CUDA)
     cusparseMatDescr_t descrR;
 #elif defined(HPGMP_WITH_HIP)
@@ -103,9 +103,9 @@ public:
 
     // to store transpose
     rocsparse_spmat_descr descrP;
-    int* d_tran_row_ptr = nullptr;
-    int* d_tran_col_idx = nullptr;
-    SC* d_tran_nzvals   = nullptr; //!< values of matrix entries
+    int* d_tran_row_ptr     = nullptr;
+    int* d_tran_col_idx     = nullptr;
+    scalar_t* d_tran_nzvals = nullptr; //!< values of matrix entries
 #endif
 #endif
 };

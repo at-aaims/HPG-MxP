@@ -27,19 +27,19 @@
 #include "DataTypes.hpp"
 #include "exceptions.hpp"
 
-template<class scalar>
+template<typename scalar>
 MultiVector<scalar>::MultiVector()
 {
 }
 
-template<class scalar>
+template<typename scalar>
 MultiVector<scalar>::MultiVector(const local_int_t localLength, const local_int_t n,
                                  comm_type comm, DeviceCtx* const dctx)
 {
     initialize(localLength, n, comm, dctx);
 }
 
-template<class scalar>
+template<typename scalar>
 MultiVector<scalar>::MultiVector(const local_int_t localLength, const local_int_t n,
                                  comm_type comm, DeviceCtx* const dctx, scalar* const vals,
                                  scalar* const d_vals)
@@ -47,7 +47,7 @@ MultiVector<scalar>::MultiVector(const local_int_t localLength, const local_int_
     initialize_view(localLength, n, comm, dctx, vals, d_vals);
 }
 
-template<class scalar>
+template<typename scalar>
 void MultiVector<scalar>::initialize(const local_int_t localLength, const local_int_t n,
                                      comm_type comm, DeviceCtx* const dctx)
 {
@@ -76,7 +76,7 @@ void MultiVector<scalar>::initialize(const local_int_t localLength, const local_
     is_view_ = false;
 }
 
-template<class scalar>
+template<typename scalar>
 void MultiVector<scalar>::initialize_view(const local_int_t localLength, const local_int_t n,
                                           comm_type comm, DeviceCtx* const dctx,
                                           scalar* const values, scalar* const d_values)
@@ -163,7 +163,7 @@ void MultiVector<scalar>::update_device_data() const
 
   @param[in] A the known system matrix
  */
-template<class scalar>
+template<typename scalar>
 MultiVector<scalar>::~MultiVector()
 {
     if (!is_view_) {

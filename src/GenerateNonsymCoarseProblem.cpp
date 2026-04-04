@@ -153,3 +153,6 @@ template void GenerateNonsymCoarseProblem< SparseMatrix<double> >(
 
 template void GenerateNonsymCoarseProblem< SparseMatrix<float> >(
     DeviceCtx*, SparseMatrix<float> const&);
+
+template void GenerateNonsymCoarseProblem< SparseMatrix<double, float> >(
+    DeviceCtx*, SparseMatrix<double, float> const&);

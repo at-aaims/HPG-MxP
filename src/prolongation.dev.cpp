@@ -38,12 +38,12 @@
 
 #include "kernel_helpers.hpp.inc"
 
-template<unsigned int BLOCKSIZE, typename mscalar, typename vscalar>
+template<unsigned int BLOCKSIZE, typename mat_scalar_type, typename vec_scalar_t>
 __launch_bounds__(BLOCKSIZE)
     __global__ void kernel_prolongation(const local_int_t size,
                                         const local_int_t* __restrict__ f2cOperator,
-                                        const mscalar* __restrict__ coarse,
-                                        vscalar* __restrict__ fine,
+                                        const mat_scalar_type* __restrict__ coarse,
+                                        vec_scalar_t* __restrict__ fine,
                                         const local_int_t* __restrict__ perm_fine,
                                         const local_int_t* __restrict__ perm_coarse)
 {
@@ -71,8 +71,8 @@ __launch_bounds__(BLOCKSIZE)
  *
  * @return Returns zero on success and a non-zero value otherwise.
  */
-template<typename mat_scalar, typename vec_scalar>
-int prolongation(const SparseMatrix<mat_scalar>& Af, Vector<vec_scalar>& xf)
+template<typename local_scalar_t, typename halo_scalar_t, typename vec_scalar_t>
+int prolongation(const SparseMatrix<local_scalar_t, halo_scalar_t>& Af, Vector<vec_scalar_t>& xf)
 {
     auto stream_interior = Af.dctx->get_compute_stream();
     dim3 blocks((Af.mgData->rc->local_length() - 1) / 128 + 1);
@@ -91,5 +91,6 @@ int prolongation(const SparseMatrix<mat_scalar>& Af, Vector<vec_scalar>& xf)
 }
 
 template int prolongation(const SparseMatrix<double>& Af, Vector<double>& xf);
-
 template int prolongation(const SparseMatrix<float>& Af, Vector<float>& xf);
+template int prolongation(const SparseMatrix<double, float>& Af, Vector<float>& xf);
+template int prolongation(const SparseMatrix<double, float>& Af, Vector<double>& xf);

@@ -38,6 +38,10 @@
 #include "permute.hpp"
 #include "multicoloring.hpp"
 
+#ifdef HPGMP_WITH_GINKGO
+#include "GinkgoOptData.hpp"
+#endif
+
 /*!
   Optimizes the data structures used for GMRES to increase the
   performance of the benchmark version of the preconditioned GMRES algorithm.
@@ -53,9 +57,9 @@
   @see GenerateGeometry
   @see GenerateProblem
 */
-template<typename mat_scalar, typename solver_scalar, typename vec_scalar>
-int OptimizeProblemELL(SparseMatrix<mat_scalar>& A, GMRESData<solver_scalar>& data,
-                       Vector<vec_scalar>& b, Vector<vec_scalar>& x, Vector<vec_scalar>& xexact)
+template<typename local_scalar_t, typename halo_scalar_t, class GMRESData_type, typename vec_scalar_t>
+int OptimizeProblemELL(SparseMatrix<local_scalar_t, halo_scalar_t>& A, GMRESData_type& data,
+                       Vector<vec_scalar_t>& b, Vector<vec_scalar_t>& x, Vector<vec_scalar_t>& xexact)
 {
     b.update_device_data();
     xexact.update_device_data();
@@ -63,8 +67,8 @@ int OptimizeProblemELL(SparseMatrix<mat_scalar>& A, GMRESData<solver_scalar>& da
     auto dctx             = A.dctx;
     const int local_nrows = A.localNumberOfRows;
 
-    SparseMatrix<mat_scalar>* M = &A;
-    int igrid                   = 0;
+    SparseMatrix<local_scalar_t, halo_scalar_t>* M = &A;
+    int igrid                                      = 0;
     while (M != NULL)
     {
 
@@ -74,10 +78,10 @@ int OptimizeProblemELL(SparseMatrix<mat_scalar>& A, GMRESData<solver_scalar>& da
             dctx->device_alloc(M->max_nnz_per_row * local_nrows * sizeof(local_int_t)));
         dctx->copy_host_to_device_sync(M->d_mtxIndL, M->mtxIndL[0],
                                        M->max_nnz_per_row * local_nrows * sizeof(local_int_t));
-        M->d_matrixValues = reinterpret_cast<mat_scalar*>(
-            dctx->device_alloc(M->max_nnz_per_row * local_nrows * sizeof(mat_scalar)));
+        M->d_matrixValues = reinterpret_cast<local_scalar_t*>(
+            dctx->device_alloc(M->max_nnz_per_row * local_nrows * sizeof(local_scalar_t)));
         dctx->copy_host_to_device_sync(M->d_matrixValues, M->matrixValues[0],
-                                       M->max_nnz_per_row * local_nrows * sizeof(mat_scalar));
+                                       M->max_nnz_per_row * local_nrows * sizeof(local_scalar_t));
 
         // Perform matrix coloring
         multicolor_JPL(*M);
@@ -91,24 +95,23 @@ int OptimizeProblemELL(SparseMatrix<mat_scalar>& A, GMRESData<solver_scalar>& da
             std::cout << "Setting up ELL on grid " << igrid << "." << std::endl;
         }
 #endif
-        auto moptdata       = new EllOptData<mat_scalar>;
-        moptdata->mat       = std::make_shared<ELLMatrix<mat_scalar>>(*M);
+#ifdef HPGMP_WITH_GINKGO
+        auto moptdata       = new GinkgoOptData<local_scalar_t, halo_scalar_t>;
+        auto mat            = std::make_shared<GinkgoMatrix<local_scalar_t, halo_scalar_t>>(*M);
+        moptdata->mat       = mat;
+        moptdata->smoother  = std::make_shared<GinkgoSmoother<local_scalar_t, halo_scalar_t>>(mat.get());
         M->optimizationData = moptdata;
+#else
+        auto moptdata       = new EllOptData<local_scalar_t, halo_scalar_t>;
+        moptdata->mat       = std::make_shared<ELLMatrix<local_scalar_t, halo_scalar_t>>(*M); // Performs row permutation
+        M->optimizationData = moptdata;
+#endif
 #ifdef HPGMP_VERBOSE
         MPI_Barrier(A.comm);
         if (A.geom->rank == 0) {
             std::cout << "Built ELL on grid " << igrid << "." << std::endl;
         }
 #endif
-
-        // Permute matrix rows
-        moptdata->mat->permute_rows(M->perm);
-
-        // Extract diagonal indices and inverse values
-        moptdata->mat->extract_diagonal();
-
-        dctx->device_free(M->d_mtxIndL);
-        dctx->device_free(M->d_matrixValues);
 
         // Go to next level in hierarchy
         M = M->Ac;
@@ -119,6 +122,10 @@ int OptimizeProblemELL(SparseMatrix<mat_scalar>& A, GMRESData<solver_scalar>& da
     b.permute(A.perm);
     xexact.permute(A.perm);
 
+    // Update host mirrors with permutted values
+    b.update_host_mirror();
+    xexact.update_host_mirror();
+
     return 0;
 }
 
@@ -128,21 +135,27 @@ int OptimizeProblemELL(SparseMatrix<mat_scalar>& A, GMRESData<solver_scalar>& da
 //    return 0.0;
 //}
 
-template int OptimizeProblemELL(SparseMatrix<double>& A, GMRESData<double>& data,
+template int OptimizeProblemELL(SparseMatrix<double>& A, GMRESData<double, double, double>& data,
                                 Vector<double>& b, Vector<double>& x, Vector<double>& xexact);
 
-template int OptimizeProblemELL(SparseMatrix<float>& A, GMRESData<float>& data,
+template int OptimizeProblemELL(SparseMatrix<float>& A, GMRESData<float, float, float>& data,
                                 Vector<float>& b, Vector<float>& x, Vector<float>& xexact);
 
-template int OptimizeProblemELL(SparseMatrix<float>& A, GMRESData<double>& data,
+template int OptimizeProblemELL(SparseMatrix<float>& A, GMRESData<double, double, double>& data,
+                                Vector<double>& b, Vector<double>& x, Vector<double>& xexact);
+
+template int OptimizeProblemELL(SparseMatrix<double, float>& A, GMRESData<double, float, double>& data,
+                                Vector<float>& b, Vector<float>& x, Vector<float>& xexact);
+
+template int OptimizeProblemELL(SparseMatrix<double, float>& A, GMRESData<double, double, double>& data,
                                 Vector<double>& b, Vector<double>& x, Vector<double>& xexact);
 
 #if 0
-template <typename SC>
-void seemingly_necessary_stuff_from_reference(SparseMatrix<SC>* M)
+template <typename scalar_t>
+void seemingly_necessary_stuff_from_reference(SparseMatrix<scalar_t>* M)
 {
     auto dctx = M->dctx;
-    SparseMatrix<SC> *curLevelMatrix = M;
+    SparseMatrix<scalar_t> *curLevelMatrix = M;
     do {
       // form CSR on host
       const local_int_t nrow = curLevelMatrix->localNumberOfRows;
@@ -151,12 +164,12 @@ void seemingly_necessary_stuff_from_reference(SparseMatrix<SC>* M)
       global_int_t nnz = curLevelMatrix->localNumberOfNonzeros;
       int *h_row_ptr = (int*)malloc((nrow+1)* sizeof(int));
       int *h_col_idx = (int*)malloc( nnz    * sizeof(int));
-      SC  *h_nzvals  = (SC *)malloc( nnz    * sizeof(SC));
+      scalar_t  *h_nzvals  = (scalar_t *)malloc( nnz    * sizeof(scalar_t));
 
       nnz = 0;
       h_row_ptr[0] = 0;
       for (local_int_t i=0; i<nrow; i++)  {
-        const SC * const cur_vals = curLevelMatrix->matrixValues[i];
+        const scalar_t * const cur_vals = curLevelMatrix->matrixValues[i];
         const local_int_t * const cur_inds = curLevelMatrix->mtxIndL[i];
 
         const local_int_t cur_nnz = curLevelMatrix->nonzerosInRow[i];
@@ -175,15 +188,15 @@ void seemingly_necessary_stuff_from_reference(SparseMatrix<SC>* M)
       // copy CSR(A) to device
       curLevelMatrix->d_row_ptr = static_cast<int*>(dctx->device_alloc((nrow+1)*sizeof(int)));
       curLevelMatrix->d_col_idx = static_cast<int*>(dctx->device_alloc(nnz*sizeof(int)));
-      curLevelMatrix->d_nzvals = static_cast<SC*>(dctx->device_alloc(nnz*sizeof(SC)));
+      curLevelMatrix->d_nzvals = static_cast<scalar_t>(dctx->device_alloc(nnz*sizeof(scalar_t)));
 #ifndef HPGMP_NO_MPI
-      curLevelMatrix->d_sendBuffer = static_cast<SC*>(dctx->device_alloc(nnz*sizeof(SC)));
+      curLevelMatrix->d_sendBuffer = static_cast<scalar_t>(dctx->device_alloc(nnz*sizeof(scalar_t)));
       curLevelMatrix->d_elementsToSend = static_cast<local_int_t*>(
                                     dctx->device_alloc(totalToBeSent*sizeof(local_int_t)));
 #endif
       dctx->copy_host_to_device_sync(curLevelMatrix->d_row_ptr, h_row_ptr, (nrow+1)*sizeof(int));
       dctx->copy_host_to_device_sync(curLevelMatrix->d_col_idx, h_col_idx, nnz*sizeof(int));
-      dctx->copy_host_to_device_sync(curLevelMatrix->d_nzvals, h_nzvals, nnz*sizeof(SC));
+      dctx->copy_host_to_device_sync(curLevelMatrix->d_nzvals, h_nzvals, nnz*sizeof(scalar_t));
 #ifndef HPGMP_NO_MPI
       dctx->copy_host_to_device_sync(curLevelMatrix->d_elementsToSend,
               curLevelMatrix->elementsToSend, totalToBeSent*sizeof(local_int_t));
@@ -197,16 +210,16 @@ void seemingly_necessary_stuff_from_reference(SparseMatrix<SC>* M)
       global_int_t nnzU = nnz-nnzL;
       int *h_Lrow_ptr = (int*)malloc((nrow+1)* sizeof(int));
       int *h_Lcol_idx = (int*)malloc( nnzL   * sizeof(int));
-      SC  *h_Lnzvals  = (SC *)malloc( nnzL   * sizeof(SC));
+      scalar_t  *h_Lnzvals  = (scalar_t *)malloc( nnzL   * sizeof(scalar_t));
       int *h_Urow_ptr = (int*)malloc((nrow+1)* sizeof(int));
       int *h_Ucol_idx = (int*)malloc( nnzU   * sizeof(int));
-      SC  *h_Unzvals  = (SC *)malloc( nnzU   * sizeof(SC));
+      scalar_t  *h_Unzvals  = (scalar_t *)malloc( nnzU   * sizeof(scalar_t));
       nnzL = 0;
       nnzU = 0;
       h_Lrow_ptr[0] = 0;
       h_Urow_ptr[0] = 0;
       for (local_int_t i=0; i<nrow; i++)  {
-        const SC * const cur_vals = curLevelMatrix->matrixValues[i];
+        const scalar_t * const cur_vals = curLevelMatrix->matrixValues[i];
         const local_int_t * const cur_inds = curLevelMatrix->mtxIndL[i];
 
         const int cur_nnz = curLevelMatrix->nonzerosInRow[i];
@@ -230,18 +243,18 @@ void seemingly_necessary_stuff_from_reference(SparseMatrix<SC>* M)
       // copy CSR(L) to device
       curLevelMatrix->d_Lrow_ptr = static_cast<int*>(dctx->device_alloc((nrow+1)*sizeof(int)));
       curLevelMatrix->d_Lcol_idx = static_cast<int*>(dctx->device_alloc(nnzL*sizeof(int)));
-      curLevelMatrix->d_Lnzvals = static_cast<SC*>(dctx->device_alloc(nnzL*sizeof(SC)));
+      curLevelMatrix->d_Lnzvals = static_cast<scalar_t>(dctx->device_alloc(nnzL*sizeof(scalar_t)));
       dctx->copy_host_to_device_sync(curLevelMatrix->d_Lrow_ptr, h_Lrow_ptr, (nrow+1)*sizeof(int));
       dctx->copy_host_to_device_sync(curLevelMatrix->d_Lcol_idx, h_Lcol_idx, nnzL*sizeof(int));
-      dctx->copy_host_to_device_sync(curLevelMatrix->d_Lnzvals, h_Lnzvals, nnzL*sizeof(SC));
+      dctx->copy_host_to_device_sync(curLevelMatrix->d_Lnzvals, h_Lnzvals, nnzL*sizeof(scalar_t));
 
       // copy CSR(U) to device
       curLevelMatrix->d_Urow_ptr = static_cast<int*>(dctx->device_alloc((nrow+1)*sizeof(int)));
       curLevelMatrix->d_Ucol_idx = static_cast<int*>(dctx->device_alloc(nnzU*sizeof(int)));
-      curLevelMatrix->d_Unzvals = static_cast<SC*>(dctx->device_alloc(nnzU*sizeof(SC)));
+      curLevelMatrix->d_Unzvals = static_cast<scalar_t>(dctx->device_alloc(nnzU*sizeof(scalar_t)));
       dctx->copy_host_to_device_sync(curLevelMatrix->d_Urow_ptr, h_Urow_ptr, (nrow+1)*sizeof(int));
       dctx->copy_host_to_device_sync(curLevelMatrix->d_Ucol_idx, h_Ucol_idx, nnzU*sizeof(int));
-      dctx->copy_host_to_device_sync(curLevelMatrix->d_Unzvals,  h_Unzvals, nnzU*sizeof(SC));
+      dctx->copy_host_to_device_sync(curLevelMatrix->d_Unzvals,  h_Unzvals, nnzU*sizeof(scalar_t));
 
       // free matrix on host
       free(h_Lrow_ptr);
@@ -278,5 +291,5 @@ double OptimizeProblemMemoryUse(const SparseMatrix_type& A)
 }
 
 template double OptimizeProblemMemoryUse(const SparseMatrix<double>&);
-
 template double OptimizeProblemMemoryUse(const SparseMatrix<float>&);
+template double OptimizeProblemMemoryUse(const SparseMatrix<double, float>&);

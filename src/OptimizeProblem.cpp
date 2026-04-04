@@ -10,9 +10,9 @@
 #include "Vector.hpp"
 #include "GMRESData.hpp"
 
-template<typename mat_scalar, typename solver_scalar, typename vec_scalar>
-int OptimizeProblemELL(SparseMatrix<mat_scalar>& A, GMRESData<solver_scalar>& data,
-                       Vector<vec_scalar>& b, Vector<vec_scalar>& x, Vector<vec_scalar>& xexact);
+template<typename local_scalar_type, typename halo_scalar_t, typename GMRESData_type, typename vec_scalar_t>
+int OptimizeProblemELL(SparseMatrix<local_scalar_type, halo_scalar_t>& A, GMRESData_type& data,
+                       Vector<vec_scalar_t>& b, Vector<vec_scalar_t>& x, Vector<vec_scalar_t>& xexact);
 
 template<typename SparseMatrix_type, typename GMRESData_type, typename Vector_type>
 int OptimizeProblem_ref(SparseMatrix_type& A, GMRESData_type& data,
@@ -31,11 +31,16 @@ int OptimizeProblem(SparseMatrix_type& A, GMRESData_type& data, Vector_type& b, 
 }
 
 template int OptimizeProblem(
-    SparseMatrix<double>&, GMRESData<double>&, Vector<double>&, Vector<double>&,
+    SparseMatrix<double>&, GMRESData<double, double, double>&, Vector<double>&, Vector<double>&,
     Vector<double>&);
 template int OptimizeProblem(
-    SparseMatrix<float>&, GMRESData<float>&, Vector<float>&, Vector<float>&,
+    SparseMatrix<float>&, GMRESData<float, float, float>&, Vector<float>&, Vector<float>&,
     Vector<float>&);
 template int OptimizeProblem(
-    SparseMatrix<float>&, GMRESData<double>&, Vector<double>&, Vector<double>&,
+    SparseMatrix<float>&, GMRESData<double, double, double>&, Vector<double>&, Vector<double>&,
     Vector<double>&);
+#ifdef HPGMP_WITH_GINKGO_AMP
+template int OptimizeProblem(
+    SparseMatrix<double, float>&, GMRESData<double, double, double>&, Vector<double>&, Vector<double>&,
+    Vector<double>&);
+#endif

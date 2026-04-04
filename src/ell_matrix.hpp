@@ -7,11 +7,11 @@
 #include "SparseMatrix.hpp"
 #include "optimization_base.hpp"
 
-template<typename hiscalar, typename loscalar = hiscalar>
+template<typename local_scalar_t, typename halo_scalar_t = local_scalar_t>
 class ELLMatrix : public DistMatrixBase
 {
 public:
-    using scalar_type = hiscalar;
+    using scalar_type = local_scalar_t;
 
     ELLMatrix(comm_type comm, DeviceCtx* const dctx, const Geometry* const geom)
         : DistMatrixBase(comm, dctx, geom)
@@ -20,16 +20,16 @@ public:
     /**
      * Initialize this matrix with a conversion of a HPGMP SparseMatrix.
      */
-    ELLMatrix(const SparseMatrix<hiscalar>& A);
+    ELLMatrix(const SparseMatrix<local_scalar_t, halo_scalar_t>& A);
 
     ~ELLMatrix();
 
     local_int_t get_ell_width() const { return ell_width_; }
-    const hiscalar* get_values() const { return values_; }
+    const local_scalar_t* get_values() const { return values_; }
     const local_int_t* get_col_idxs() const { return col_idxs_; }
 
     const local_int_t* get_halo_col_idxs() const { return halo_col_idxs_; }
-    const hiscalar* get_halo_values() const { return halo_values_; }
+    const halo_scalar_t* get_halo_values() const { return halo_values_; }
 
     int get_ld_values() const { return ldv_; }
     int get_ld_indices() const { return ldi_; }
@@ -42,7 +42,7 @@ public:
      */
     void permute_rows(const local_int_t* perm);
 
-    const hiscalar* get_inverse_diagonal() const { return inv_diag_; }
+    const local_scalar_t* get_inverse_diagonal() const { return inv_diag_; }
     const local_int_t* get_diagonal_indices() const { return diag_idxs_; }
 
     /** @brief Compute and store indices of diagonal entries in every row and
@@ -51,7 +51,7 @@ public:
     void extract_diagonal();
 
 protected:
-    static constexpr int pad_mult_v = padding_multiple<hiscalar>::value;
+    static constexpr int pad_mult_v = padding_multiple<local_scalar_t>::value;
     static constexpr int pad_mult_i = padding_multiple<local_int_t>::value;
 
     /** @brief Leading dimension of values array.
@@ -70,30 +70,31 @@ protected:
     /// Local column indices.
     local_int_t* col_idxs_ = nullptr;
     /// Nonzero values corresponding to column indices in col_idxs_.
-    hiscalar* values_ = nullptr;
+    local_scalar_t* values_ = nullptr;
 
     local_int_t* halo_col_idxs_ = nullptr;
-    hiscalar* halo_values_      = nullptr;
+    halo_scalar_t* halo_values_ = nullptr;
 
-    local_int_t* diag_idxs_ = nullptr;
-    hiscalar* inv_diag_     = nullptr;
+    local_int_t* diag_idxs_   = nullptr;
+    local_scalar_t* inv_diag_ = nullptr;
 
-    void convert_from_csr(const SparseMatrix<hiscalar>& A);
+    void convert_from_csr(const SparseMatrix<local_scalar_t, halo_scalar_t>& A);
 };
 
-//template <typename mscalar, typename vscalar>
-//void ell_spmv(const ELLMatrix<mscalar>* mat, const Vector<vscalar> *x, Vector<vscalar>* y);
+//template <typename local_scalar_t, typename halo_scalar_t, typename vec_scalar_t>
+//void ell_spmv(const ELLMatrix<local_scalar_t, halo_scalar_t>* mat, const Vector<vec_scalar_t> *x, Vector<vec_scalar_t>* y);
 
-template<typename hiscalar, typename vscalar>
-void ell_halo_spmv(const ELLMatrix<hiscalar>* mat, const Vector<vscalar>* x, Vector<vscalar>* y);
+template<typename local_scalar_t, typename halo_scalar_t, typename vec_scalar_t>
+void ell_halo_spmv(const ELLMatrix<local_scalar_t, halo_scalar_t>* mat, const Vector<vec_scalar_t>* x, Vector<vec_scalar_t>* y);
 
-template<typename hiscalar, typename vscalar>
-void ell_interior_spmv(const ELLMatrix<hiscalar>* mat, const Vector<vscalar>* x, Vector<vscalar>* y);
+template<typename local_scalar_t, typename halo_scalar_t, typename vec_scalar_t>
+void ell_interior_spmv(const ELLMatrix<local_scalar_t, halo_scalar_t>* mat, const Vector<vec_scalar_t>* x, Vector<vec_scalar_t>* y);
 
-template<typename hiscalar, typename loscalar = hiscalar>
+template<typename local_scalar_t, typename halo_scalar_t>
 struct EllOptData : public OptimizationData
 {
-    std::shared_ptr<ELLMatrix<hiscalar, loscalar>> mat;
+    using matrix_type = ELLMatrix<local_scalar_t, halo_scalar_t>;
+    std::shared_ptr<matrix_type> mat;
 };
 
 template<class SparseMatrix_type, class Vector_type>

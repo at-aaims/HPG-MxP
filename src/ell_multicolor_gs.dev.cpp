@@ -110,7 +110,7 @@
     }
 
 template<unsigned int BLOCKSIZE, unsigned int WIDTH,
-         typename mscalar, typename diag_scalar, typename vscalar>
+         typename mat_scalar_type, typename diag_scalar, typename vec_scalar_t>
 __launch_bounds__(BLOCKSIZE)
     __global__ void kernel_symgs_sweep(const local_int_t m,
                                        const local_int_t n,
@@ -118,10 +118,10 @@ __launch_bounds__(BLOCKSIZE)
                                        const local_int_t offset,
                                        const int ldi, const int ldv,
                                        const local_int_t* ell_col_ind,
-                                       const mscalar* ell_val,
+                                       const mat_scalar_type* ell_val,
                                        const diag_scalar* inv_diag,
-                                       const vscalar* x,
-                                       vscalar* y)
+                                       const vec_scalar_t* x,
+                                       vec_scalar_t* y)
 {
     const local_int_t gid = blockIdx.x * BLOCKSIZE + threadIdx.x;
     if (gid >= block_nrow) {
@@ -130,7 +130,7 @@ __launch_bounds__(BLOCKSIZE)
 
     const local_int_t row = gid + offset;
 
-    vscalar sum = __ldcg(x + row);
+    vec_scalar_t sum = __ldcg(x + row);
 
 #pragma unroll
     for (local_int_t p = 0; p < WIDTH; ++p)
@@ -138,32 +138,32 @@ __launch_bounds__(BLOCKSIZE)
         const local_int_t col = __ldcg(ell_col_ind + row + ldi * p);
 
         if (col >= 0 && col < n && col != row) {
-            sum = fma(-static_cast<vscalar>(__ldcg(ell_val + row + ldv * p)),
+            sum = fma(-static_cast<vec_scalar_t>(__ldcg(ell_val + row + ldv * p)),
                       y[col], sum);
         }
     }
     __stcg(y + row,
-           sum * static_cast<vscalar>(__ldcg(inv_diag + row)));
+           sum * static_cast<vec_scalar_t>(__ldcg(inv_diag + row)));
 }
 
 template<unsigned int BLOCKSIZE, unsigned int WIDTH,
-         typename mscalar, typename diag_scalar, typename vscalar>
+         typename mat_scalar_type, typename diag_scalar, typename vec_scalar_t>
 __launch_bounds__(BLOCKSIZE)
     __global__ void kernel_symgs_interior(const local_int_t m,
                                           const local_int_t block_nrow,
                                           const int ldi, const int ldv,
                                           const local_int_t* ell_col_ind,
-                                          const mscalar* ell_val,
+                                          const mat_scalar_type* ell_val,
                                           const diag_scalar* inv_diag,
-                                          const vscalar* x,
-                                          vscalar* y)
+                                          const vec_scalar_t* x,
+                                          vec_scalar_t* y)
 {
     const local_int_t row = blockIdx.x * BLOCKSIZE + threadIdx.x;
     if (row >= block_nrow) {
         return;
     }
 
-    vscalar sum = __ldcg(x + row);
+    vec_scalar_t sum = __ldcg(x + row);
 
 #pragma unroll
     for (local_int_t p = 0; p < WIDTH; ++p)
@@ -171,16 +171,16 @@ __launch_bounds__(BLOCKSIZE)
         const local_int_t col = __ldcg(ell_col_ind + row + p * ldi);
 
         if (col >= 0 && col < m && col != row) {
-            sum = fma(-static_cast<vscalar>(__ldcg(ell_val + row + p * ldv)),
+            sum = fma(-static_cast<vec_scalar_t>(__ldcg(ell_val + row + p * ldv)),
                       __ldg(y + col), sum);
         }
     }
     __stcg(y + row,
-           sum * static_cast<vscalar>(__ldcg(inv_diag + row)));
+           sum * static_cast<vec_scalar_t>(__ldcg(inv_diag + row)));
 }
 
 template<unsigned int BLOCKSIZE, unsigned int WIDTH,
-         typename mscalar, typename diag_scalar, typename vscalar>
+         typename mat_scalar_type, typename diag_scalar, typename vec_scalar_t>
 __launch_bounds__(BLOCKSIZE)
     __global__ void kernel_symgs_halo(const local_int_t m,
                                       const local_int_t n,
@@ -188,11 +188,11 @@ __launch_bounds__(BLOCKSIZE)
                                       const int ldi, const int ldv,
                                       const local_int_t* halo_row_ind,
                                       const local_int_t* halo_col_ind,
-                                      const mscalar* halo_val,
+                                      const mat_scalar_type* halo_val,
                                       const diag_scalar* inv_diag,
                                       const local_int_t* perm,
-                                      const vscalar* x,
-                                      vscalar* y)
+                                      const vec_scalar_t* x,
+                                      vec_scalar_t* y)
 {
     const local_int_t row = blockIdx.x * BLOCKSIZE + threadIdx.x;
     if (row >= m) {
@@ -205,7 +205,7 @@ __launch_bounds__(BLOCKSIZE)
         return;
     }
 
-    vscalar sum = 0.0;
+    vec_scalar_t sum = 0.0;
 
 #pragma unroll
     for (local_int_t p = 0; p < WIDTH; ++p)
@@ -213,11 +213,11 @@ __launch_bounds__(BLOCKSIZE)
         const local_int_t col = __ldcg(halo_col_ind + row + p * ldi);
 
         if (col >= 0 && col < n) {
-            sum = fma(-static_cast<vscalar>(__ldcg(halo_val + row + p * ldv)),
+            sum = fma(-static_cast<vec_scalar_t>(__ldcg(halo_val + row + p * ldv)),
                       y[col], sum);
         }
     }
-    y[perm_idx] = fma(sum, static_cast<vscalar>(inv_diag[halo_idx]), y[perm_idx]);
+    y[perm_idx] = fma(sum, static_cast<vec_scalar_t>(inv_diag[halo_idx]), y[perm_idx]);
 }
 
 template<unsigned int BLOCKSIZE, typename scalar>
@@ -234,17 +234,17 @@ __launch_bounds__(BLOCKSIZE)
     out[gid] = x[gid] * y[gid];
 }
 
-template<unsigned int BLOCKSIZE, typename mscalar, typename vscalar>
+template<unsigned int BLOCKSIZE, typename mat_scalar_type, typename vec_scalar_t>
 __launch_bounds__(BLOCKSIZE)
     __global__ void kernel_forward_sweep_0(const local_int_t m,
                                            const local_int_t block_nrow,
                                            const local_int_t offset,
                                            const int ldi, const int ldv,
                                            const local_int_t* ell_col_ind,
-                                           const mscalar* ell_val,
+                                           const mat_scalar_type* ell_val,
                                            const local_int_t* diag_idx,
-                                           const vscalar* x,
-                                           vscalar* y)
+                                           const vec_scalar_t* x,
+                                           vec_scalar_t* y)
 {
     const local_int_t gid = blockIdx.x * BLOCKSIZE + threadIdx.x;
     if (gid >= block_nrow) {
@@ -254,7 +254,7 @@ __launch_bounds__(BLOCKSIZE)
     const local_int_t row   = gid + offset;
     const local_int_t idiag = __ldcg(diag_idx + row);
 
-    vscalar sum = __ldcg(x + row);
+    vec_scalar_t sum = __ldcg(x + row);
 
     for (local_int_t p = 0; p < idiag; ++p)
     {
@@ -262,15 +262,15 @@ __launch_bounds__(BLOCKSIZE)
 
         // Every entry above offset is zero
         if (col >= 0 && col < offset) {
-            sum = fma(-static_cast<vscalar>(__ldcg(ell_val + row + p * ldv)),
+            sum = fma(-static_cast<vec_scalar_t>(__ldcg(ell_val + row + p * ldv)),
                       y[col], sum);
         }
     }
-    sum = sum / static_cast<vscalar>(__ldcg(ell_val + row + idiag * ldv));
+    sum = sum / static_cast<vec_scalar_t>(__ldcg(ell_val + row + idiag * ldv));
     __stcg(y + row, sum);
 }
 
-template<unsigned int BLOCKSIZE, typename mscalar, typename vscalar>
+template<unsigned int BLOCKSIZE, typename mat_scalar_type, typename vec_scalar_t>
 __launch_bounds__(BLOCKSIZE)
     __global__ void kernel_backward_sweep_0(const local_int_t m,
                                             const local_int_t block_nrow,
@@ -278,9 +278,9 @@ __launch_bounds__(BLOCKSIZE)
                                             const local_int_t ell_width,
                                             const int ldi, const int ldv,
                                             const local_int_t* ell_col_ind,
-                                            const mscalar* ell_val,
+                                            const mat_scalar_type* ell_val,
                                             const local_int_t* diag_idx,
-                                            vscalar* x)
+                                            vec_scalar_t* x)
 {
     const local_int_t gid = blockIdx.x * BLOCKSIZE + threadIdx.x;
     if (gid >= block_nrow) {
@@ -290,10 +290,10 @@ __launch_bounds__(BLOCKSIZE)
     const local_int_t row   = gid + offset;
     const local_int_t idiag = __ldcg(diag_idx + row);
 
-    const mscalar diag_val = __ldcg(ell_val + row + idiag * ldv);
+    const mat_scalar_type diag_val = __ldcg(ell_val + row + idiag * ldv);
 
     // Scale result with diagonal entry
-    vscalar sum = x[row] * static_cast<vscalar>(diag_val);
+    vec_scalar_t sum = x[row] * static_cast<vec_scalar_t>(diag_val);
 
     for (local_int_t p = idiag + 1; p < ell_width; ++p)
     {
@@ -301,17 +301,17 @@ __launch_bounds__(BLOCKSIZE)
 
         // Every entry below offset should not be taken into account
         if (col >= offset && col < m) {
-            sum = fma(-static_cast<vscalar>(__ldcg(ell_val + row + p * ldv)),
+            sum = fma(-static_cast<vec_scalar_t>(__ldcg(ell_val + row + p * ldv)),
                       x[col], sum);
         }
     }
-    sum /= static_cast<vscalar>(diag_val);
+    sum /= static_cast<vec_scalar_t>(diag_val);
     __stcg(x + row, sum);
 }
 
-template<typename mscalar, typename vscalar>
-int ell_multicolor_gs(const bool symmetric, const ELLMatrix<mscalar>* const A,
-                      const Vector<vscalar>* const r, Vector<vscalar>* const x)
+template<typename mat_scalar_type, typename vec_scalar_t>
+int ell_multicolor_gs(const bool symmetric, const ELLMatrix<mat_scalar_type, mat_scalar_type>* const A,
+                      const Vector<vec_scalar_t>* const r, Vector<vec_scalar_t>* const x)
 {
     assert(x->local_length() == A->get_local_num_cols());
     auto dctx            = A->get_device_context();
@@ -319,7 +319,7 @@ int ell_multicolor_gs(const bool symmetric, const ELLMatrix<mscalar>* const A,
 
     local_int_t i = 0;
 
-#ifndef HPCG_NO_MPI
+#ifndef HPGMP_NO_MPI
     if (A->get_geometry()->size > 1)
     {
         x->update_halos_pack_send_buffer(A);
@@ -361,9 +361,9 @@ int ell_multicolor_gs(const bool symmetric, const ELLMatrix<mscalar>* const A,
     return 0;
 }
 
-template<typename mscalar, typename vscalar>
-int ell_multicolor_gs_zero_initial(const bool symmetric, const ELLMatrix<mscalar>* const A,
-                                   const Vector<vscalar>* const r, Vector<vscalar>* const x)
+template<typename mat_scalar_type, typename vec_scalar_t>
+int ell_multicolor_gs_zero_initial(const bool symmetric, const ELLMatrix<mat_scalar_type, mat_scalar_type>* const A,
+                                   const Vector<vec_scalar_t>* const r, Vector<vec_scalar_t>* const x)
 {
     assert(x->local_length() == A->get_local_num_cols());
     auto dctx            = A->get_device_context();
@@ -414,17 +414,17 @@ int ell_multicolor_gs_zero_initial(const bool symmetric, const ELLMatrix<mscalar
 }
 
 template int ell_multicolor_gs(
-    bool sym, const ELLMatrix<double>* const A, const Vector<double>* const r,
+    bool sym, const ELLMatrix<double, double>* const A, const Vector<double>* const r,
     Vector<double>* const x);
 
 template int ell_multicolor_gs(
-    bool sym, const ELLMatrix<float>* const A, const Vector<float>* const r,
+    bool sym, const ELLMatrix<float, float>* const A, const Vector<float>* const r,
     Vector<float>* const x);
 
 template int ell_multicolor_gs_zero_initial(
-    bool sym, const ELLMatrix<double>* const A,
+    bool sym, const ELLMatrix<double, double>* const A,
     const Vector<double>* const r, Vector<double>* const x);
 
 template int ell_multicolor_gs_zero_initial(
-    bool sym, const ELLMatrix<float>* const A,
+    bool sym, const ELLMatrix<float, float>* const A,
     const Vector<float>* const r, Vector<float>* const x);

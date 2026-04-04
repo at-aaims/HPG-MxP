@@ -1,0 +1,134 @@
+#ifdef HPGMP_WITH_GINKGO
+
+#include "GinkgoOptData.hpp"
+#include "Profiling.hpp"
+
+template<typename local_scalar_t, typename halo_scalar_t>
+GinkgoMatrix<local_scalar_t, halo_scalar_t>::GinkgoMatrix(const SparseMatrix<local_scalar_t, halo_scalar_t>& A)
+    : ELLMatrix<local_scalar_t, halo_scalar_t>(A)
+{
+    assert(this->ldi_ == this->ldv_);
+    auto gko_exec = create_ginkgo_executor();
+    auto ell_mat =
+        gko::share(gko_ell_type::create(gko_exec,
+                                        gko::dim<2>{static_cast<gko::size_type>(this->local_nrows_),
+                                                    static_cast<gko::size_type>(this->local_ncols_)},
+                                        std::move(gko::make_array_view(gko_exec,
+                                                                       this->ldv_ * this->ell_width_,
+                                                                       this->values_)),
+                                        std::move(gko::make_array_view(gko_exec,
+                                                                       this->ldi_ * this->ell_width_,
+                                                                       this->col_idxs_)),
+                                        this->ell_width_,
+                                        this->ldv_));
+
+    if constexpr (std::is_same_v<gko_mat_type, gko_ell_type>)
+    {
+        gko_mat_ = ell_mat;
+    } else if constexpr (std::is_same_v<gko_mat_type, gko_amp_type>)
+    {
+        auto amp_mat =
+            gko::share(gko_amp_type::build().with_tolerance(1e-8).on(gko_exec)->generate(std::move(ell_mat)));
+        gko_mat_ = amp_mat;
+        //std::cout << "Using Ginkgo AMP matrix.\n";
+        //std::cout << "amp_mat->num_precisions:" << amp_mat->num_precisions << "\n";
+    } else
+    {
+        throw std::runtime_error("Unsupported gko_mat_type in GinkgoMatrix!");
+    }
+}
+
+template<typename local_scalar_t, typename halo_scalar_t, typename vec_scalar_t>
+int ginkgo_interior_spmv(const GinkgoMatrix<local_scalar_t, halo_scalar_t>* mat,
+                         const Vector<vec_scalar_t>* x, Vector<vec_scalar_t>* y)
+{
+    using gko_vec_type = gko::matrix::Dense<vec_scalar_t>;
+    auto gko_exec      = mat->get_gko_mat()->get_executor();
+    auto gko_x =
+        gko_vec_type::create_const(gko_exec,
+                                   gko::dim<2>{static_cast<gko::size_type>(x->local_length()), 1},
+                                   gko::make_const_array_view(gko_exec,
+                                                              x->local_length(),
+                                                              x->d_values()),
+                                   1);
+    auto gko_y =
+        gko_vec_type::create(gko_exec,
+                             gko::dim<2>{static_cast<gko::size_type>(y->local_length()), 1},
+                             std::move(gko::make_array_view(gko_exec,
+                                                            y->local_length(),
+                                                            y->d_values())),
+                             1);
+
+    mat->get_gko_mat()->apply(gko_x, gko_y);
+
+    return 0;
+}
+
+template<typename local_scalar_t, typename halo_scalar_t, typename vec_scalar_t>
+void ginkgo_spmv(const GinkgoMatrix<local_scalar_t, halo_scalar_t>* mat,
+                 const Vector<vec_scalar_t>* x, Vector<vec_scalar_t>* y)
+{
+    auto dctx = x->get_device_context();
+
+    // On halo stream: pack send buffer and copy to host if needed
+    x->update_halos_pack_send_buffer(mat);
+
+    //std::cout << "Using Ginkgo SPMV.\n";
+    ginkgo_interior_spmv<local_scalar_t, halo_scalar_t, vec_scalar_t>(mat, x, y);
+
+    // wait for comms to complete
+    x->update_halos_send_receive(mat);
+    x->update_halos_finalize(mat);
+
+    ell_halo_spmv<local_scalar_t, halo_scalar_t, vec_scalar_t>(mat, x, y);
+
+    dctx->synchronize_halo_stream();
+    dctx->synchronize_compute_stream();
+}
+
+template<class SparseMatrix_type, class Vector_type>
+int ComputeSPMV_ginkgo(const SparseMatrix_type& A, Vector_type& x, Vector_type& y)
+{
+
+    HPGMP_RANGE_PUSH(__FUNCTION__);
+
+    using local_scalar_t = typename SparseMatrix_type::local_scalar_type;
+    using halo_scalar_t  = typename SparseMatrix_type::halo_scalar_type;
+    auto gko_data        = static_cast<const GinkgoOptData<local_scalar_t, halo_scalar_t>*>(A.optimizationData);
+    ginkgo_spmv(gko_data->mat.get(), &x, &y);
+
+    HPGMP_RANGE_POP(__FUNCTION__);
+
+    return 0;
+}
+
+// Available template instantiations
+template class GinkgoMatrix<double, double>;
+template class GinkgoMatrix<float, float>;
+template class GinkgoMatrix<double, float>;
+
+template int ginkgo_interior_spmv<double, double, double>(
+    const GinkgoMatrix<double, double>*, const Vector<double>*, Vector<double>*);
+
+template int ginkgo_interior_spmv<float, float, float>(
+    const GinkgoMatrix<float, float>*, const Vector<float>*, Vector<float>*);
+
+template int ginkgo_interior_spmv<double, float, float>(
+    const GinkgoMatrix<double, float>*, const Vector<float>*, Vector<float>*);
+
+template int ginkgo_interior_spmv<double, float, double>(
+    const GinkgoMatrix<double, float>*, const Vector<double>*, Vector<double>*);
+
+template int ComputeSPMV_ginkgo< SparseMatrix<double>, Vector<double> >(
+    const SparseMatrix<double>&, Vector<double>&, Vector<double>&);
+
+template int ComputeSPMV_ginkgo< SparseMatrix<float>, Vector<float> >(
+    const SparseMatrix<float>&, Vector<float>&, Vector<float>&);
+
+template int ComputeSPMV_ginkgo< SparseMatrix<double, float>, Vector<float> >(
+    const SparseMatrix<double, float>&, Vector<float>&, Vector<float>&);
+
+template int ComputeSPMV_ginkgo< SparseMatrix<double, float>, Vector<double> >(
+    const SparseMatrix<double, float>&, Vector<double>&, Vector<double>&);
+
+#endif

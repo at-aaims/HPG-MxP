@@ -94,19 +94,24 @@ void SetupMatrix(DeviceCtx* const dctx, int numberOfMgLevels, SparseMatrix_type&
  * --------------- */
 
 // uniform
-template void SetupMatrix< SparseMatrix<double>, GMRESData<double>, class Vector<double> >(
+template void SetupMatrix< SparseMatrix<double>, GMRESData<double, double, double>, class Vector<double> >(
     DeviceCtx* dctx, int numberOfMgLevels, SparseMatrix<double>& A, Geometry* geom,
-    GMRESData<double>& data, Vector<double>* b, Vector<double>* x, Vector<double>* xexact,
+    GMRESData<double, double, double>& data, Vector<double>* b, Vector<double>* x, Vector<double>* xexact,
     bool init_vect, comm_type comm);
 
-template void SetupMatrix< SparseMatrix<float>, GMRESData<float>, class Vector<float> >(
+template void SetupMatrix< SparseMatrix<float>, GMRESData<float, float, float>, class Vector<float> >(
     DeviceCtx* dctx, int numberOfMgLevels, SparseMatrix<float>& A, Geometry* geom,
-    GMRESData<float>& data, Vector<float>* b, Vector<float>* x, Vector<float>* xexact,
+    GMRESData<float, float, float>& data, Vector<float>* b, Vector<float>* x, Vector<float>* xexact,
     bool init_vect, comm_type comm);
 
 
 // mixed
-template void SetupMatrix< SparseMatrix<float>, GMRESData<float>, class Vector<double> >(
+template void SetupMatrix< SparseMatrix<double, float>, GMRESData<double, float, double>, class Vector<double> >(
+    DeviceCtx* dctx, int numberOfMgLevels, SparseMatrix<double, float>& A, Geometry* geom,
+    GMRESData<double, float, double>& data, Vector<double>* b, Vector<double>* x, Vector<double>* xexact,
+    bool init_vect, comm_type comm);
+
+template void SetupMatrix< SparseMatrix<float>, GMRESData<float, float, float>, class Vector<double> >(
     DeviceCtx* dctx, int numberOfMgLevels, SparseMatrix<float>& A, Geometry* geom,
-    GMRESData<float>& data, Vector<double>* b, Vector<double>* x, Vector<double>* xexact,
+    GMRESData<float, float, float>& data, Vector<double>* b, Vector<double>* x, Vector<double>* xexact,
     bool init_vect, comm_type comm);

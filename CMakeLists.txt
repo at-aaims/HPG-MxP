@@ -32,6 +32,7 @@ option(HPGMP_BUILD_REFERENCE "Build reference implementation without optimizatio
 option(HPGMP_ENABLE_ASAN "Build address sanitizer" OFF)
 option(HPGMP_ENABLE_PROFILING "Enable profiling" OFF)
 option(HPGMP_ENABLE_GINKGO "Enable Ginkgo for linear algebra operations" OFF)
+option(HPGMP_ENABLE_GINKGO_AMP "Enable Ginkgo Adaptive Mixed Precision" OFF)
 option(CMAKE_DEBUG "Enable CMake script debugging" OFF)
 
 # set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-unused-result")
@@ -92,6 +93,9 @@ if(HPGMP_ENABLE_HIP OR HPGMP_ENABLE_CUDA)
             src/ComputeWAXPBY_opt.dev.cpp
             src/ell_matrix.dev.cpp
             src/ell_multicolor_gs.dev.cpp
+            src/GinkgoMatrix.cpp
+            src/GinkgoOptData.cpp
+            src/GinkgoSmoother.cpp
             src/multicoloring.dev.cpp
             src/permute.dev.cpp
             src/prolongation.dev.cpp
@@ -138,7 +142,9 @@ set(host_sources
     src/ComputeSYMGS.cpp
     src/ComputeTRSM.cpp
     src/ComputeWAXPBY.cpp
+    src/GinkgoInterface.cpp
     src/GMRES.cpp
+    src/GMRESData.cpp
     src/GMRES_IR.cpp
     src/GenerateGeometry.cpp
     src/GenerateNonsymCoarseProblem.cpp
@@ -317,8 +323,17 @@ endif()
 if(HPGMP_ENABLE_GINKGO)
     find_package(Ginkgo REQUIRED)
     target_compile_definitions(hpgmp PUBLIC HPGMP_WITH_GINKGO)
+    if(HPGMP_ENABLE_GINKGO_AMP)
+        target_compile_definitions(hpgmp PUBLIC HPGMP_WITH_GINKGO_AMP)
+    endif()
     target_link_libraries(hpgmp PUBLIC Ginkgo::ginkgo)
     message(STATUS "Ginkgo is enabled")
+    if(HPGMP_BUILD_REFERENCE)
+        message(WARNING "Ginkgo is not used within the benchmark for reference builds.")
+    else()
+        message(WARNING "Using Ginkgo within the benchmark for optimized builds requires a custom "
+                        "version of Ginkgo that supports adaptive mixed-precision matrices.")
+    endif()
 endif()
 
 add_executable(xhpgmp src/main_hpgmp.cpp)

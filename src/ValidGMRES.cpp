@@ -51,18 +51,23 @@
  */
 
 
-template<class scalar_type, class scalar_type2, class project_type>
+template<typename scalar_type, typename scalar_type2, class project_type>
 int ValidGMRES(const int argc, char** argv, const validation_t validation_type, comm_type comm,
                DeviceCtx* const dctx, const int numberOfMgLevels, const bool verbose,
                TestGMRESData& test_data)
 {
     typedef Vector<scalar_type> Vector_type;
     typedef SparseMatrix<scalar_type> SparseMatrix_type;
-    typedef GMRESData<scalar_type> GMRESData_type;
+    typedef GMRESData<scalar_type, scalar_type, scalar_type> GMRESData_type;
 
     typedef Vector<scalar_type2> Vector_type2;
+#ifdef HPGMP_WITH_GINKGO_AMP
+    typedef SparseMatrix<scalar_type, scalar_type2> SparseMatrix_type2;
+    typedef GMRESData<scalar_type, scalar_type2, project_type> GMRESData_type2;
+#else
     typedef SparseMatrix<scalar_type2> SparseMatrix_type2;
-    typedef GMRESData<scalar_type2, project_type> GMRESData_type2;
+    typedef GMRESData<scalar_type2, scalar_type2, project_type> GMRESData_type2;
+#endif
 
     double total_validation_time = mytimer();
 
@@ -236,5 +241,10 @@ template int ValidGMRES<float, float, float >(
     int, char**, validation_t, comm_type, DeviceCtx*, int, bool, TestGMRESData&);
 
 // mixed version
+#ifdef HPGMP_WITH_GINKGO_AMP
+template int ValidGMRES<double, float, double >(
+    int, char**, validation_t, comm_type, DeviceCtx*, int, bool, TestGMRESData&);
+#else
 template int ValidGMRES<double, float, float >(
     int, char**, validation_t, comm_type, DeviceCtx*, int, bool, TestGMRESData&);
+#endif

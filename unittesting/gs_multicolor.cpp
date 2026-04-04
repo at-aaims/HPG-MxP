@@ -36,13 +36,13 @@ typedef double scalar_type;
 
 typedef Vector<scalar_type> Vector_type;
 typedef SparseMatrix<scalar_type> SparseMatrix_type;
-typedef GMRESData<scalar_type> GMRESData_type;
+typedef GMRESData<scalar_type, scalar_type, scalar_type> GMRESData_type;
 
 typedef float scalar_type2;
 typedef float project_type;
 typedef Vector<scalar_type2> Vector_type2;
 typedef SparseMatrix<scalar_type2> SparseMatrix_type2;
-typedef GMRESData<scalar_type2, project_type> GMRESData_type2;
+typedef GMRESData<scalar_type2, scalar_type2, project_type> GMRESData_type2;
 
 /*!
   Main driver program: Construct synthetic problem, run V&V tests, compute benchmark parameters, run benchmark, report results.
@@ -136,8 +136,8 @@ int main(int argc, char* argv[])
     Vector_type xl;
     xl.initialize(A.localNumberOfColumns, A.comm, dctx.get());
 
-    std::shared_ptr<const ELLMatrix<scalar_type>> mat =
-        dynamic_cast<EllOptData<scalar_type>*>(A.optimizationData)->mat;
+    std::shared_ptr<const ELLMatrix<scalar_type, scalar_type>> mat =
+        dynamic_cast<EllOptData<scalar_type, scalar_type>*>(A.optimizationData)->mat;
     ierr = ell_multicolor_gs(false, mat.get(), &b, &xl);
 
     assert(ierr == 0);

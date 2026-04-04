@@ -119,8 +119,11 @@ private:
 template<typename T>
 struct padding_multiple
 {
+#ifdef HPGMP_WITH_GINKGO
+    static constexpr int value = 128; // Ginkgo expects the same size for indices and values
+#else
     static constexpr int value = static_cast<int>(128 / sizeof(T));
-    //static constexpr int value = 128;
+#endif
 };
 
 

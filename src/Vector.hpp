@@ -41,11 +41,11 @@
 #include "hpgmp.hpp"
 #include "matrix_base.hpp"
 
-template<class SC = double>
+template<typename scalar_t = double>
 class Vector
 {
 public:
-    typedef SC scalar_type;
+    typedef scalar_t scalar_type;
 
     /** Creates uninitialized vector.
    *
@@ -67,7 +67,7 @@ public:
    * @param comm  MPI communicator associated with the distributed vector.
    * @param device_ctx  Context of the device (accelerator/CPU) on which this vector resides.
    */
-    Vector(local_int_t localLength, comm_type comm, DeviceCtx* dev_ctx, SC* values, SC* d_values);
+    Vector(local_int_t localLength, comm_type comm, DeviceCtx* dev_ctx, scalar_t* values, scalar_t* d_values);
 
     ~Vector();
 
@@ -76,12 +76,12 @@ public:
 
     /// Initialize a non-managing view into a different entity.
     void initialize_view(local_int_t localLength, comm_type comm, DeviceCtx* dev_ctx,
-                         SC* values, SC* d_values);
+                         scalar_t* values, scalar_t* d_values);
 
-    SC* values() { return values_; }
-    SC* d_values() { return d_values_; }
-    const SC* values() const { return values_; }
-    const SC* d_values() const { return d_values_; }
+    scalar_t* values() { return values_; }
+    scalar_t* d_values() { return d_values_; }
+    const scalar_t* values() const { return values_; }
+    const scalar_t* d_values() const { return d_values_; }
     local_int_t local_length() const { return localLength_; }
 
     DeviceCtx* get_device_context() const { return dctx_; }
@@ -146,10 +146,10 @@ private:
     /// Device context for this vector
     DeviceCtx* dctx_;
 
-    SC* values_ = nullptr; //!< array of values
+    scalar_t* values_ = nullptr; //!< array of values
 
-    SC* d_values_ = nullptr; //!< array of values
-    bool is_view_ = false;
+    scalar_t* d_values_ = nullptr; //!< array of values
+    bool is_view_       = false;
 
 #ifndef HPGMP_NO_MPI
     event_t send_gather_;
@@ -173,7 +173,7 @@ private:
  * @param[in] v Input vector
  * @param[in] w Output vector
  */
-template<class scalar_src, class scalar_dst>
+template<typename scalar_src, typename scalar_dst>
 void CopyVector(const Vector<scalar_src>& v, Vector<scalar_dst>& w);
 
 #endif // VECTOR_HPP

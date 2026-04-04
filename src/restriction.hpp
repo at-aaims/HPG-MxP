@@ -4,11 +4,11 @@
 #include "SparseMatrix.hpp"
 #include "Vector.hpp"
 
-template<typename mscalar, typename vscalar>
-int fused_spmv_restriction(const SparseMatrix<mscalar>& A, const Vector<vscalar>& rf,
-                           const Vector<vscalar>& xf);
+template<typename local_scalar_t, typename halo_scalar_t, typename vec_scalar_t>
+int fused_spmv_restriction(const SparseMatrix<local_scalar_t, halo_scalar_t>& A, const Vector<vec_scalar_t>& rf,
+                           const Vector<vec_scalar_t>& xf);
 
-template<typename mscalar, typename vscalar>
-int restriction(const SparseMatrix<mscalar>& A, const Vector<vscalar>& rf);
+template<typename local_scalar_t, typename halo_scalar_t, typename vec_scalar_t>
+int restriction(const SparseMatrix<local_scalar_t, halo_scalar_t>& A, const Vector<vec_scalar_t>& rf);
 
 #endif

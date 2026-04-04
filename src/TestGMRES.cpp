@@ -226,21 +226,54 @@ int TestGMRES(SparseMatrix_type& A, GMRESData_type& data, Vector_type& b, Vector
  * --------------- */
 
 // uniform
-template int TestGMRES< SparseMatrix<double>, GMRESData<double>, Vector<double>>(
-    SparseMatrix<double>&, GMRESData<double>&, Vector<double>&, Vector<double>&, bool, bool, TestGMRESData&);
+template int TestGMRES< SparseMatrix<double>,
+                        GMRESData<double, double, double>,
+                        Vector<double>>(
+    SparseMatrix<double>&, GMRESData<double, double, double>&, Vector<double>&, Vector<double>&, bool, bool, TestGMRESData&);
 
-template int TestGMRES< SparseMatrix<float>, GMRESData<float>, Vector<float>>(
-    SparseMatrix<float>&, GMRESData<float>&, Vector<float>&, Vector<float>&, bool, bool, TestGMRESData&);
+template int TestGMRES< SparseMatrix<float>,
+                        GMRESData<float, float, float>,
+                        Vector<float>>(
+    SparseMatrix<float>&, GMRESData<float, float, float>&, Vector<float>&, Vector<float>&, bool, bool, TestGMRESData&);
 
 
 // uniform version
-template int TestGMRES< SparseMatrix<double>, SparseMatrix<double>, GMRESData<double>, GMRESData<double>, Vector<double>>(
-    SparseMatrix<double>&, SparseMatrix<double>&, GMRESData<double>&, GMRESData<double>&, Vector<double>&, Vector<double>&, bool, bool, TestGMRESData&);
+template int TestGMRES< SparseMatrix<double>,
+                        SparseMatrix<double>,
+                        GMRESData<double, double, double>,
+                        GMRESData<double, double, double>,
+                        Vector<double>>(
+    SparseMatrix<double>&, SparseMatrix<double>&,
+    GMRESData<double, double, double>&, GMRESData<double, double, double>&,
+    Vector<double>&, Vector<double>&, bool, bool, TestGMRESData&);
 
-template int TestGMRES< SparseMatrix<float>, SparseMatrix<float>, GMRESData<float>, GMRESData<float>, Vector<float>>(
-    SparseMatrix<float>&, SparseMatrix<float>&, GMRESData<float>&, GMRESData<float>&, Vector<float>&, Vector<float>&, bool, bool, TestGMRESData&);
+template int TestGMRES< SparseMatrix<float>,
+                        SparseMatrix<float>,
+                        GMRESData<float, float, float>,
+                        GMRESData<float, float, float>,
+                        Vector<float>>(
+    SparseMatrix<float>&, SparseMatrix<float>&,
+    GMRESData<float, float, float>&, GMRESData<float, float, float>&,
+    Vector<float>&, Vector<float>&, bool, bool, TestGMRESData&);
 
 
 // mixed version
-template int TestGMRES< SparseMatrix<double>, SparseMatrix<float>, GMRESData<double>, GMRESData<float>, Vector<double>>(
-    SparseMatrix<double>&, SparseMatrix<float>&, GMRESData<double>&, GMRESData<float>&, Vector<double>&, Vector<double>&, bool, bool, TestGMRESData&);
+template int TestGMRES< SparseMatrix<double>,
+                        SparseMatrix<float>,
+                        GMRESData<double, double, double>,
+                        GMRESData<float, float, float>,
+                        Vector<double>>(
+    SparseMatrix<double>&, SparseMatrix<float>&,
+    GMRESData<double, double, double>&, GMRESData<float, float, float>&,
+    Vector<double>&, Vector<double>&, bool, bool, TestGMRESData&);
+
+#ifdef HPGMP_WITH_GINKGO_AMP
+template int TestGMRES< SparseMatrix<double>,
+                        SparseMatrix<double, float>,
+                        GMRESData<double, double, double>,
+                        GMRESData<double, float, double>,
+                        Vector<double>>(
+    SparseMatrix<double>&, SparseMatrix<double, float>&,
+    GMRESData<double, double, double>&, GMRESData<double, float, double>&,
+    Vector<double>&, Vector<double>&, bool, bool, TestGMRESData&);
+#endif

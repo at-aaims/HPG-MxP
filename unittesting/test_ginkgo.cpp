@@ -29,22 +29,27 @@
 #include "SparseMatrix.hpp"
 #include "Vector.hpp"
 #include "GMRESData.hpp"
-#include "ell_matrix.hpp"
 #include "simulate_halos.hpp"
 #include "GinkgoInterface.hpp"
+#include "GinkgoOptData.hpp"
 
 typedef double scalar_type;
-//typedef float  scalar_type;
+typedef float scalar_type2;
 
 typedef Vector<scalar_type> Vector_type;
 typedef SparseMatrix<scalar_type> SparseMatrix_type;
-typedef GMRESData<scalar_type> GMRESData_type;
+typedef GMRESData<scalar_type, scalar_type, scalar_type> GMRESData_type;
 
-typedef float scalar_type2;
-typedef float project_type;
 typedef Vector<scalar_type2> Vector_type2;
+#ifdef HPGMP_WITH_GINKGO_AMP
+typedef double project_type;
+typedef SparseMatrix<scalar_type, scalar_type2> SparseMatrix_type2;
+typedef GMRESData<scalar_type, scalar_type2, project_type> GMRESData_type2;
+#else
+typedef float project_type;
 typedef SparseMatrix<scalar_type2> SparseMatrix_type2;
-typedef GMRESData<scalar_type2, project_type> GMRESData_type2;
+typedef GMRESData<scalar_type2, scalar_type2, project_type> GMRESData_type2;
+#endif
 
 /*!
   Main driver program: Construct synthetic problem, run V&V tests, compute benchmark parameters, run benchmark, report results.
@@ -215,10 +220,13 @@ int main(int argc, char* argv[])
         u_values[row]   = x_values[row];
     }
 #else // HPGMP_REFERENCE
-    using gko_mat_type = gko::matrix::Ell<scalar_type, local_int_t>;
-    std::shared_ptr<const ELLMatrix<scalar_type>> mat =
-        dynamic_cast<EllOptData<scalar_type>*>(A.optimizationData)->mat;
+    using gko_mat_type = gko_ell_type;
+    std::shared_ptr<const GinkgoMatrix<scalar_type, scalar_type>> mat =
+        dynamic_cast<GinkgoOptData<scalar_type, scalar_type>*>(A.optimizationData)->mat;
     auto mat_ptr = mat.get();
+    // In principle, could use GinkgoMatrix directly, but keeping a second construction with ELL to
+    // test the accessors below and because some solver functionalities are not
+    // supported with AMP yet.
 #ifdef HPGMP_VERBOSE
     {
         size_t mat_values_bytes       = mat_ptr->get_ld_values() * mat_ptr->get_ell_width() * sizeof(scalar_type);
@@ -227,7 +235,6 @@ int main(int argc, char* argv[])
         local_int_t* h_tmp_col_values = (local_int_t*)malloc(mat_col_bytes);
         dctx.get()->copy_device_to_host_sync((void*)h_tmp_mat_values, mat_ptr->get_values(), mat_values_bytes);
         dctx.get()->copy_device_to_host_sync((void*)h_tmp_col_values, mat_ptr->get_col_idxs(), mat_col_bytes);
-        b.update_host_mirror(); // Necessary to get the correct permutation on the host
         std::cout << "ELL matrix column indices (copied to host): (First 20 rows)\n";
         for (local_int_t row = 0; row < 20; ++row)
         {
@@ -258,8 +265,8 @@ int main(int argc, char* argv[])
 #endif // HPGMP_VERBOSE
     auto gko_mat =
         gko::share(gko_mat_type::create_const(gko_exec,
-                                              gko::dim<2>{static_cast<gko::size_type>(A.localNumberOfRows),
-                                                          static_cast<gko::size_type>(A.localNumberOfColumns)},
+                                              gko::dim<2>{static_cast<gko::size_type>(mat_ptr->get_local_num_rows()),
+                                                          static_cast<gko::size_type>(mat_ptr->get_local_num_cols())},
                                               gko::make_const_array_view(gko_exec,
                                                                          mat_ptr->get_ld_values() * mat_ptr->get_ell_width(),
                                                                          mat_ptr->get_values()),
@@ -269,18 +276,18 @@ int main(int argc, char* argv[])
                                               mat_ptr->get_ell_width(),
                                               mat_ptr->get_ld_values()));
     auto rhs =
-        gko_vec_type::create(gko_exec,
-                             gko::dim<2>{static_cast<gko::size_type>(A.localNumberOfRows), 1},
-                             gko::make_array_view(gko_exec,
-                                                  b.local_length(),
-                                                  b.d_values()),
-                             1);
+        gko_vec_type::create_const(gko_exec,
+                                   gko::dim<2>{static_cast<gko::size_type>(b.local_length()), 1},
+                                   gko::make_const_array_view(gko_exec,
+                                                              b.local_length(),
+                                                              b.d_values()),
+                                   1);
     auto u =
         gko_vec_type::create(gko_exec,
-                             gko::dim<2>{static_cast<gko::size_type>(A.localNumberOfRows), 1},
-                             gko::make_array_view(gko_exec,
-                                                  x.local_length(),
-                                                  x.d_values()),
+                             gko::dim<2>{static_cast<gko::size_type>(x.local_length()), 1},
+                             std::move(gko::make_array_view(gko_exec,
+                                                            x.local_length(),
+                                                            x.d_values())),
                              1);
 
 #endif // HPGMP_REFERENCE
@@ -329,6 +336,9 @@ int main(int argc, char* argv[])
     if (!logger->has_converged()) {
         status = 1;
     }
+
+    // Quick test for GinkgoSmoother (Gauss Seidel) constructor
+    auto gko_gs = GinkgoSmoother<scalar_type, scalar_type>(mat_ptr);
 
     // free
     DeleteMatrix(A);

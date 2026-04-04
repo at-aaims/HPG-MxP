@@ -40,11 +40,13 @@ using GlobalToLocalMap = std::unordered_map< global_int_t, local_int_t >;
 #include <mpi.h>
 #endif
 
-template<class SC = double>
+template<typename local_scalar_t = double, typename halo_scalar_t = local_scalar_t>
 class SparseMatrix
 {
 public:
-    typedef SC scalar_type;
+    typedef local_scalar_t scalar_type;
+    typedef local_scalar_t local_scalar_type;
+    typedef halo_scalar_t halo_scalar_type;
 
     void initialize(const Geometry* const g, comm_type c, DeviceCtx* const d)
     {
@@ -68,8 +70,8 @@ public:
     local_int_t* nonzerosInRow           = nullptr; //!< The number of nonzeros in a row will always be 27 or fewer
     global_int_t** mtxIndG               = nullptr; //!< matrix indices as global values
     local_int_t** mtxIndL                = nullptr; //!< matrix indices as local values
-    SC** matrixValues                    = nullptr; //!< values of matrix entries
-    SC** matrixDiagonal                  = nullptr; //!< values of matrix diagonal entries
+    local_scalar_t** matrixValues        = nullptr; //!< values of matrix entries
+    local_scalar_t** matrixDiagonal      = nullptr; //!< values of matrix diagonal entries
     GlobalToLocalMap globalToLocalMap; //!< global-to-local mapping
     std::vector< global_int_t > localToGlobalMap; //!< local-to-global mapping
 
@@ -79,12 +81,12 @@ public:
     mutable bool isWaxpbyOptimized     = true;
     mutable bool isGemvOptimized       = true;
     /*!
-   This is for storing optimized data structres created in OptimizeProblem and
-   used inside optimized ComputeSPMV().
-   */
-    mutable SparseMatrix<SC>* Ac       = nullptr; // Coarse grid matrix
-    mutable MGData<SC>* mgData         = nullptr; // Pointer to the coarse level data for this fine matrix
-    OptimizationData* optimizationData = nullptr; // pointer that can be used to store implementation-specific data
+       This is for storing optimized data structres created in OptimizeProblem and
+       used inside optimized ComputeSPMV().
+     */
+    mutable SparseMatrix<local_scalar_t, halo_scalar_t>* Ac = nullptr; // Coarse grid matrix
+    mutable MGData<local_scalar_t>* mgData                  = nullptr; // Pointer to the coarse level data for this fine matrix
+    OptimizationData* optimizationData                      = nullptr; // pointer that can be used to store implementation-specific data
 
     // communicator
     comm_type comm;
@@ -96,10 +98,10 @@ public:
     int* neighbors                     = nullptr; //!< neighboring processes
     local_int_t* receiveLength         = nullptr; //!< lenghts of messages received from neighboring processes
     local_int_t* sendLength            = nullptr; //!< lenghts of messages sent to neighboring processes
-    SC* sendBuffer                     = nullptr; //!< send buffer for non-blocking sends
+    halo_scalar_t* sendBuffer          = nullptr; //!< send buffer for non-blocking sends
 #if defined(HPGMP_WITH_CUDA) | defined(HPGMP_WITH_HIP)
     local_int_t* d_elementsToSend = nullptr; //!< elements to send to neighboring processes (on GPU)
-    SC* d_sendBuffer              = nullptr; //!< send buffer for non-blocking sends (on GPU)
+    halo_scalar_t* d_sendBuffer   = nullptr; //!< send buffer for non-blocking sends (on GPU)
 #endif
 #endif
 
@@ -114,9 +116,9 @@ public:
     void* buffer_A = nullptr;
 
     // to store the local matrix on device
-    int* d_row_ptr = nullptr;
-    int* d_col_idx = nullptr;
-    SC* d_nzvals   = nullptr; //!< values of matrix entries
+    int* d_row_ptr           = nullptr;
+    int* d_col_idx           = nullptr;
+    local_scalar_t* d_nzvals = nullptr; //!< values of matrix entries
 
     // to store the lower-triangular matrix on device
     local_int_t nnzL{};
@@ -133,9 +135,9 @@ public:
     size_t buffer_size_L{};
     void* buffer_L = nullptr;
 #endif
-    int* d_Lrow_ptr = nullptr;
-    int* d_Lcol_idx = nullptr;
-    SC* d_Lnzvals   = nullptr; //!< values of matrix entries
+    int* d_Lrow_ptr           = nullptr;
+    int* d_Lcol_idx           = nullptr;
+    local_scalar_t* d_Lnzvals = nullptr; //!< values of matrix entries
     // to store the strictly upper-triangular matrix on device
     local_int_t nnzU{};
 #if defined(HPGMP_WITH_CUDA)
@@ -144,13 +146,13 @@ public:
     rocsparse_spmat_descr descrU;
 #endif
     size_t buffer_size_U{};
-    void* buffer_U  = nullptr;
-    int* d_Urow_ptr = nullptr;
-    int* d_Ucol_idx = nullptr;
-    SC* d_Unzvals   = nullptr; //!< values of matrix entries
+    void* buffer_U            = nullptr;
+    int* d_Urow_ptr           = nullptr;
+    int* d_Ucol_idx           = nullptr;
+    local_scalar_t* d_Unzvals = nullptr; //!< values of matrix entries
 
     // workspace vector for reference (vendor library) GS
-    mutable Vector<SC> workx; // nrow
+    mutable Vector<local_scalar_t> workx; // nrow
 #endif
 
 #else // HPGMP_REFERENCE
@@ -158,10 +160,10 @@ public:
     const int max_nnz_per_row = 27;
 
     // Optimizations
-    local_int_t* rowHash   = nullptr;
-    local_int_t* d_rowHash = nullptr;
-    local_int_t* d_mtxIndL = nullptr;
-    SC* d_matrixValues     = nullptr;
+    local_int_t* rowHash           = nullptr;
+    local_int_t* d_rowHash         = nullptr;
+    local_int_t* d_mtxIndL         = nullptr;
+    local_scalar_t* d_matrixValues = nullptr;
 
 #endif
 
