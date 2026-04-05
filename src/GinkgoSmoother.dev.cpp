@@ -135,7 +135,7 @@ int ginkgo_multicolor_gs(const GinkgoSmoother<local_scalar_t, halo_scalar_t>* in
 #endif
 
     ginkgo_multicolor_gs_interior(interior_smoother, mat, r, x); // all independent row blocks
-                                                                 
+
 #ifndef HPGMP_NO_MPI
     if (mat->get_geometry()->size > 1)
     {
