@@ -31,16 +31,16 @@ template<unsigned int BLOCKSIZE, unsigned int WIDTH,
          typename local_scalar_t, typename halo_scalar_t, typename vec_scalar_t>
 __launch_bounds__(BLOCKSIZE)
     __global__ void kernel_fgs_halo(const local_int_t m,
-                                      const local_int_t n,
-                                      const local_int_t block_nrow,
-                                      const int ldi, const int ldv,
-                                      const local_int_t* halo_row_ind,
-                                      const local_int_t* halo_col_ind,
-                                      const halo_scalar_t* halo_val,
-                                      const local_scalar_t* inv_diag,
-                                      const local_int_t* perm,
-                                      const vec_scalar_t* x,
-                                      vec_scalar_t* y)
+                                    const local_int_t n,
+                                    const local_int_t block_nrow,
+                                    const int ldi, const int ldv,
+                                    const local_int_t* halo_row_ind,
+                                    const local_int_t* halo_col_ind,
+                                    const halo_scalar_t* halo_val,
+                                    const local_scalar_t* inv_diag,
+                                    const local_int_t* perm,
+                                    const vec_scalar_t* x,
+                                    vec_scalar_t* y)
 {
     const local_int_t row = blockIdx.x * BLOCKSIZE + threadIdx.x;
     if (row >= m) {
