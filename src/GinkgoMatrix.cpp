@@ -7,6 +7,9 @@ template<typename local_scalar_t, typename halo_scalar_t>
 GinkgoMatrix<local_scalar_t, halo_scalar_t>::GinkgoMatrix(const SparseMatrix<local_scalar_t, halo_scalar_t>& A)
     : ELLMatrix<local_scalar_t, halo_scalar_t>(A)
 {
+
+    HPGMP_RANGE_PUSH(__FUNCTION__);
+
     assert(this->ldi_ == this->ldv_);
     auto gko_exec = create_ginkgo_executor();
     auto ell_mat =
@@ -36,6 +39,8 @@ GinkgoMatrix<local_scalar_t, halo_scalar_t>::GinkgoMatrix(const SparseMatrix<loc
     {
         throw std::runtime_error("Unsupported gko_mat_type in GinkgoMatrix!");
     }
+
+    HPGMP_RANGE_POP(__FUNCTION__);
 }
 
 template<typename local_scalar_t, typename halo_scalar_t, typename vec_scalar_t>

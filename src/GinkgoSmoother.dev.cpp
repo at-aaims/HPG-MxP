@@ -71,6 +71,9 @@ __launch_bounds__(BLOCKSIZE)
 template<typename local_scalar_t, typename halo_scalar_t>
 GinkgoSmoother<local_scalar_t, halo_scalar_t>::GinkgoSmoother(const GinkgoMatrix<local_scalar_t, halo_scalar_t>* mat)
 {
+
+    HPGMP_RANGE_PUSH(__FUNCTION__);
+
     auto gko_mat    = mat->get_gko_mat();
     auto gko_exec   = gko_mat->get_executor();
     auto color_ptrs = mat->get_independent_set_offsets();
@@ -86,6 +89,8 @@ GinkgoSmoother<local_scalar_t, halo_scalar_t>::GinkgoSmoother(const GinkgoMatrix
     smoother_ = gko::share(smoother_factory->generate(gko_mat));
 
     //std::cout << "Using Ginkgo (FwdGaussSeidel) smoother.\n";
+
+    HPGMP_RANGE_POP(__FUNCTION__);
 }
 
 template<typename local_scalar_t, typename halo_scalar_t, typename vec_scalar_t>
@@ -121,6 +126,8 @@ int ginkgo_multicolor_gs(const GinkgoSmoother<local_scalar_t, halo_scalar_t>* in
                          const GinkgoMatrix<local_scalar_t, halo_scalar_t>* mat,
                          const Vector<vec_scalar_t>* r, Vector<vec_scalar_t>* x)
 {
+    HPGMP_RANGE_PUSH(__FUNCTION__);
+
     assert(x->local_length() == mat->get_local_num_cols());
     auto dctx            = mat->get_device_context();
     auto stream_interior = dctx->get_compute_stream();
@@ -152,6 +159,8 @@ int ginkgo_multicolor_gs(const GinkgoSmoother<local_scalar_t, halo_scalar_t>* in
 
     dctx->synchronize_compute_stream();
     dctx->synchronize_halo_stream();
+
+    HPGMP_RANGE_POP(__FUNCTION__);
 
     return 0;
 }

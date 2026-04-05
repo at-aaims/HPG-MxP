@@ -40,6 +40,8 @@ void SetupMatrix(DeviceCtx* const dctx, int numberOfMgLevels, SparseMatrix_type&
                  Vector_type* b, Vector_type* x, Vector_type* xexact, bool init_vect, comm_type comm)
 {
 
+    HPGMP_RANGE_PUSH(__FUNCTION__);
+
     A.initialize(geom, comm, dctx);
 
     GenerateNonsymProblem(dctx, A, b, x, xexact, init_vect);
@@ -87,6 +89,8 @@ void SetupMatrix(DeviceCtx* const dctx, int numberOfMgLevels, SparseMatrix_type&
     #endif */
 
     data.initialize(A, dctx);
+
+    HPGMP_RANGE_POP(__FUNCTION__);
 }
 
 /* --------------- *

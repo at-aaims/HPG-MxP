@@ -416,6 +416,9 @@ template<class SparseMatrixType, class VectorType>
 void test_mg_spmv(comm_type comm, DeviceCtx* const dctx, const Geometry* const geom,
                   const SparseMatrixType& A, TestGMRESData& test_data)
 {
+
+    HPGMP_RANGE_PUSH(__FUNCTION__);
+
     const local_int_t nrow = A.localNumberOfRows;
     const local_int_t ncol = A.localNumberOfColumns;
     const bool symmetric   = false;
@@ -467,4 +470,7 @@ void test_mg_spmv(comm_type comm, DeviceCtx* const dctx, const Geometry* const g
         std::cout << "BenchGMRES:  test_mg_spmv: MG = " << mgflops / mgtime / 1e9
                   << " GFLOP/s" << std::endl;
     }
+
+    HPGMP_RANGE_POP(__FUNCTION__);
+
 }

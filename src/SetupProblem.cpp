@@ -52,6 +52,8 @@ void SetupProblem(const char* title, int argc, char** argv, comm_type comm, Devi
                   GMRESData_type& data, SparseMatrix_type2& A2, GMRESData_type2& data2,
                   Vector_type& b, Vector_type& x, TestGMRESData& test_data)
 {
+    HPGMP_RANGE_PUSH(__FUNCTION__);
+
     HPGMP_Params params;
     HPGMP_Init_Params(title, &argc, &argv, params, comm);
     const int size        = params.comm_size; // Number of MPI processes
@@ -138,6 +140,8 @@ void SetupProblem(const char* title, int argc, char** argv, comm_type comm, Devi
         HPGMP_fout << " Setup    Time     " << setup_time << " seconds." << endl;
         HPGMP_fout << " Optimize Time     " << opt_time << " seconds." << endl;
     }
+
+    HPGMP_RANGE_POP(__FUNCTION__);
 }
 
 

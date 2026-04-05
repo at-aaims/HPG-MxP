@@ -56,6 +56,9 @@ int ValidGMRES(const int argc, char** argv, const validation_t validation_type, 
                DeviceCtx* const dctx, const int numberOfMgLevels, const bool verbose,
                TestGMRESData& test_data)
 {
+
+    HPGMP_RANGE_PUSH(__FUNCTION__);
+
     typedef Vector<scalar_type> Vector_type;
     typedef SparseMatrix<scalar_type> SparseMatrix_type;
     typedef GMRESData<scalar_type, scalar_type, scalar_type> GMRESData_type;
@@ -229,6 +232,9 @@ int ValidGMRES(const int argc, char** argv, const validation_t validation_type, 
     }
 
     delete geom;
+
+    HPGMP_RANGE_POP(__FUNCTION__);
+
     return fail;
 }
 

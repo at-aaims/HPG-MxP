@@ -61,6 +61,9 @@ template<typename local_scalar_t, typename halo_scalar_t, class GMRESData_type, 
 int OptimizeProblemELL(SparseMatrix<local_scalar_t, halo_scalar_t>& A, GMRESData_type& data,
                        Vector<vec_scalar_t>& b, Vector<vec_scalar_t>& x, Vector<vec_scalar_t>& xexact)
 {
+
+    HPGMP_RANGE_PUSH(__FUNCTION__);
+
     b.update_device_data();
     xexact.update_device_data();
 
@@ -125,6 +128,8 @@ int OptimizeProblemELL(SparseMatrix<local_scalar_t, halo_scalar_t>& A, GMRESData
     // Update host mirrors with permutted values
     b.update_host_mirror();
     xexact.update_host_mirror();
+
+    HPGMP_RANGE_POP(__FUNCTION__);
 
     return 0;
 }
