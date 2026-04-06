@@ -5,21 +5,17 @@
 #include "mytimer.hpp"
 #include "GMRES_IR.hpp"
 
-#ifdef HPGMP_WITH_GINKGO_AMP // TODO: Improve this implementation
 template<typename scalar_type, typename scalar_type2, class GMRESData_type, class GMRESData_type2>
 double estimate_run_time(comm_type comm,
-                         const SparseMatrix<scalar_type, scalar_type>& A, const SparseMatrix<scalar_type, scalar_type2>& A_lo,
-                         GMRESData_type& data, GMRESData_type2& data_lo,
-                         const Vector<scalar_type>& b, Vector<scalar_type>& x, const int max_iters,
-                         const int restart_length, const bool verbose)
+                         const SparseMatrix<scalar_type, scalar_type>& A, 
+#ifdef HPGMP_WITH_GINKGO_AMP
+                         const SparseMatrix<scalar_type, scalar_type2>& A_lo,
 #else
-template<typename scalar_type, typename scalar_type2, class GMRESData_type, class GMRESData_type2>
-double estimate_run_time(comm_type comm,
-                         const SparseMatrix<scalar_type, scalar_type>& A, const SparseMatrix<scalar_type2, scalar_type2>& A_lo,
+                         const SparseMatrix<scalar_type2, scalar_type2>& A_lo,
+#endif
                          GMRESData_type& data, GMRESData_type2& data_lo,
                          const Vector<scalar_type>& b, Vector<scalar_type>& x, const int max_iters,
                          const int restart_length, const bool verbose)
-#endif
 {
     HPGMP_RANGE_PUSH(__FUNCTION__);
 
