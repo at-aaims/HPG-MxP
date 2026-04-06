@@ -89,7 +89,7 @@ int ComputeMG(const SparseMatrix_type& A, const Vector_type& r, Vector_type& x,
         auto time_gs_sofar = x.time2_;
         x.time2_           = 0.0;
 
-        HPGMP_RANGE_PUSH("ell_multicolor_gs");
+        HPGMP_RANGE_PUSH("multicolor_gs");
 
         TICK();
 
@@ -125,7 +125,7 @@ int ComputeMG(const SparseMatrix_type& A, const Vector_type& r, Vector_type& x,
         x.time2_ = time_gs_sofar;
         TOCK(x.time2_);
 
-        HPGMP_RANGE_POP("ell_multicolor_gs");
+        HPGMP_RANGE_POP("multicolor_gs");
         if (ierr != 0) {
             HPGMP_RANGE_POP(__FUNCTION__);
             return ierr;
@@ -207,7 +207,7 @@ int ComputeMG(const SparseMatrix_type& A, const Vector_type& r, Vector_type& x,
         // coarsest grid
         auto time_gs_sofar = x.time2_;
         x.time2_           = 0.0;
-        HPGMP_RANGE_PUSH("ell_multicolor_gs");
+        HPGMP_RANGE_PUSH("multicolor_gs");
         TICK();
 #ifdef HPGMP_WITH_GINKGO
         ierr += ginkgo_multicolor_gs(smoother.get(), mat.get(), &r, &x);
@@ -219,7 +219,7 @@ int ComputeMG(const SparseMatrix_type& A, const Vector_type& r, Vector_type& x,
         // restore GS time so far
         x.time2_ = time_gs_sofar;
         TOCK(x.time2_);
-        HPGMP_RANGE_POP("ell_multicolor_gs");
+        HPGMP_RANGE_POP("multicolor_gs");
         //ft.mg_gs.flops[0] += 2*A.totalNumberOfNonzeros;
         ft.mg_gs.add_flops<scalar_type>(2 * A.totalNumberOfNonzeros);
         ft.mg_gs.add_memory_traffic<scalar_type>(A.totalNumberOfNonzeros + 2 * A.totalNumberOfRows);
