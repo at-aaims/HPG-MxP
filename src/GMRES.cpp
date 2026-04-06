@@ -194,7 +194,7 @@ int GMRES(const SparseMatrix_type& A, GMRESData_type& data, const Vector_type& b
 
         //HPGMP_VERBOSE_PRINT("GMRES: Starting restart cycle..");
         while (k <= restart_length && normr / normr0 > tolerance) { // Use ">" to exit when res=zero (continuing will cause NaN)
-            
+
             HPGMP_RANGE_PUSH("GMRES restart cycle");
 
             auto Qkm1 = Q.get_vector(k - 1);

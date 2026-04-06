@@ -472,5 +472,4 @@ void test_mg_spmv(comm_type comm, DeviceCtx* const dctx, const Geometry* const g
     }
 
     HPGMP_RANGE_POP(__FUNCTION__);
-
 }
