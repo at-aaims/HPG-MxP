@@ -16,7 +16,6 @@
                stream_interior>>>(                                                     \
                 mat->get_num_halo_rows(),                                              \
                 mat->get_local_num_cols(),                                             \
-                mat->get_independent_set_sizes()[i],                                   \
                 mat->get_halo_ld_indices(), mat->get_halo_ld_values(),                 \
                 mat->get_halo_row_indices(),                                           \
                 mat->get_halo_col_idxs(),                                              \
@@ -32,7 +31,6 @@ template<unsigned int BLOCKSIZE, unsigned int WIDTH,
 __launch_bounds__(BLOCKSIZE)
     __global__ void kernel_fgs_halo(const local_int_t m,
                                     const local_int_t n,
-                                    const local_int_t block_nrow,
                                     const int ldi, const int ldv,
                                     const local_int_t* halo_row_ind,
                                     const local_int_t* halo_col_ind,
@@ -49,9 +47,6 @@ __launch_bounds__(BLOCKSIZE)
 
     const local_int_t halo_idx = __ldcg(halo_row_ind + row);
     const local_int_t perm_idx = perm[halo_idx];
-    if (perm_idx >= block_nrow) {
-        return;
-    }
 
     vec_scalar_t sum = 0.0;
 
@@ -148,11 +143,8 @@ int ginkgo_multicolor_gs(const GinkgoSmoother<local_scalar_t, halo_scalar_t>* in
     if (mat->get_geometry()->size > 1)
     {
         x->update_halos_finalize(mat);
-        for (local_int_t i; i < mat->get_num_independent_sets(); ++i) // all colors
-        {
-            if (mat->get_ell_width() == 27) {
-                LAUNCH_FGS_HALO(256, 27);
-            }
+        if (mat->get_ell_width() == 27) {
+            LAUNCH_FGS_HALO(256, 27); // all colors
         }
     }
 #endif
