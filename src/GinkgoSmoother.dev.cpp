@@ -60,7 +60,7 @@ __launch_bounds__(BLOCKSIZE)
     {
         const local_int_t col = __ldcg(halo_col_ind + row + p * ldi);
 
-        if (col >= 0 && col < n) {
+        if (col >= m && col < n) {
             sum = fma(-static_cast<vec_scalar_t>(__ldcg(halo_val + row + p * ldv)),
                       y[col], sum);
         }
@@ -138,6 +138,7 @@ int ginkgo_multicolor_gs(const GinkgoSmoother<local_scalar_t, halo_scalar_t>* in
     if (mat->get_geometry()->size > 1)
     {
         x->update_halos_pack_send_buffer(mat);
+        x->update_halos_send_receive(mat);
     }
 #endif
 
@@ -146,7 +147,6 @@ int ginkgo_multicolor_gs(const GinkgoSmoother<local_scalar_t, halo_scalar_t>* in
 #ifndef HPGMP_NO_MPI
     if (mat->get_geometry()->size > 1)
     {
-        x->update_halos_send_receive(mat);
         x->update_halos_finalize(mat);
         for (local_int_t i; i < mat->get_num_independent_sets(); ++i) // all colors
         {
