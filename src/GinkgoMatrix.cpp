@@ -15,7 +15,7 @@ GinkgoMatrix<local_scalar_t, halo_scalar_t>::GinkgoMatrix(const SparseMatrix<loc
     auto ell_mat =
         gko::share(gko_ell_type::create(gko_exec,
                                         gko::dim<2>{static_cast<gko::size_type>(this->local_nrows_),
-                                                    static_cast<gko::size_type>(this->local_ncols_)},
+                                                    static_cast<gko::size_type>(this->local_nrows_)},
                                         std::move(gko::make_array_view(gko_exec,
                                                                        this->ldv_ * this->ell_width_,
                                                                        this->values_)),
@@ -51,14 +51,14 @@ int ginkgo_interior_spmv(const GinkgoMatrix<local_scalar_t, halo_scalar_t>* mat,
     auto gko_exec      = mat->get_gko_mat()->get_executor();
     auto gko_x =
         gko_vec_type::create_const(gko_exec,
-                                   gko::dim<2>{static_cast<gko::size_type>(x->local_length()), 1},
+                                   gko::dim<2>{static_cast<gko::size_type>(mat->get_local_num_rows()), 1},
                                    gko::make_const_array_view(gko_exec,
                                                               x->local_length(),
                                                               x->d_values()),
                                    1);
     auto gko_y =
         gko_vec_type::create(gko_exec,
-                             gko::dim<2>{static_cast<gko::size_type>(y->local_length()), 1},
+                             gko::dim<2>{static_cast<gko::size_type>(mat->get_local_num_rows()), 1},
                              std::move(gko::make_array_view(gko_exec,
                                                             y->local_length(),
                                                             y->d_values())),

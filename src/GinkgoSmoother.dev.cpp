@@ -103,14 +103,14 @@ int ginkgo_multicolor_gs_interior(const GinkgoSmoother<local_scalar_t, halo_scal
     auto gko_exec      = mat->get_gko_mat()->get_executor();
     auto gko_r =
         gko_vec_type::create_const(gko_exec,
-                                   gko::dim<2>{static_cast<gko::size_type>(r->local_length()), 1},
+                                   gko::dim<2>{static_cast<gko::size_type>(mat->get_local_num_rows()), 1},
                                    gko::make_const_array_view(gko_exec,
                                                               r->local_length(),
                                                               r->d_values()),
                                    1);
     auto gko_x =
         gko_vec_type::create(gko_exec,
-                             gko::dim<2>{static_cast<gko::size_type>(x->local_length()), 1},
+                             gko::dim<2>{static_cast<gko::size_type>(mat->get_local_num_rows()), 1},
                              std::move(gko::make_array_view(gko_exec,
                                                             x->local_length(),
                                                             x->d_values())),

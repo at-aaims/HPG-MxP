@@ -266,7 +266,7 @@ int main(int argc, char* argv[])
     auto gko_mat =
         gko::share(gko_mat_type::create_const(gko_exec,
                                               gko::dim<2>{static_cast<gko::size_type>(mat_ptr->get_local_num_rows()),
-                                                          static_cast<gko::size_type>(mat_ptr->get_local_num_cols())},
+                                                          static_cast<gko::size_type>(mat_ptr->get_local_num_rows())},
                                               gko::make_const_array_view(gko_exec,
                                                                          mat_ptr->get_ld_values() * mat_ptr->get_ell_width(),
                                                                          mat_ptr->get_values()),
