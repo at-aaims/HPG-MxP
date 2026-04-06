@@ -64,7 +64,7 @@ typedef GMRESData<scalar_type, scalar_type, scalar_type> GMRESData_type;
 
 typedef Vector<scalar_type2> Vector_type2;
 #ifdef HPGMP_WITH_GINKGO_AMP
-using project_type = double;
+using project_type = float;
 typedef SparseMatrix<scalar_type, scalar_type2> SparseMatrix_type2;
 typedef GMRESData<scalar_type, scalar_type2, project_type> GMRESData_type2;
 #else

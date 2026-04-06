@@ -180,9 +180,9 @@ template void SetupProblem< SparseMatrix<double>,
 template void SetupProblem< SparseMatrix<double, double>,
                             SparseMatrix<double, float>,
                             GMRESData<double, double, double>,
-                            GMRESData<double, float, double>,
+                            GMRESData<double, float, float>,
                             Vector<double>>(
     const char*, int, char**, comm_type, DeviceCtx*, int, bool, Geometry*, SparseMatrix<double, double>&,
-    GMRESData<double, double, double>&, SparseMatrix<double, float>&, GMRESData<double, float, double>&,
+    GMRESData<double, double, double>&, SparseMatrix<double, float>&, GMRESData<double, float, float>&,
     Vector<double>&, Vector<double>&, TestGMRESData&);
 #endif

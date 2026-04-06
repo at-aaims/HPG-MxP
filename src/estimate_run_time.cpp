@@ -91,7 +91,7 @@ template double estimate_run_time(comm_type comm,
 #ifdef HPGMP_WITH_GINKGO_AMP
 template double estimate_run_time(comm_type comm,
                                   const SparseMatrix<double, double>& A, const SparseMatrix<double, float>& A_lo,
-                                  GMRESData<double, double, double>& data, GMRESData<double, float, double>& data_lo,
+                                  GMRESData<double, double, double>& data, GMRESData<double, float, float>& data_lo,
                                   const Vector<double>& b, Vector<double>& x, int max_iters,
                                   int restart_length, bool verbose);
 #else

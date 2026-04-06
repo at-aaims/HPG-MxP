@@ -403,13 +403,8 @@ template int BenchGMRES<float, float, float >(int, char**, comm_type, DeviceCtx*
 
 
 // mixed version
-#ifdef HPGMP_WITH_GINKGO_AMP
-template int BenchGMRES<double, float, double >(int, char**, comm_type, DeviceCtx*, int, bool, bool,
-                                                const HPGMP_gen_opts&, TestGMRESData&);
-#else
 template int BenchGMRES<double, float, float >(int, char**, comm_type, DeviceCtx*, int, bool, bool,
                                                const HPGMP_gen_opts&, TestGMRESData&);
-#endif
 
 
 template<class SparseMatrixType, class VectorType>

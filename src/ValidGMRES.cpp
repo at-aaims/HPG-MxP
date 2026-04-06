@@ -247,10 +247,5 @@ template int ValidGMRES<float, float, float >(
     int, char**, validation_t, comm_type, DeviceCtx*, int, bool, TestGMRESData&);
 
 // mixed version
-#ifdef HPGMP_WITH_GINKGO_AMP
-template int ValidGMRES<double, float, double >(
-    int, char**, validation_t, comm_type, DeviceCtx*, int, bool, TestGMRESData&);
-#else
 template int ValidGMRES<double, float, float >(
     int, char**, validation_t, comm_type, DeviceCtx*, int, bool, TestGMRESData&);
-#endif
