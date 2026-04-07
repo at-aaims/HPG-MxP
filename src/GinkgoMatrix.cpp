@@ -47,6 +47,9 @@ template<typename local_scalar_t, typename halo_scalar_t, typename vec_scalar_t>
 int ginkgo_interior_spmv(const GinkgoMatrix<local_scalar_t, halo_scalar_t>* mat,
                          const Vector<vec_scalar_t>* x, Vector<vec_scalar_t>* y)
 {
+
+    HPGMP_RANGE_PUSH(__FUNCTION__);
+
     using gko_vec_type = gko::matrix::Dense<vec_scalar_t>;
     auto gko_exec      = mat->get_gko_mat()->get_executor();
     auto gko_x =
@@ -66,6 +69,8 @@ int ginkgo_interior_spmv(const GinkgoMatrix<local_scalar_t, halo_scalar_t>* mat,
 
     mat->get_gko_mat()->apply(gko_x, gko_y);
 
+    HPGMP_RANGE_POP(__FUNCTION__);
+
     return 0;
 }
 
@@ -73,6 +78,9 @@ template<typename local_scalar_t, typename halo_scalar_t, typename vec_scalar_t>
 void ginkgo_spmv(const GinkgoMatrix<local_scalar_t, halo_scalar_t>* mat,
                  const Vector<vec_scalar_t>* x, Vector<vec_scalar_t>* y)
 {
+
+    HPGMP_RANGE_PUSH(__FUNCTION__);
+
     auto dctx = x->get_device_context();
 
     // On halo stream: pack send buffer and copy to host if needed
@@ -89,6 +97,8 @@ void ginkgo_spmv(const GinkgoMatrix<local_scalar_t, halo_scalar_t>* mat,
 
     dctx->synchronize_halo_stream();
     dctx->synchronize_compute_stream();
+
+    HPGMP_RANGE_POP(__FUNCTION__);
 }
 
 template<class SparseMatrix_type, class Vector_type>

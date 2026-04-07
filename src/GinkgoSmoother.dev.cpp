@@ -93,6 +93,9 @@ int ginkgo_multicolor_gs_interior(const GinkgoSmoother<local_scalar_t, halo_scal
                                   const GinkgoMatrix<local_scalar_t, halo_scalar_t>* mat,
                                   const Vector<vec_scalar_t>* r, Vector<vec_scalar_t>* x)
 {
+
+    HPGMP_RANGE_PUSH(__FUNCTION__);
+
     using gko_vec_type = gko::matrix::Dense<vec_scalar_t>;
     auto gko_smoother  = interior_smoother->get_smoother();
     auto gko_exec      = mat->get_gko_mat()->get_executor();
@@ -112,6 +115,8 @@ int ginkgo_multicolor_gs_interior(const GinkgoSmoother<local_scalar_t, halo_scal
                              1);
 
     gko_smoother->apply(gko_r, gko_x);
+
+    HPGMP_RANGE_POP(__FUNCTION__);
 
     return 0;
 }
