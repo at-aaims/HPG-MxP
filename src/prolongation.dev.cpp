@@ -42,7 +42,7 @@ template<unsigned int BLOCKSIZE, typename local_scalar_t, typename halo_scalar_t
 __launch_bounds__(BLOCKSIZE)
     __global__ void kernel_prolongation(const local_int_t size,
                                         const local_int_t* __restrict__ f2cOperator,
-                                        const local_scalar_t* __restrict__ coarse,
+                                        const halo_scalar_t* __restrict__ coarse,
                                         vec_scalar_t* __restrict__ fine,
                                         const local_int_t* __restrict__ perm_fine,
                                         const local_int_t* __restrict__ perm_coarse)

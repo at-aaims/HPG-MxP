@@ -85,7 +85,7 @@ public:
        used inside optimized ComputeSPMV().
      */
     mutable SparseMatrix<local_scalar_t, halo_scalar_t>* Ac = nullptr; // Coarse grid matrix
-    mutable MGData<local_scalar_t>* mgData                  = nullptr; // Pointer to the coarse level data for this fine matrix
+    mutable MGData<halo_scalar_t>* mgData                   = nullptr; // Pointer to the coarse level data for this fine matrix
     OptimizationData* optimizationData                      = nullptr; // pointer that can be used to store implementation-specific data
 
     // communicator

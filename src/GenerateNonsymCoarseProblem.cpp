@@ -43,7 +43,7 @@ template<class SparseMatrix_type>
 void GenerateNonsymCoarseProblem(DeviceCtx* const dctx, const SparseMatrix_type& Af)
 {
 
-    typedef typename SparseMatrix_type::scalar_type scalar_type;
+    typedef typename SparseMatrix_type::halo_scalar_type scalar_type;
     typedef Vector<scalar_type> Vector_type;
     typedef MGData<scalar_type> MGData_type;
 
