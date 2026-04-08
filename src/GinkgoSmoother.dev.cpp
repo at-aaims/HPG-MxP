@@ -79,6 +79,7 @@ GinkgoSmoother<local_scalar_t, halo_scalar_t>::GinkgoSmoother(const GinkgoMatrix
     auto smoother_factory = smoother_type::build()
                                 .with_criteria(gko::stop::Iteration::build().with_max_iters(1u))
                                 .with_color_ptrs(color_ptrs_vector)
+                                .with_init_guess_mode(gko::solver::initial_guess_mode::provided)
                                 .on(gko_exec);
 
     smoother_ = gko::share(smoother_factory->generate(gko_mat));
