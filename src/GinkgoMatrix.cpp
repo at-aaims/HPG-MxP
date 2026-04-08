@@ -32,7 +32,7 @@ GinkgoMatrix<local_scalar_t, halo_scalar_t>::GinkgoMatrix(const SparseMatrix<loc
     } else if constexpr (std::is_same_v<gko_mat_type, gko_amp_type>)
     {
         std::ifstream amp_config_file("amp_config.txt");
-        
+
         local_scalar_t tol = 1e-8;
         if (amp_config_file.is_open()) {
             amp_config_file >> tol;
@@ -44,14 +44,14 @@ GinkgoMatrix<local_scalar_t, halo_scalar_t>::GinkgoMatrix(const SparseMatrix<loc
         gko_mat_ = amp_mat;
 
         std::cout << "Using Ginkgo AMP matrix with tolerance: " << tol << ".\n";
-       
+
         auto q = gko_mat_->num_precisions;
         for (auto k = 0; k < q; k++)
         {
-            const auto* bin = gko_mat_->get_bin_matrix(k);
-            const auto* bin_ell = static_cast<const gko_ell_type*>(bin);
+            const auto* bin            = gko_mat_->get_bin_matrix(k);
+            const auto* bin_ell        = static_cast<const gko_ell_type*>(bin);
             const auto max_nnz_per_row = bin_ell->get_num_stored_elements_per_row();
-            std::cout << "Bin " << k  << ": max_nnz_per_row = " << max_nnz_per_row << "\n";
+            std::cout << "Bin " << k << ": max_nnz_per_row = " << max_nnz_per_row << "\n";
         }
     } else
     {
