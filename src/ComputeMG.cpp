@@ -97,9 +97,14 @@ int ComputeMG(const SparseMatrix_type& A, const Vector_type& r, Vector_type& x,
             if (i == 0) {
 #ifdef HPGMP_WITH_GINKGO
                 ierr += ginkgo_multicolor_gs(smoother.get(), mat.get(), &r, &x);
+
+                //ft.mg_gs.flops[0] += 2*A.totalNumberOfNonzeros;
+                ft.mg_gs.add_flops<scalar_type>(2 * A.totalNumberOfNonzeros);
+                ft.mg_gs.add_memory_traffic<scalar_type>(A.totalNumberOfNonzeros + 2 * A.totalNumberOfRows);
+                ft.mg_gs.add_memory_traffic<int>(A.totalNumberOfNonzeros);
 #else
                 ierr += ell_multicolor_gs_zero_initial(symmetric, mat.get(), &r, &x);
-#endif
+
                 //ft.mg_gs.flops[0] += A.totalNumberOfNonzeros;
                 ft.mg_gs.add_flops<scalar_type>(A.totalNumberOfNonzeros);
                 // the first color is treated differently:
@@ -108,6 +113,7 @@ int ComputeMG(const SparseMatrix_type& A, const Vector_type& r, Vector_type& x,
                     7.0 / 8 * (A.totalNumberOfNonzeros + A.totalNumberOfRows - 1) / 2 + //
                     1 + 2 * A.totalNumberOfRows);
                 ft.mg_gs.add_memory_traffic<int>(7.0 / 8 * A.totalNumberOfNonzeros);
+#endif
             } else {
 #ifdef HPGMP_WITH_GINKGO
                 ierr += ginkgo_multicolor_gs(smoother.get(), mat.get(), &r, &x);
