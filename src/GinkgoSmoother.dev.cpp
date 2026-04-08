@@ -84,7 +84,7 @@ GinkgoSmoother<local_scalar_t, halo_scalar_t>::GinkgoSmoother(const GinkgoMatrix
 
     smoother_ = gko::share(smoother_factory->generate(gko_mat));
 
-    //std::cout << "Using Ginkgo (FwdGaussSeidel) smoother.\n";
+    std::cout << "Using Ginkgo (FwdGaussSeidel) smoother.\n";
 
     HPGMP_RANGE_POP(__FUNCTION__);
 }
