@@ -11,7 +11,8 @@ GinkgoMatrix<local_scalar_t, halo_scalar_t>::GinkgoMatrix(const SparseMatrix<loc
     HPGMP_RANGE_PUSH(__FUNCTION__);
 
     assert(this->ldi_ == this->ldv_);
-    auto gko_exec = create_ginkgo_executor();
+
+    auto gko_exec = create_ginkgo_executor(this->dctx_->get_compute_stream());
     auto ell_mat =
         gko::share(gko_ell_type::create(gko_exec,
                                         gko::dim<2>{static_cast<gko::size_type>(this->local_nrows_),

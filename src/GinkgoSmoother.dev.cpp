@@ -139,7 +139,6 @@ int ginkgo_multicolor_gs(const GinkgoSmoother<local_scalar_t, halo_scalar_t>* in
     if (mat->get_geometry()->size > 1)
     {
         x->update_halos_pack_send_buffer(mat);
-        x->update_halos_send_receive(mat);
     }
 #endif
 
@@ -148,6 +147,7 @@ int ginkgo_multicolor_gs(const GinkgoSmoother<local_scalar_t, halo_scalar_t>* in
 #ifndef HPGMP_NO_MPI
     if (mat->get_geometry()->size > 1)
     {
+        x->update_halos_send_receive(mat);
         x->update_halos_finalize(mat);
         if (mat->get_ell_width() == 27) {
             LAUNCH_FGS_HALO(256, 27); // all colors
