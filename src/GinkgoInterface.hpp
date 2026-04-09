@@ -6,10 +6,10 @@
 
 using gko_reference_exec_type = gko::ReferenceExecutor;
 #ifdef HPGMP_WITH_HIP
-using gko_exec_type = gko::HipExecutor;
+using gko_exec_type      = gko::HipExecutor;
 using gko_allocator_type = gko::HipAllocator;
 #elif HPGMP_WITH_CUDA
-using gko_exec_type = gko::CudaExecutor;
+using gko_exec_type      = gko::CudaExecutor;
 using gko_allocator_type = gko::CudaAllocator;
 #else // CPU
 #ifdef HPGMP_NO_OPENMP
