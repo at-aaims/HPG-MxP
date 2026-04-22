@@ -43,6 +43,8 @@ template<class SparseMatrix_type>
 void GenerateNonsymCoarseProblem(DeviceCtx* const dctx, const SparseMatrix_type& Af)
 {
 
+    // Use halo_scalar_type here since, for now, it represents the uniform precision of
+    //   all working vectors inside a restart cycle.
     typedef typename SparseMatrix_type::halo_scalar_type scalar_type;
     typedef Vector<scalar_type> Vector_type;
     typedef MGData<scalar_type> MGData_type;
