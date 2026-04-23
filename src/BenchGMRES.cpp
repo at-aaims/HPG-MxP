@@ -123,7 +123,7 @@ int BenchGMRES(int argc, char** argv, comm_type comm, DeviceCtx* const dctx, int
 
     Vector_type b, x;
     SetupProblem("bench_", argc, argv, comm, dctx, numberOfMgLevels, verbose, geom, A, data,
-                 A_lo, data_lo, b, x, test_data);
+                 A_lo, data_lo, b, x, test_data, gopts);
     if (geom->rank == 0) {
         std::cout << "BenchGMRES: Set up problem. Running time = " << test_data.runningTime
                   << std::endl;
@@ -403,19 +403,17 @@ template int BenchGMRES<float, float, float >(int, char**, comm_type, DeviceCtx*
 
 
 // mixed version
-#ifdef HPGMP_WITH_GINKGO_AMP
-template int BenchGMRES<double, float, double >(int, char**, comm_type, DeviceCtx*, int, bool, bool,
-                                                const HPGMP_gen_opts&, TestGMRESData&);
-#else
 template int BenchGMRES<double, float, float >(int, char**, comm_type, DeviceCtx*, int, bool, bool,
                                                const HPGMP_gen_opts&, TestGMRESData&);
-#endif
 
 
 template<class SparseMatrixType, class VectorType>
 void test_mg_spmv(comm_type comm, DeviceCtx* const dctx, const Geometry* const geom,
                   const SparseMatrixType& A, TestGMRESData& test_data)
 {
+
+    HPGMP_RANGE_PUSH(__FUNCTION__);
+
     const local_int_t nrow = A.localNumberOfRows;
     const local_int_t ncol = A.localNumberOfColumns;
     const bool symmetric   = false;
@@ -467,4 +465,6 @@ void test_mg_spmv(comm_type comm, DeviceCtx* const dctx, const Geometry* const g
         std::cout << "BenchGMRES:  test_mg_spmv: MG = " << mgflops / mgtime / 1e9
                   << " GFLOP/s" << std::endl;
     }
+
+    HPGMP_RANGE_POP(__FUNCTION__);
 }

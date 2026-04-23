@@ -119,6 +119,7 @@ struct HPGMP_gen_opts
 {
     validation_t validation_type;
     run_t run_type;
+    double amp_tol;
 };
 
 /*!

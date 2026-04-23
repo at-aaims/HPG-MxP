@@ -107,12 +107,14 @@ int GMRES(const SparseMatrix_type& A, GMRESData_type& data, const Vector_type& b
     Vector_type& p  = data.p; // Direction vector (in MPI mode ncol>=nrow)
     Vector_type& Ap = data.Ap;
 
+    HPGMP_RANGE_PUSH("GMRES setup projection space");
     MultiVector_type Q(nrow, restart_length + 1, A.comm, x.get_device_context());
     SerialDenseMatrix_type H(restart_length + 1, restart_length, x.get_device_context());
     SerialDenseMatrix_type h(restart_length + 1, 1, x.get_device_context());
     SerialDenseMatrix_type t(restart_length + 1, 1, x.get_device_context());
     SerialDenseMatrix_type cs(restart_length + 1, 1, x.get_device_context());
     SerialDenseMatrix_type ss(restart_length + 1, 1, x.get_device_context());
+    HPGMP_RANGE_POP("GMRES setup projection space");
 
     if (!doPreconditioning && A.geom->rank == 0)
         HPGMP_fout << "WARNING: PERFORMING UNPRECONDITIONED ITERATIONS" << std::endl;
@@ -128,6 +130,8 @@ int GMRES(const SparseMatrix_type& A, GMRESData_type& data, const Vector_type& b
     double t_begin      = mytimer(); // Start timing right away
     while (niters <= max_iter && !converged)
     {
+        HPGMP_RANGE_PUSH("GMRES iterations");
+
         // p is of length ncols, copy x to p for sparse MV operation
         // In HIP/Cuda builds, this copies only device buffers.
         CopyVector(x, p);
@@ -190,6 +194,9 @@ int GMRES(const SparseMatrix_type& A, GMRESData_type& data, const Vector_type& b
 
         //HPGMP_VERBOSE_PRINT("GMRES: Starting restart cycle..");
         while (k <= restart_length && normr / normr0 > tolerance) { // Use ">" to exit when res=zero (continuing will cause NaN)
+
+            HPGMP_RANGE_PUSH("GMRES restart cycle");
+
             auto Qkm1 = Q.get_vector(k - 1);
             auto Qk   = Q.get_vector(k);
 
@@ -339,6 +346,9 @@ int GMRES(const SparseMatrix_type& A, GMRESData_type& data, const Vector_type& b
             }
             niters++;
             k++;
+
+            HPGMP_RANGE_POP("GMRES restart cycle");
+
         } // end of restart-cycle
         // prepare to restart
         if (verbose && A.geom->rank == 0) {
@@ -375,6 +385,9 @@ int GMRES(const SparseMatrix_type& A, GMRESData_type& data, const Vector_type& b
             flops += (itwo * Nrow * (k - ione));
             ctrs.ortho.add_memory_traffic<scalar_type>((A.totalNumberOfRows + 1) * restart_length + 2 * A.totalNumberOfRows);
         }
+
+        HPGMP_RANGE_POP("GMRES iterations");
+
     } // end of outer-loop
 
     //const double flops_gmg = ctrs.mg_gs.get_total_flops() + ctrs.mg_rp.get_total_flops();

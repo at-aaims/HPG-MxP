@@ -59,8 +59,12 @@
 */
 template<typename local_scalar_t, typename halo_scalar_t, class GMRESData_type, typename vec_scalar_t>
 int OptimizeProblemELL(SparseMatrix<local_scalar_t, halo_scalar_t>& A, GMRESData_type& data,
-                       Vector<vec_scalar_t>& b, Vector<vec_scalar_t>& x, Vector<vec_scalar_t>& xexact)
+                       Vector<vec_scalar_t>& b, Vector<vec_scalar_t>& x, Vector<vec_scalar_t>& xexact,
+                       const HPGMP_gen_opts& gopts)
 {
+
+    HPGMP_RANGE_PUSH(__FUNCTION__);
+
     b.update_device_data();
     xexact.update_device_data();
 
@@ -97,7 +101,7 @@ int OptimizeProblemELL(SparseMatrix<local_scalar_t, halo_scalar_t>& A, GMRESData
 #endif
 #ifdef HPGMP_WITH_GINKGO
         auto moptdata       = new GinkgoOptData<local_scalar_t, halo_scalar_t>;
-        auto mat            = std::make_shared<GinkgoMatrix<local_scalar_t, halo_scalar_t>>(*M);
+        auto mat            = std::make_shared<GinkgoMatrix<local_scalar_t, halo_scalar_t>>(*M, gopts);
         moptdata->mat       = mat;
         moptdata->smoother  = std::make_shared<GinkgoSmoother<local_scalar_t, halo_scalar_t>>(mat.get());
         M->optimizationData = moptdata;
@@ -126,29 +130,31 @@ int OptimizeProblemELL(SparseMatrix<local_scalar_t, halo_scalar_t>& A, GMRESData
     b.update_host_mirror();
     xexact.update_host_mirror();
 
+    HPGMP_RANGE_POP(__FUNCTION__);
+
     return 0;
 }
 
-// Helper function (see OptimizeProblem.hpp for details)
-//double OptimizeProblemMemoryUse(const SparseMatrix & A)
-//{
-//    return 0.0;
-//}
-
 template int OptimizeProblemELL(SparseMatrix<double>& A, GMRESData<double, double, double>& data,
-                                Vector<double>& b, Vector<double>& x, Vector<double>& xexact);
+                                Vector<double>& b, Vector<double>& x, Vector<double>& xexact, const HPGMP_gen_opts&);
 
 template int OptimizeProblemELL(SparseMatrix<float>& A, GMRESData<float, float, float>& data,
-                                Vector<float>& b, Vector<float>& x, Vector<float>& xexact);
+                                Vector<float>& b, Vector<float>& x, Vector<float>& xexact, const HPGMP_gen_opts&);
 
 template int OptimizeProblemELL(SparseMatrix<float>& A, GMRESData<double, double, double>& data,
-                                Vector<double>& b, Vector<double>& x, Vector<double>& xexact);
+                                Vector<double>& b, Vector<double>& x, Vector<double>& xexact, const HPGMP_gen_opts&);
 
-template int OptimizeProblemELL(SparseMatrix<double, float>& A, GMRESData<double, float, double>& data,
-                                Vector<float>& b, Vector<float>& x, Vector<float>& xexact);
+template int OptimizeProblemELL(SparseMatrix<double, float>& A, GMRESData<double, float, float>& data,
+                                Vector<double>& b, Vector<double>& x, Vector<double>& xexact, const HPGMP_gen_opts&);
+
+template int OptimizeProblemELL(SparseMatrix<double, float>& A, GMRESData<double, float, float>& data,
+                                Vector<float>& b, Vector<float>& x, Vector<float>& xexact, const HPGMP_gen_opts&);
 
 template int OptimizeProblemELL(SparseMatrix<double, float>& A, GMRESData<double, double, double>& data,
-                                Vector<double>& b, Vector<double>& x, Vector<double>& xexact);
+                                Vector<double>& b, Vector<double>& x, Vector<double>& xexact, const HPGMP_gen_opts&);
+
+template int OptimizeProblemELL(SparseMatrix<double, float>& A, GMRESData<double, double, double>& data,
+                                Vector<float>& b, Vector<float>& x, Vector<float>& xexact, const HPGMP_gen_opts&);
 
 #if 0
 template <typename scalar_t>
@@ -285,11 +291,11 @@ void seemingly_necessary_stuff_from_reference(SparseMatrix<scalar_t>* M)
 
 // Helper function (see OptimizeProblem.hpp for details)
 template<class SparseMatrix_type>
-double OptimizeProblemMemoryUse(const SparseMatrix_type& A)
+double OptimizeProblemMemoryUse(const SparseMatrix_type& A, const HPGMP_gen_opts&)
 {
     return 0.0;
 }
 
-template double OptimizeProblemMemoryUse(const SparseMatrix<double>&);
-template double OptimizeProblemMemoryUse(const SparseMatrix<float>&);
-template double OptimizeProblemMemoryUse(const SparseMatrix<double, float>&);
+template double OptimizeProblemMemoryUse(const SparseMatrix<double>&, const HPGMP_gen_opts&);
+template double OptimizeProblemMemoryUse(const SparseMatrix<float>&, const HPGMP_gen_opts&);
+template double OptimizeProblemMemoryUse(const SparseMatrix<double, float>&, const HPGMP_gen_opts&);

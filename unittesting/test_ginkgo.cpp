@@ -65,7 +65,7 @@ int main(int argc, char* argv[])
 #ifndef HPGMP_NO_MPI
     MPI_Init(&argc, &argv);
 #endif
-    HPGMP_Init(&argc, &argv);
+    const HPGMP_gen_opts gopts = HPGMP_Init(&argc, &argv);
 #ifndef HPGMP_NO_MPI
     MPI_Comm bench_comm = MPI_COMM_WORLD;
 #else
@@ -126,7 +126,7 @@ int main(int argc, char* argv[])
 
     // Call user-tunable set up function.
     double t7 = mytimer();
-    OptimizeProblem(A, data, b, x, xexact);
+    OptimizeProblem(A, data, b, x, xexact, gopts);
     t7       = mytimer() - t7;
     times[7] = t7;
 
@@ -178,7 +178,7 @@ int main(int argc, char* argv[])
     using gko_vec_type = gko::matrix::Dense<scalar_type>;
     using gko_ell_type = gko::matrix::Ell<scalar_type, local_int_t>;
     using gko_coo_type = gko::matrix::Coo<scalar_type, local_int_t>;
-    auto gko_exec      = create_ginkgo_executor();
+    auto gko_exec      = create_ginkgo_executor(dctx->get_compute_stream());
 #ifdef HPGMP_REFERENCE
     using gko_mat_type = gko_coo_type;
     auto gko_mat =
@@ -233,8 +233,8 @@ int main(int argc, char* argv[])
         size_t mat_col_bytes          = mat_ptr->get_ld_indices() * mat_ptr->get_ell_width() * sizeof(local_int_t);
         scalar_type* h_tmp_mat_values = (scalar_type*)malloc(mat_values_bytes);
         local_int_t* h_tmp_col_values = (local_int_t*)malloc(mat_col_bytes);
-        dctx.get()->copy_device_to_host_sync((void*)h_tmp_mat_values, mat_ptr->get_values(), mat_values_bytes);
-        dctx.get()->copy_device_to_host_sync((void*)h_tmp_col_values, mat_ptr->get_col_idxs(), mat_col_bytes);
+        dctx->copy_device_to_host_sync((void*)h_tmp_mat_values, mat_ptr->get_values(), mat_values_bytes);
+        dctx->copy_device_to_host_sync((void*)h_tmp_col_values, mat_ptr->get_col_idxs(), mat_col_bytes);
         std::cout << "ELL matrix column indices (copied to host): (First 20 rows)\n";
         for (local_int_t row = 0; row < 20; ++row)
         {
@@ -266,7 +266,7 @@ int main(int argc, char* argv[])
     auto gko_mat =
         gko::share(gko_mat_type::create_const(gko_exec,
                                               gko::dim<2>{static_cast<gko::size_type>(mat_ptr->get_local_num_rows()),
-                                                          static_cast<gko::size_type>(mat_ptr->get_local_num_cols())},
+                                                          static_cast<gko::size_type>(mat_ptr->get_local_num_rows())},
                                               gko::make_const_array_view(gko_exec,
                                                                          mat_ptr->get_ld_values() * mat_ptr->get_ell_width(),
                                                                          mat_ptr->get_values()),

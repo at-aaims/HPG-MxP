@@ -54,8 +54,11 @@
 template<typename scalar_type, typename scalar_type2, class project_type>
 int ValidGMRES(const int argc, char** argv, const validation_t validation_type, comm_type comm,
                DeviceCtx* const dctx, const int numberOfMgLevels, const bool verbose,
-               TestGMRESData& test_data)
+               TestGMRESData& test_data, const HPGMP_gen_opts& gopts)
 {
+
+    HPGMP_RANGE_PUSH(__FUNCTION__);
+
     typedef Vector<scalar_type> Vector_type;
     typedef SparseMatrix<scalar_type> SparseMatrix_type;
     typedef GMRESData<scalar_type, scalar_type, scalar_type> GMRESData_type;
@@ -83,7 +86,7 @@ int ValidGMRES(const int argc, char** argv, const validation_t validation_type, 
 
     Vector_type b, x;
     SetupProblem("valid_", argc, argv, comm, dctx, numberOfMgLevels, verbose, geom, A, data,
-                 A_lo, data_lo, b, x, test_data);
+                 A_lo, data_lo, b, x, test_data, gopts);
 
     //////////////////////////////////////////////////////////
     // Solver Parameters
@@ -229,22 +232,20 @@ int ValidGMRES(const int argc, char** argv, const validation_t validation_type, 
     }
 
     delete geom;
+
+    HPGMP_RANGE_POP(__FUNCTION__);
+
     return fail;
 }
 
 
 // uniform version
 template int ValidGMRES<double, double, double >(
-    int, char**, validation_t, comm_type, DeviceCtx*, int, bool, TestGMRESData&);
+    int, char**, validation_t, comm_type, DeviceCtx*, int, bool, TestGMRESData&, const HPGMP_gen_opts& gopts);
 
 template int ValidGMRES<float, float, float >(
-    int, char**, validation_t, comm_type, DeviceCtx*, int, bool, TestGMRESData&);
+    int, char**, validation_t, comm_type, DeviceCtx*, int, bool, TestGMRESData&, const HPGMP_gen_opts& gopts);
 
 // mixed version
-#ifdef HPGMP_WITH_GINKGO_AMP
-template int ValidGMRES<double, float, double >(
-    int, char**, validation_t, comm_type, DeviceCtx*, int, bool, TestGMRESData&);
-#else
 template int ValidGMRES<double, float, float >(
-    int, char**, validation_t, comm_type, DeviceCtx*, int, bool, TestGMRESData&);
-#endif
+    int, char**, validation_t, comm_type, DeviceCtx*, int, bool, TestGMRESData&, const HPGMP_gen_opts& gopts);

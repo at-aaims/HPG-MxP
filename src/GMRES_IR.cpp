@@ -73,11 +73,9 @@ int GMRES_IR(const SparseMatrix_type& A, const SparseMatrix_type2& A_lo,
     // (working) precision for outer loop
     typedef typename SparseMatrix_type::local_scalar_type scalar_type;
     typedef MultiVector<scalar_type> MultiVector_type;
-    //typedef SerialDenseMatrix<scalar_type> SerialDenseMatrix_type;
     // (lower) precision for inner loop
-    typedef typename SparseMatrix_type2::local_scalar_type scalar_type2;
+    typedef typename SparseMatrix_type2::halo_scalar_type scalar_type2;
     typedef MultiVector<scalar_type2> MultiVector_type2;
-    //typedef SerialDenseMatrix<scalar_type2> SerialDenseMatrix_type;
     typedef Vector<scalar_type2> Vector_type2;
     // (lower) precision for storing projected matrix
     typedef typename GMRESData_type2::project_type project_type;
@@ -107,6 +105,7 @@ int GMRES_IR(const SparseMatrix_type& A, const SparseMatrix_type2& A_lo,
     //Vector_type2 & p = data_lo.p; // Direction vector (in MPI mode ncol>=nrow)
     //Vector_type2 & Ap = data_lo.Ap;
 
+    HPGMP_RANGE_PUSH("GMRES-IR setup projection space");
     SerialDenseMatrix_type H(restart_length + 1, restart_length, x_hi.get_device_context());
     SerialDenseMatrix_type h(restart_length + 1, 1, x_hi.get_device_context());
     SerialDenseMatrix_type t(restart_length + 1, 1, x_hi.get_device_context());
@@ -122,6 +121,7 @@ int GMRES_IR(const SparseMatrix_type& A, const SparseMatrix_type2& A_lo,
     SerialDenseMatrix_type G(restart_length + 1, 2);
     SerialDenseMatrix_type w(restart_length + 1, 1);
 #endif
+    HPGMP_RANGE_POP("GMRES-IR setup projection space");
 
     // vectors in scalar_type (higher)
     const scalar_type zero_hi(0.0);
@@ -166,6 +166,9 @@ int GMRES_IR(const SparseMatrix_type& A, const SparseMatrix_type2& A_lo,
 
     while (niters <= max_iter && !converged)
     {
+
+        HPGMP_RANGE_PUSH("GMRES-IR iterations");
+
         // > Compute residual vector (higher working precision)
         // p is of length ncols, copy x to p for sparse MV operation
         CopyVector(x_hi, p_hi);
@@ -248,6 +251,9 @@ int GMRES_IR(const SparseMatrix_type& A, const SparseMatrix_type2& A_lo,
         ctrs.qr_host.add_memory_traffic<project_type>(1);
         while (k <= restart_length && normr / normr0 > tolerance && !IS_NAN(normr))
         {
+
+            HPGMP_RANGE_PUSH("GMRES_IR restart cycle");
+
             // Use ">" to exit when res=zero (continuing will cause NaN)
             const auto Qkm1 = Q.get_vector(k - 1);
             auto Qk         = Q.get_vector(k);
@@ -472,6 +478,9 @@ int GMRES_IR(const SparseMatrix_type& A, const SparseMatrix_type2& A_lo,
             }
             niters++;
             k++;
+
+            HPGMP_RANGE_POP("GMRES-IR restart cycle");
+
         } // end of restart-cycle
 
         // prepare to restart. At this point, k == m+1.
@@ -539,6 +548,8 @@ int GMRES_IR(const SparseMatrix_type& A, const SparseMatrix_type2& A_lo,
             ctrs.ortho.add_memory_traffic<scalar_type>(2 * A.totalNumberOfRows);
             ctrs.ortho.add_memory_traffic<project_type>(restart_length);
         }
+
+        HPGMP_RANGE_POP("GMRES-IR iterations");
 
     } // end of outer-loop
 
@@ -620,8 +631,8 @@ template int GMRES_IR< SparseMatrix<double>, SparseMatrix<float>, GMRESData<doub
     TestGMRESData&);
 
 #ifdef HPGMP_WITH_GINKGO_AMP
-template int GMRES_IR< SparseMatrix<double, double>, SparseMatrix<double, float>, GMRESData<double, double, double>, GMRESData<double, float, double>, Vector<double>>(
-    SparseMatrix<double, double> const&, SparseMatrix<double, float> const&, GMRESData<double, double, double>&, GMRESData<double, float, double>&,
+template int GMRES_IR< SparseMatrix<double, double>, SparseMatrix<double, float>, GMRESData<double, double, double>, GMRESData<double, float, float>, Vector<double>>(
+    SparseMatrix<double, double> const&, SparseMatrix<double, float> const&, GMRESData<double, double, double>&, GMRESData<double, float, float>&,
     Vector<double> const&, Vector<double>&, const int, const int, double, int&, double&, double&, bool, bool,
     TestGMRESData&);
 #endif

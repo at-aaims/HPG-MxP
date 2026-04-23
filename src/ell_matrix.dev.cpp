@@ -159,13 +159,13 @@ __launch_bounds__(BLOCKSIZEX* BLOCKSIZEY)
 #endif
 }
 
-template<unsigned int BLOCKSIZEX, unsigned int BLOCKSIZEY, typename mat_scalar_type>
+template<unsigned int BLOCKSIZEX, unsigned int BLOCKSIZEY, typename local_scalar_t>
 __launch_bounds__(BLOCKSIZEX* BLOCKSIZEY)
     __global__ void kernel_to_ell_val(const local_int_t m,
                                       const local_int_t nnz_per_row,
                                       const int ld_v,
-                                      const mat_scalar_type* __restrict__ matrixValues,
-                                      mat_scalar_type* __restrict__ ell_val)
+                                      const local_scalar_t* __restrict__ matrixValues,
+                                      local_scalar_t* __restrict__ ell_val)
 {
     const local_int_t row = blockIdx.x * BLOCKSIZEY + threadIdx.y;
 
@@ -386,13 +386,13 @@ void ELLMatrix<local_scalar_t, halo_scalar_t>::permute_rows(const local_int_t* c
     dctx_->device_free(tmp_vals);
 }
 
-template<unsigned int BLOCKSIZE, typename mat_scalar_type, typename diag_scalar>
+template<unsigned int BLOCKSIZE, typename local_scalar_t, typename diag_scalar>
 __launch_bounds__(BLOCKSIZE)
     __global__ void kernel_extract_diag_index(const local_int_t m,
                                               const local_int_t ell_width,
                                               const int ldi, const int ldv,
                                               const local_int_t* __restrict__ ell_col_ind,
-                                              const mat_scalar_type* __restrict__ ell_val,
+                                              const local_scalar_t* __restrict__ ell_val,
                                               local_int_t* __restrict__ diag_idx,
                                               diag_scalar* __restrict__ inv_diag)
 {
@@ -430,10 +430,10 @@ template class ELLMatrix<double, double>;
 template class ELLMatrix<float, float>;
 template class ELLMatrix<double, float>;
 
-template<typename mat_scalar_type, typename vec_scalar_t>
+template<typename local_scalar_t, typename halo_scalar_t, typename vec_scalar_t>
 __global__ void simple_ell_spmv(const local_int_t nrows, const int ldv, const int ldi,
                                 const local_int_t width,
-                                const local_int_t* const col_idxs, const mat_scalar_type* const mvalues,
+                                const local_int_t* const col_idxs, const local_scalar_t* const mvalues,
                                 const vec_scalar_t* const xvals, vec_scalar_t* const __restrict__ yvals)
 {
     const local_int_t row_idx = blockIdx.x * blockDim.x + threadIdx.x;
@@ -457,10 +457,10 @@ __global__ void simple_ell_spmv(const local_int_t nrows, const int ldv, const in
     __stcg(yvals + row_idx, partial);
 }
 
-template<typename mat_scalar_type, typename vec_scalar_t>
+template<typename local_scalar_t, typename halo_scalar_t, typename vec_scalar_t>
 __global__ void simple_ell_spmv_halo(const local_int_t nrows, const int ldv, const int ldi,
                                      const local_int_t width, const local_int_t* const halo_row_ind,
-                                     const local_int_t* const col_idxs, const mat_scalar_type* const mvalues,
+                                     const local_int_t* const col_idxs, const halo_scalar_t* const halo_values,
                                      const local_int_t* const perm,
                                      const vec_scalar_t* const xvals, vec_scalar_t* const __restrict__ yvals)
 {
@@ -474,20 +474,21 @@ __global__ void simple_ell_spmv_halo(const local_int_t nrows, const int ldv, con
         if (col < 0) {
             continue;
         }
-        partial += static_cast<vec_scalar_t>(mvalues[row_idx + j * ldv]) * static_cast<vec_scalar_t>(xvals[col]);
+        partial += static_cast<vec_scalar_t>(halo_values[row_idx + j * ldv]) * static_cast<vec_scalar_t>(xvals[col]);
     }
     yvals[perm[halo_row_ind[row_idx]]] += partial;
 }
 
-template<typename mat_scalar_type, typename vec_scalar_t>
-void ell_interior_spmv(const ELLMatrix<mat_scalar_type, mat_scalar_type>* mat, const Vector<vec_scalar_t>* x, Vector<vec_scalar_t>* y)
+template<typename local_scalar_t, typename halo_scalar_t, typename vec_scalar_t>
+void ell_interior_spmv(const ELLMatrix<local_scalar_t, halo_scalar_t>* mat, const Vector<vec_scalar_t>* x, Vector<vec_scalar_t>* y)
 {
     constexpr int block_size = 1024;
     int nblocks              = (mat->get_local_num_rows() - 1) / block_size + 1;
     auto stream              = mat->get_device_context()->get_compute_stream();
-    simple_ell_spmv<<<nblocks, block_size, 0, stream>>>(mat->get_local_num_rows(),
-                                                        mat->get_ld_values(), mat->get_ld_indices(), mat->get_ell_width(),
-                                                        mat->get_col_idxs(), mat->get_values(), x->d_values(), y->d_values());
+    simple_ell_spmv<local_scalar_t, halo_scalar_t, vec_scalar_t>
+        <<<nblocks, block_size, 0, stream>>>(mat->get_local_num_rows(),
+                                             mat->get_ld_values(), mat->get_ld_indices(), mat->get_ell_width(),
+                                             mat->get_col_idxs(), mat->get_values(), x->d_values(), y->d_values());
 }
 
 template void ell_interior_spmv(const ELLMatrix<double, double>* mat, const Vector<double>* x, Vector<double>* y);
@@ -502,10 +503,11 @@ void ell_halo_spmv(const ELLMatrix<local_scalar_t, halo_scalar_t>* mat,
     const int nblocks        = (mat->get_num_halo_rows() - 1) / block_size + 1;
     // We use the compute stream since the halo spmv *adds* to the output vector y after the interior spmv.
     auto stream = mat->get_device_context()->get_compute_stream();
-    simple_ell_spmv_halo<<<nblocks, block_size, 0, stream>>>(mat->get_num_halo_rows(),
-                                                             mat->get_halo_ld_values(), mat->get_halo_ld_indices(), mat->get_ell_width(),
-                                                             mat->get_halo_row_indices(), mat->get_halo_col_idxs(), mat->get_halo_values(),
-                                                             mat->get_reordering_permutation(), x->d_values(), y->d_values());
+    simple_ell_spmv_halo<local_scalar_t, halo_scalar_t>
+        <<<nblocks, block_size, 0, stream>>>(mat->get_num_halo_rows(),
+                                             mat->get_halo_ld_values(), mat->get_halo_ld_indices(), mat->get_ell_width(),
+                                             mat->get_halo_row_indices(), mat->get_halo_col_idxs(), mat->get_halo_values(),
+                                             mat->get_reordering_permutation(), x->d_values(), y->d_values());
 }
 
 template void ell_halo_spmv(const ELLMatrix<double, double>* mat, const Vector<double>* x, Vector<double>* y);
@@ -514,8 +516,8 @@ template void ell_halo_spmv(const ELLMatrix<float, float>* mat, const Vector<dou
 template void ell_halo_spmv(const ELLMatrix<double, float>* mat, const Vector<double>* x, Vector<double>* y);
 template void ell_halo_spmv(const ELLMatrix<double, float>* mat, const Vector<float>* x, Vector<float>* y);
 
-template<typename mat_scalar_type, typename vec_scalar_t>
-void ell_spmv(const ELLMatrix<mat_scalar_type, mat_scalar_type>* mat, const Vector<vec_scalar_t>* x, Vector<vec_scalar_t>* y)
+template<typename local_scalar_t, typename halo_scalar_t, typename vec_scalar_t>
+void ell_spmv(const ELLMatrix<local_scalar_t, halo_scalar_t>* mat, const Vector<vec_scalar_t>* x, Vector<vec_scalar_t>* y)
 {
     auto dctx = x->get_device_context();
 
@@ -541,9 +543,11 @@ int ComputeSPMV_ell(const SparseMatrix_type& A, Vector_type& x, Vector_type& y)
 
     HPGMP_RANGE_PUSH(__FUNCTION__);
 
-    using scalar_type = typename SparseMatrix_type::scalar_type;
-    auto elldata      = static_cast<const EllOptData<scalar_type, scalar_type>*>(A.optimizationData);
-    ell_spmv(elldata->mat.get(), &x, &y);
+    using local_scalar_t = typename SparseMatrix_type::local_scalar_type;
+    using halo_scalar_t  = typename SparseMatrix_type::halo_scalar_type;
+    using vev_scalar_t   = typename Vector_type::scalar_type;
+    auto elldata         = static_cast<const EllOptData<local_scalar_t, halo_scalar_t>*>(A.optimizationData);
+    ell_spmv<local_scalar_t, halo_scalar_t, vev_scalar_t>(elldata->mat.get(), &x, &y);
 
     HPGMP_RANGE_POP(__FUNCTION__);
 

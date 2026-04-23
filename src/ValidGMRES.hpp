@@ -31,6 +31,6 @@
 
 template<typename scalar_type, typename scalar_type2, typename project_type = scalar_type2>
 int ValidGMRES(int argc, char** argv, validation_t v_type, comm_type comm, DeviceCtx* dctx,
-               int numberOfMgLevels, bool verbose, TestGMRESData& testcg_data);
+               int numberOfMgLevels, bool verbose, TestGMRESData& testcg_data, const HPGMP_gen_opts& gopts);
 
 #endif // BENCHGMRES_HPP
