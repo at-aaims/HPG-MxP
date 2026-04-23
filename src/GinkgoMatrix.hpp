@@ -47,7 +47,7 @@ public:
      * Initialize this matrix with a conversion of a HPGMP SparseMatrix, with
      * ELLMatrix as an intermediary step.
      */
-    GinkgoMatrix(const SparseMatrix<local_scalar_t, halo_scalar_t>& A);
+    GinkgoMatrix(const SparseMatrix<local_scalar_t, halo_scalar_t>& A, const HPGMP_gen_opts& gopts);
 
     ~GinkgoMatrix()
     { }

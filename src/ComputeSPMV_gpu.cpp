@@ -62,7 +62,9 @@ int ComputeSPMV_ref(const SparseMatrix_type& A, Vector_type& x, Vector_type& y)
 
     assert(x.local_length() >= A.localNumberOfColumns); // Test vector lengths
     assert(y.local_length() >= A.localNumberOfRows);
-    typedef typename SparseMatrix_type::scalar_type scalar_type;
+    typedef typename SparseMatrix_type::local_scalar_type local_scalar_t;
+    typedef typename SparseMatrix_type::halo_scalar_type halo_scalar_t;
+    using scalar_type = local_scalar_t;
 
     const scalar_type one(1.0);
     const scalar_type zero(0.0);
@@ -77,7 +79,7 @@ int ComputeSPMV_ref(const SparseMatrix_type& A, Vector_type& x, Vector_type& y)
 #ifndef HPGMP_NO_MPI
     if (A.geom->size > 1) {
         ExchangeHalo(A, x);
-        //auto elldata = static_cast<const EllOptData<scalar_type,scalar_type>*>(A.optimizationData);
+        //auto elldata = static_cast<const EllOptData<local_scalar_t, local_scalar_t>*>(A.optimizationData);
         //x.update_halos(elldata->mat.get());
     }
 #endif

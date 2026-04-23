@@ -47,70 +47,73 @@
 
 #include "kernel_helpers.hpp.inc"
 
-#define LAUNCH_SYMGS_SWEEP(blocksize, width)                                  \
-    {                                                                         \
-        dim3 blocks((A->get_independent_set_sizes()[i] - 1) / blocksize + 1); \
-        dim3 threads(blocksize);                                              \
-                                                                              \
-        kernel_symgs_sweep<blocksize, width><<<blocks,                        \
-                                               threads,                       \
-                                               0,                             \
-                                               stream_interior>>>(            \
-            A->get_local_num_rows(),                                          \
-            A->get_local_num_cols(),                                          \
-            A->get_independent_set_sizes()[i],                                \
-            A->get_independent_set_offsets()[i],                              \
-            A->get_ld_indices(), A->get_ld_values(),                          \
-            A->get_col_idxs(),                                                \
-            A->get_values(),                                                  \
-            A->get_inverse_diagonal(),                                        \
-            r->d_values(),                                                    \
-            x->d_values());                                                   \
+#define LAUNCH_SYMGS_SWEEP(blocksize, width)                                              \
+    {                                                                                     \
+        dim3 blocks((A->get_independent_set_sizes()[i] - 1) / blocksize + 1);             \
+        dim3 threads(blocksize);                                                          \
+                                                                                          \
+        kernel_symgs_sweep<blocksize, width, local_scalar_t, halo_scalar_t, vec_scalar_t> \
+            <<<blocks,                                                                    \
+               threads,                                                                   \
+               0,                                                                         \
+               stream_interior>>>(                                                        \
+                A->get_local_num_rows(),                                                  \
+                A->get_local_num_cols(),                                                  \
+                A->get_independent_set_sizes()[i],                                        \
+                A->get_independent_set_offsets()[i],                                      \
+                A->get_ld_indices(), A->get_ld_values(),                                  \
+                A->get_col_idxs(),                                                        \
+                A->get_values(),                                                          \
+                A->get_inverse_diagonal(),                                                \
+                r->d_values(),                                                            \
+                x->d_values());                                                           \
     }
 
-#define LAUNCH_SYMGS_INTERIOR(blocksize, width)                               \
-    {                                                                         \
-        dim3 blocks((A->get_independent_set_sizes()[0] - 1) / blocksize + 1); \
-        dim3 threads(blocksize);                                              \
-                                                                              \
-        kernel_symgs_interior<blocksize, width><<<blocks,                     \
-                                                  threads,                    \
-                                                  0,                          \
-                                                  stream_interior>>>(         \
-            A->get_local_num_rows(),                                          \
-            A->get_independent_set_sizes()[0],                                \
-            A->get_ld_indices(), A->get_ld_values(),                          \
-            A->get_col_idxs(),                                                \
-            A->get_values(),                                                  \
-            A->get_inverse_diagonal(),                                        \
-            r->d_values(),                                                    \
-            x->d_values());                                                   \
+#define LAUNCH_SYMGS_INTERIOR(blocksize, width)                                              \
+    {                                                                                        \
+        dim3 blocks((A->get_independent_set_sizes()[0] - 1) / blocksize + 1);                \
+        dim3 threads(blocksize);                                                             \
+                                                                                             \
+        kernel_symgs_interior<blocksize, width, local_scalar_t, halo_scalar_t, vec_scalar_t> \
+            <<<blocks,                                                                       \
+               threads,                                                                      \
+               0,                                                                            \
+               stream_interior>>>(                                                           \
+                A->get_local_num_rows(),                                                     \
+                A->get_independent_set_sizes()[0],                                           \
+                A->get_ld_indices(), A->get_ld_values(),                                     \
+                A->get_col_idxs(),                                                           \
+                A->get_values(),                                                             \
+                A->get_inverse_diagonal(),                                                   \
+                r->d_values(),                                                               \
+                x->d_values());                                                              \
     }
 
-#define LAUNCH_SYMGS_HALO(blocksize, width)                        \
-    {                                                              \
-        dim3 blocks((A->get_num_halo_rows() - 1) / blocksize + 1); \
-        dim3 threads(blocksize);                                   \
-                                                                   \
-        kernel_symgs_halo<blocksize, width><<<blocks,              \
-                                              threads,             \
-                                              0,                   \
-                                              stream_interior>>>(  \
-            A->get_num_halo_rows(),                                \
-            A->get_local_num_cols(),                               \
-            A->get_independent_set_sizes()[0],                     \
-            A->get_halo_ld_indices(), A->get_halo_ld_values(),     \
-            A->get_halo_row_indices(),                             \
-            A->get_halo_col_idxs(),                                \
-            A->get_halo_values(),                                  \
-            A->get_inverse_diagonal(),                             \
-            A->get_reordering_permutation(),                       \
-            r->d_values(),                                         \
-            x->d_values());                                        \
+#define LAUNCH_SYMGS_HALO(blocksize, width)                                              \
+    {                                                                                    \
+        dim3 blocks((A->get_num_halo_rows() - 1) / blocksize + 1);                       \
+        dim3 threads(blocksize);                                                         \
+                                                                                         \
+        kernel_symgs_halo<blocksize, width, local_scalar_t, halo_scalar_t, vec_scalar_t> \
+            <<<blocks,                                                                   \
+               threads,                                                                  \
+               0,                                                                        \
+               stream_interior>>>(                                                       \
+                A->get_num_halo_rows(),                                                  \
+                A->get_local_num_cols(),                                                 \
+                A->get_independent_set_sizes()[0],                                       \
+                A->get_halo_ld_indices(), A->get_halo_ld_values(),                       \
+                A->get_halo_row_indices(),                                               \
+                A->get_halo_col_idxs(),                                                  \
+                A->get_halo_values(),                                                    \
+                A->get_inverse_diagonal(),                                               \
+                A->get_reordering_permutation(),                                         \
+                r->d_values(),                                                           \
+                x->d_values());                                                          \
     }
 
 template<unsigned int BLOCKSIZE, unsigned int WIDTH,
-         typename mat_scalar_type, typename diag_scalar, typename vec_scalar_t>
+         typename local_scalar_t, typename halo_scalar_t, typename vec_scalar_t>
 __launch_bounds__(BLOCKSIZE)
     __global__ void kernel_symgs_sweep(const local_int_t m,
                                        const local_int_t n,
@@ -118,8 +121,8 @@ __launch_bounds__(BLOCKSIZE)
                                        const local_int_t offset,
                                        const int ldi, const int ldv,
                                        const local_int_t* ell_col_ind,
-                                       const mat_scalar_type* ell_val,
-                                       const diag_scalar* inv_diag,
+                                       const local_scalar_t* ell_val,
+                                       const local_scalar_t* inv_diag,
                                        const vec_scalar_t* x,
                                        vec_scalar_t* y)
 {
@@ -147,14 +150,14 @@ __launch_bounds__(BLOCKSIZE)
 }
 
 template<unsigned int BLOCKSIZE, unsigned int WIDTH,
-         typename mat_scalar_type, typename diag_scalar, typename vec_scalar_t>
+         typename local_scalar_t, typename halo_scalar_t, typename vec_scalar_t>
 __launch_bounds__(BLOCKSIZE)
     __global__ void kernel_symgs_interior(const local_int_t m,
                                           const local_int_t block_nrow,
                                           const int ldi, const int ldv,
                                           const local_int_t* ell_col_ind,
-                                          const mat_scalar_type* ell_val,
-                                          const diag_scalar* inv_diag,
+                                          const local_scalar_t* ell_val,
+                                          const local_scalar_t* inv_diag,
                                           const vec_scalar_t* x,
                                           vec_scalar_t* y)
 {
@@ -180,7 +183,7 @@ __launch_bounds__(BLOCKSIZE)
 }
 
 template<unsigned int BLOCKSIZE, unsigned int WIDTH,
-         typename mat_scalar_type, typename diag_scalar, typename vec_scalar_t>
+         typename local_scalar_t, typename halo_scalar_t, typename vec_scalar_t>
 __launch_bounds__(BLOCKSIZE)
     __global__ void kernel_symgs_halo(const local_int_t m,
                                       const local_int_t n,
@@ -188,8 +191,8 @@ __launch_bounds__(BLOCKSIZE)
                                       const int ldi, const int ldv,
                                       const local_int_t* halo_row_ind,
                                       const local_int_t* halo_col_ind,
-                                      const mat_scalar_type* halo_val,
-                                      const diag_scalar* inv_diag,
+                                      const halo_scalar_t* halo_val,
+                                      const local_scalar_t* inv_diag,
                                       const local_int_t* perm,
                                       const vec_scalar_t* x,
                                       vec_scalar_t* y)
@@ -234,14 +237,14 @@ __launch_bounds__(BLOCKSIZE)
     out[gid] = x[gid] * y[gid];
 }
 
-template<unsigned int BLOCKSIZE, typename mat_scalar_type, typename vec_scalar_t>
+template<unsigned int BLOCKSIZE, typename local_scalar_t, typename halo_scalar_t, typename vec_scalar_t>
 __launch_bounds__(BLOCKSIZE)
     __global__ void kernel_forward_sweep_0(const local_int_t m,
                                            const local_int_t block_nrow,
                                            const local_int_t offset,
                                            const int ldi, const int ldv,
                                            const local_int_t* ell_col_ind,
-                                           const mat_scalar_type* ell_val,
+                                           const local_scalar_t* ell_val,
                                            const local_int_t* diag_idx,
                                            const vec_scalar_t* x,
                                            vec_scalar_t* y)
@@ -270,7 +273,7 @@ __launch_bounds__(BLOCKSIZE)
     __stcg(y + row, sum);
 }
 
-template<unsigned int BLOCKSIZE, typename mat_scalar_type, typename vec_scalar_t>
+template<unsigned int BLOCKSIZE, typename local_scalar_t, typename halo_scalar_t, typename vec_scalar_t>
 __launch_bounds__(BLOCKSIZE)
     __global__ void kernel_backward_sweep_0(const local_int_t m,
                                             const local_int_t block_nrow,
@@ -278,7 +281,7 @@ __launch_bounds__(BLOCKSIZE)
                                             const local_int_t ell_width,
                                             const int ldi, const int ldv,
                                             const local_int_t* ell_col_ind,
-                                            const mat_scalar_type* ell_val,
+                                            const local_scalar_t* ell_val,
                                             const local_int_t* diag_idx,
                                             vec_scalar_t* x)
 {
@@ -290,7 +293,7 @@ __launch_bounds__(BLOCKSIZE)
     const local_int_t row   = gid + offset;
     const local_int_t idiag = __ldcg(diag_idx + row);
 
-    const mat_scalar_type diag_val = __ldcg(ell_val + row + idiag * ldv);
+    const local_scalar_t diag_val = __ldcg(ell_val + row + idiag * ldv);
 
     // Scale result with diagonal entry
     vec_scalar_t sum = x[row] * static_cast<vec_scalar_t>(diag_val);
@@ -309,8 +312,8 @@ __launch_bounds__(BLOCKSIZE)
     __stcg(x + row, sum);
 }
 
-template<typename mat_scalar_type, typename vec_scalar_t>
-int ell_multicolor_gs(const bool symmetric, const ELLMatrix<mat_scalar_type, mat_scalar_type>* const A,
+template<typename local_scalar_t, typename halo_scalar_t, typename vec_scalar_t>
+int ell_multicolor_gs(const bool symmetric, const ELLMatrix<local_scalar_t, halo_scalar_t>* const A,
                       const Vector<vec_scalar_t>* const r, Vector<vec_scalar_t>* const x)
 {
     assert(x->local_length() == A->get_local_num_cols());
@@ -361,8 +364,8 @@ int ell_multicolor_gs(const bool symmetric, const ELLMatrix<mat_scalar_type, mat
     return 0;
 }
 
-template<typename mat_scalar_type, typename vec_scalar_t>
-int ell_multicolor_gs_zero_initial(const bool symmetric, const ELLMatrix<mat_scalar_type, mat_scalar_type>* const A,
+template<typename local_scalar_t, typename halo_scalar_t, typename vec_scalar_t>
+int ell_multicolor_gs_zero_initial(const bool symmetric, const ELLMatrix<local_scalar_t, halo_scalar_t>* const A,
                                    const Vector<vec_scalar_t>* const r, Vector<vec_scalar_t>* const x)
 {
     assert(x->local_length() == A->get_local_num_cols());
@@ -370,24 +373,20 @@ int ell_multicolor_gs_zero_initial(const bool symmetric, const ELLMatrix<mat_sca
     auto stream_interior = dctx->get_compute_stream();
 
     // Solve L
-    kernel_pointwise_mult<256><<<(A->get_independent_set_sizes()[0] - 1) / 256 + 1,
-                                 256,
-                                 0,
-                                 stream_interior>>>(
-        A->get_independent_set_sizes()[0], r->d_values(), A->get_inverse_diagonal(),
-        x->d_values());
+    kernel_pointwise_mult<256>
+        <<<(A->get_independent_set_sizes()[0] - 1) / 256 + 1, 256, 0, stream_interior>>>(
+            A->get_independent_set_sizes()[0], r->d_values(), A->get_inverse_diagonal(),
+            x->d_values());
 
     for (local_int_t i = 1; i < A->get_num_independent_sets(); ++i)
     {
-        kernel_forward_sweep_0<1024><<<(A->get_independent_set_sizes()[i] - 1) / 1024 + 1,
-                                       1024,
-                                       0,
-                                       stream_interior>>>(
-            A->get_local_num_rows(),
-            A->get_independent_set_sizes()[i], A->get_independent_set_offsets()[i],
-            A->get_ld_indices(), A->get_ld_values(),
-            A->get_col_idxs(), A->get_values(),
-            A->get_diagonal_indices(), r->d_values(), x->d_values());
+        kernel_forward_sweep_0<1024, local_scalar_t, halo_scalar_t, vec_scalar_t>
+            <<<(A->get_independent_set_sizes()[i] - 1) / 1024 + 1, 1024, 0, stream_interior>>>(
+                A->get_local_num_rows(),
+                A->get_independent_set_sizes()[i], A->get_independent_set_offsets()[i],
+                A->get_ld_indices(), A->get_ld_values(),
+                A->get_col_idxs(), A->get_values(),
+                A->get_diagonal_indices(), r->d_values(), x->d_values());
     }
 
     if (symmetric) {

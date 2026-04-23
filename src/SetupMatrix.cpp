@@ -40,6 +40,8 @@ void SetupMatrix(DeviceCtx* const dctx, int numberOfMgLevels, SparseMatrix_type&
                  Vector_type* b, Vector_type* x, Vector_type* xexact, bool init_vect, comm_type comm)
 {
 
+    HPGMP_RANGE_PUSH(__FUNCTION__);
+
     A.initialize(geom, comm, dctx);
 
     GenerateNonsymProblem(dctx, A, b, x, xexact, init_vect);
@@ -87,6 +89,8 @@ void SetupMatrix(DeviceCtx* const dctx, int numberOfMgLevels, SparseMatrix_type&
     #endif */
 
     data.initialize(A, dctx);
+
+    HPGMP_RANGE_POP(__FUNCTION__);
 }
 
 /* --------------- *
@@ -106,9 +110,9 @@ template void SetupMatrix< SparseMatrix<float>, GMRESData<float, float, float>, 
 
 
 // mixed
-template void SetupMatrix< SparseMatrix<double, float>, GMRESData<double, float, double>, class Vector<double> >(
+template void SetupMatrix< SparseMatrix<double, float>, GMRESData<double, float, float>, class Vector<double> >(
     DeviceCtx* dctx, int numberOfMgLevels, SparseMatrix<double, float>& A, Geometry* geom,
-    GMRESData<double, float, double>& data, Vector<double>* b, Vector<double>* x, Vector<double>* xexact,
+    GMRESData<double, float, float>& data, Vector<double>* b, Vector<double>* x, Vector<double>* xexact,
     bool init_vect, comm_type comm);
 
 template void SetupMatrix< SparseMatrix<float>, GMRESData<float, float, float>, class Vector<double> >(

@@ -5,21 +5,17 @@
 #include "mytimer.hpp"
 #include "GMRES_IR.hpp"
 
-#ifdef HPGMP_WITH_GINKGO_AMP // TODO: Improve this implementation
 template<typename scalar_type, typename scalar_type2, class GMRESData_type, class GMRESData_type2>
 double estimate_run_time(comm_type comm,
-                         const SparseMatrix<scalar_type, scalar_type>& A, const SparseMatrix<scalar_type, scalar_type2>& A_lo,
-                         GMRESData_type& data, GMRESData_type2& data_lo,
-                         const Vector<scalar_type>& b, Vector<scalar_type>& x, const int max_iters,
-                         const int restart_length, const bool verbose)
+                         const SparseMatrix<scalar_type, scalar_type>& A,
+#ifdef HPGMP_WITH_GINKGO_AMP
+                         const SparseMatrix<scalar_type, scalar_type2>& A_lo,
 #else
-template<typename scalar_type, typename scalar_type2, class GMRESData_type, class GMRESData_type2>
-double estimate_run_time(comm_type comm,
-                         const SparseMatrix<scalar_type, scalar_type>& A, const SparseMatrix<scalar_type2, scalar_type2>& A_lo,
+                         const SparseMatrix<scalar_type2, scalar_type2>& A_lo,
+#endif
                          GMRESData_type& data, GMRESData_type2& data_lo,
                          const Vector<scalar_type>& b, Vector<scalar_type>& x, const int max_iters,
                          const int restart_length, const bool verbose)
-#endif
 {
     HPGMP_RANGE_PUSH(__FUNCTION__);
 
@@ -95,7 +91,7 @@ template double estimate_run_time(comm_type comm,
 #ifdef HPGMP_WITH_GINKGO_AMP
 template double estimate_run_time(comm_type comm,
                                   const SparseMatrix<double, double>& A, const SparseMatrix<double, float>& A_lo,
-                                  GMRESData<double, double, double>& data, GMRESData<double, float, double>& data_lo,
+                                  GMRESData<double, double, double>& data, GMRESData<double, float, float>& data_lo,
                                   const Vector<double>& b, Vector<double>& x, int max_iters,
                                   int restart_length, bool verbose);
 #else

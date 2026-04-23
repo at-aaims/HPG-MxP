@@ -17,9 +17,14 @@
 #ifndef OPTIMIZEPROBLEM_HPP
 #define OPTIMIZEPROBLEM_HPP
 
+#include "DataTypes.hpp"
+#include "SparseMatrix.hpp"
+#include "Vector.hpp"
+#include "GMRESData.hpp"
+
 template<class SparseMatrix_type, class GMRESData_type, class Vector_type>
 int OptimizeProblem(SparseMatrix_type& A, GMRESData_type& data, Vector_type& b, Vector_type& x,
-                    Vector_type& xexact);
+                    Vector_type& xexact, const HPGMP_gen_opts& gopts);
 
 /** @brief Helper function that reports memory usage of the optimization proces.
  *
@@ -32,6 +37,6 @@ int OptimizeProblem(SparseMatrix_type& A, GMRESData_type& data, Vector_type& b, 
  */
 
 template<class SparseMatrix_type>
-double OptimizeProblemMemoryUse(const SparseMatrix_type& A);
+double OptimizeProblemMemoryUse(const SparseMatrix_type& A, const HPGMP_gen_opts& gopts);
 
 #endif // OPTIMIZEPROBLEM_HPP

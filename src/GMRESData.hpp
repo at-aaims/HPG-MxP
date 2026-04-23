@@ -60,11 +60,12 @@ public:
         Ap.initialize(A.localNumberOfRows, A.comm, dctx);
     }
 
-    Vector<local_scalar_t> r; //!< pointer to residual vector
-    Vector<local_scalar_t> z; //!< pointer to preconditioned residual vector
-    Vector<local_scalar_t> p; //!< pointer to direction vector
-    Vector<local_scalar_t> w; //!< pointer to workspace
-    Vector<local_scalar_t> Ap; //!< pointer to Krylov vector
+    using vec_scalar_t = halo_scalar_t;
+    Vector<vec_scalar_t> r; //!< pointer to residual vector
+    Vector<vec_scalar_t> z; //!< pointer to preconditioned residual vector
+    Vector<vec_scalar_t> p; //!< pointer to direction vector
+    Vector<vec_scalar_t> w; //!< pointer to workspace
+    Vector<vec_scalar_t> Ap; //!< pointer to Krylov vector
 };
 
 

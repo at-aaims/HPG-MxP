@@ -56,6 +56,22 @@ startswith(const char* s, const char* prefix)
     return 1;
 }
 
+// Reading configuration file for backward compatibility
+// @todo Remove this eventually, and only support command line
+#ifdef HPGMP_WITH_GINKGO_AMP
+int read_amp_config(double& tol)
+{
+    std::ifstream amp_config_file("amp_config.txt");
+
+    if (amp_config_file.is_open()) {
+        amp_config_file >> tol;
+        amp_config_file.close();
+    }
+
+    return 0;
+}
+#endif
+
 HPGMP_gen_opts
 HPGMP_Init(int* argc_p, char*** argv_p)
 {
@@ -63,14 +79,15 @@ HPGMP_Init(int* argc_p, char*** argv_p)
     const int argc = *argc_p;
     char** argv    = *argv_p;
     // Options to be read
-    constexpr int nparams                          = 3;
+    constexpr int nparams                          = 4;
     const std::array<std::string, nparams> cparams = {"--validation_type",
-        "--run_type", "--result_file"};
+        "--run_type", "--result_file", "--amp_tol"};
     std::array<std::string, nparams> values;
     // Default values
     values[0] = "standard";
     values[1] = "benchmark";
     values[2] = " ";
+    values[3] = "1e-8";
 
     // Read cmd line args
     for (int i = 1; i <= argc && argv[i]; ++i) {
@@ -88,6 +105,8 @@ HPGMP_Init(int* argc_p, char*** argv_p)
             throw std::runtime_error("Could not read cmd line option prefix!");
         }
     }
+
+    // Set validation_type in opts
     if (values[0] == "standard") {
         opts.validation_type = validation_t::standard;
     } else if (values[0] == "fullscale") {
@@ -95,6 +114,8 @@ HPGMP_Init(int* argc_p, char*** argv_p)
     } else {
         throw std::runtime_error("Invalid value for validation_type!");
     }
+
+    // Set run_type in opts
     if (values[1] == "benchmark") {
         opts.run_type = run_t::benchmark;
     } else if (values[1] == "benchmark_no_ref") {
@@ -109,6 +130,17 @@ HPGMP_Init(int* argc_p, char*** argv_p)
         throw std::runtime_error("Invalid value for run_type!");
     }
     opts.outfile_path = values[2];
+
+    // Set amp_tol in opts
+    opts.amp_tol = std::stod(values[3]);
+
+#ifdef HPGMP_WITH_GINKGO_AMP
+    // Reading configuration file for backward compatibility.
+    // This overrides the command line argument if the file is provided.
+    // @todo Remove this eventually, and only support command line
+    read_amp_config(opts.amp_tol);
+#endif
+
     return opts;
 }
 
