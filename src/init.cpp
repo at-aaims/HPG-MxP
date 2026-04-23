@@ -131,7 +131,7 @@ HPGMP_Init(int* argc_p, char*** argv_p)
     opts.amp_tol = std::stod(values[2]);
 
 #ifdef HPGMP_WITH_GINKGO_AMP
-    // Reading configuration file for backward compatibility. 
+    // Reading configuration file for backward compatibility.
     // This overrides the command line argument if the file is provided.
     // @todo Remove this eventually, and only support command line
     read_amp_config(opts.amp_tol);
