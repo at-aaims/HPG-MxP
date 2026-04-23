@@ -129,7 +129,7 @@ void ReportResults(const SparseMatrix_type& A, int numberOfMgLevels,
         fnbytesPerLevel[0] = fnbytes;
 
         // Benchmarker-provided model for OptimizeProblem.cpp
-        double fnbytes_OptimizedProblem = OptimizeProblemMemoryUse(A);
+        double fnbytes_OptimizedProblem = OptimizeProblemMemoryUse(A, gopts);
         fnbytes += fnbytes_OptimizedProblem;
 
         Af = A.Ac;
@@ -182,6 +182,9 @@ void ReportResults(const SparseMatrix_type& A, int numberOfMgLevels,
         } else {
             doc.add("Validation type", "None");
         }
+#ifdef HPGMP_WITH_GINKGO_AMP
+        doc.add("AMP tolerance", gopts.amp_tol);
+#endif
 
         doc.add("Machine Summary", "");
         doc.get("Machine Summary")->add("Distributed Processes", A.geom->size);

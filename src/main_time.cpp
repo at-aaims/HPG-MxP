@@ -89,7 +89,7 @@ int main(int argc, char* argv[])
 #ifndef HPGMP_NO_MPI
     MPI_Init(&argc, &argv);
 #endif
-    HPGMP_Init(&argc, &argv);
+    const HPGMP_gen_opts gopts = HPGMP_Init(&argc, &argv);
 #ifndef HPGMP_NO_MPI
     MPI_Comm bench_comm = MPI_COMM_WORLD;
 #else
@@ -170,7 +170,7 @@ int main(int argc, char* argv[])
 
     // Call user-tunable set up function.
     double t7 = mytimer();
-    OptimizeProblem(A, data, b, x, xexact);
+    OptimizeProblem(A, data, b, x, xexact, gopts);
     t7       = mytimer() - t7;
     times[7] = t7;
 
@@ -220,7 +220,7 @@ int main(int argc, char* argv[])
     setup_time = mytimer() - setup_time; // Capture total time of setup
 
     t7 = mytimer();
-    OptimizeProblem(A2, data, b, x, xexact);
+    OptimizeProblem(A2, data, b, x, xexact, gopts);
     t7 = mytimer() - t7;
 
     if (A.geom->rank == 0) {

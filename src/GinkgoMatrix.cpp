@@ -4,7 +4,8 @@
 #include "Profiling.hpp"
 
 template<typename local_scalar_t, typename halo_scalar_t>
-GinkgoMatrix<local_scalar_t, halo_scalar_t>::GinkgoMatrix(const SparseMatrix<local_scalar_t, halo_scalar_t>& A)
+GinkgoMatrix<local_scalar_t, halo_scalar_t>::GinkgoMatrix(const SparseMatrix<local_scalar_t, halo_scalar_t>& A,
+                                                          const HPGMP_gen_opts& gopts)
     : ELLMatrix<local_scalar_t, halo_scalar_t>(A)
 {
 
@@ -32,19 +33,11 @@ GinkgoMatrix<local_scalar_t, halo_scalar_t>::GinkgoMatrix(const SparseMatrix<loc
         std::cout << "Using Ginkgo ELL matrix.\n";
     } else if constexpr (std::is_same_v<gko_mat_type, gko_amp_type>)
     {
-        std::ifstream amp_config_file("amp_config.txt");
-
-        local_scalar_t tol = 1e-8;
-        if (amp_config_file.is_open()) {
-            amp_config_file >> tol;
-            amp_config_file.close();
-        }
-
         auto amp_mat =
-            gko::share(gko_amp_type::build().with_tolerance(tol).on(gko_exec)->generate(std::move(ell_mat)));
+            gko::share(gko_amp_type::build().with_tolerance(gopts.amp_tol).on(gko_exec)->generate(std::move(ell_mat)));
         gko_mat_ = amp_mat;
 
-        std::cout << "Using Ginkgo AMP matrix with tolerance: " << tol << ".\n";
+        std::cout << "Using Ginkgo AMP matrix with tolerance: " << gopts.amp_tol << ".\n";
 
         auto q = gko_mat_->num_precisions;
         for (auto k = 0; k < q; k++)

@@ -222,7 +222,7 @@ int main(int argc, char* argv[])
         TICK();
         global_failure = ValidGMRES<scalar_type, scalar_type2, project_type>(
             argc, argv, gopts.validation_type, validation_comm, ctx.get(),
-            numberOfMgLevels, verbose, test_data);
+            numberOfMgLevels, verbose, test_data, gopts);
         double t_valid{};
         TOCK(t_valid);
         if (myRank == 0) {

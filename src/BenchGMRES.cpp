@@ -123,7 +123,7 @@ int BenchGMRES(int argc, char** argv, comm_type comm, DeviceCtx* const dctx, int
 
     Vector_type b, x;
     SetupProblem("bench_", argc, argv, comm, dctx, numberOfMgLevels, verbose, geom, A, data,
-                 A_lo, data_lo, b, x, test_data);
+                 A_lo, data_lo, b, x, test_data, gopts);
     if (geom->rank == 0) {
         std::cout << "BenchGMRES: Set up problem. Running time = " << test_data.runningTime
                   << std::endl;

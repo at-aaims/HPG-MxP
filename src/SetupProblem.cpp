@@ -50,7 +50,7 @@ template<class SparseMatrix_type, class SparseMatrix_type2, class GMRESData_type
 void SetupProblem(const char* title, int argc, char** argv, comm_type comm, DeviceCtx* const dctx,
                   int numberOfMgLevels, bool verbose, Geometry* geom, SparseMatrix_type& A,
                   GMRESData_type& data, SparseMatrix_type2& A2, GMRESData_type2& data2,
-                  Vector_type& b, Vector_type& x, TestGMRESData& test_data)
+                  Vector_type& b, Vector_type& x, TestGMRESData& test_data, const HPGMP_gen_opts& gopts)
 {
     HPGMP_RANGE_PUSH(__FUNCTION__);
 
@@ -107,7 +107,7 @@ void SetupProblem(const char* title, int argc, char** argv, comm_type comm, Devi
     //////////////////////////////////////////////////////////
     // Call user-tunable set up function for A
     double opt_time = mytimer();
-    OptimizeProblem(A, data, b, x, xexact);
+    OptimizeProblem(A, data, b, x, xexact, gopts);
 #ifdef HPGMP_VERBOSE
     MPI_Barrier(comm);
     if (rank == 0) {
@@ -120,7 +120,7 @@ void SetupProblem(const char* title, int argc, char** argv, comm_type comm, Devi
 #endif
 
     // Call user-tunable set up function for A2
-    OptimizeProblem(A2, data, b, x, xexact);
+    OptimizeProblem(A2, data, b, x, xexact, gopts);
     opt_time = mytimer() - opt_time; // Capture total time of setup
 #ifdef HPGMP_VERBOSE
     MPI_Barrier(comm);
@@ -156,7 +156,7 @@ template void SetupProblem< SparseMatrix<double>, SparseMatrix<double>,
                             Vector<double>>(
     const char*, int, char**, comm_type, DeviceCtx*, int, bool, Geometry*, SparseMatrix<double>&,
     GMRESData<double, double, double>&, SparseMatrix<double>&, GMRESData<double, double, double>&,
-    Vector<double>&, Vector<double>&, TestGMRESData&);
+    Vector<double>&, Vector<double>&, TestGMRESData&, const HPGMP_gen_opts& gopts);
 
 template void SetupProblem< SparseMatrix<float>, SparseMatrix<float>,
                             GMRESData<float, float, float>,
@@ -164,7 +164,7 @@ template void SetupProblem< SparseMatrix<float>, SparseMatrix<float>,
                             Vector<float>>(
     const char*, int, char**, comm_type, DeviceCtx*, int, bool, Geometry*, SparseMatrix<float>&,
     GMRESData<float, float, float>&, SparseMatrix<float>&, GMRESData<float, float, float>&,
-    Vector<float>&, Vector<float>&, TestGMRESData&);
+    Vector<float>&, Vector<float>&, TestGMRESData&, const HPGMP_gen_opts& gopts);
 
 // mixed
 template void SetupProblem< SparseMatrix<double>,
@@ -174,7 +174,7 @@ template void SetupProblem< SparseMatrix<double>,
                             Vector<double>>(
     const char*, int, char**, comm_type, DeviceCtx*, int, bool, Geometry*, SparseMatrix<double>&,
     GMRESData<double, double, double>&, SparseMatrix<float>&, GMRESData<float, float, float>&,
-    Vector<double>&, Vector<double>&, TestGMRESData&);
+    Vector<double>&, Vector<double>&, TestGMRESData&, const HPGMP_gen_opts& gopts);
 
 #ifdef HPGMP_WITH_GINKGO_AMP
 template void SetupProblem< SparseMatrix<double, double>,
@@ -184,5 +184,5 @@ template void SetupProblem< SparseMatrix<double, double>,
                             Vector<double>>(
     const char*, int, char**, comm_type, DeviceCtx*, int, bool, Geometry*, SparseMatrix<double, double>&,
     GMRESData<double, double, double>&, SparseMatrix<double, float>&, GMRESData<double, float, float>&,
-    Vector<double>&, Vector<double>&, TestGMRESData&);
+    Vector<double>&, Vector<double>&, TestGMRESData&, const HPGMP_gen_opts& gopts);
 #endif
