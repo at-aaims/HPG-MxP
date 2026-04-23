@@ -80,7 +80,7 @@ int main(int argc, char* argv[])
         MPI_Abort(MPI_COMM_WORLD, -1);
     }
 #endif
-    HPGMP_Init(&argc, &argv);
+    const HPGMP_gen_opts gopts = HPGMP_Init(&argc, &argv);
 
     int myRank = 0;
 #ifndef HPGMP_NO_MPI
@@ -160,7 +160,7 @@ int main(int argc, char* argv[])
     if (myRank < sizeValidComm) {
         global_failure = ValidGMRES<scalar_type, scalar_type2, project_type>(
             argc, argv, validation_t::standard, validation_comm, ctx.get(), numberOfMgLevels, verbose,
-            test_data);
+            test_data, gopts);
     }
 
 
@@ -175,7 +175,7 @@ int main(int argc, char* argv[])
 
         Vector_type b, x;
         SetupProblem("bench_", argc, argv, benchmark_comm, ctx.get(), numberOfMgLevels, verbose, geom,
-                     A, data, A_lo, data_lo, b, x, test_data);
+                     A, data, A_lo, data_lo, b, x, test_data, gopts);
 
         const auto nrow = A.localNumberOfRows;
         x.fill_random();
