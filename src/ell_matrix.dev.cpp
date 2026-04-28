@@ -187,7 +187,7 @@ __launch_bounds__(BLOCKSIZE)
                                    const int ld_v,
                                    const int halo_ld_i,
                                    const int halo_ld_v,
-                                   const local_int_t* __restrict__ ell_col_ind,
+                                   local_int_t* __restrict__ ell_col_ind,
                                    const local_scalar_t* __restrict__ ell_val,
                                    const local_int_t* __restrict__ halo_row_ind,
                                    local_int_t* __restrict__ halo_col_ind,
@@ -212,6 +212,7 @@ __launch_bounds__(BLOCKSIZE)
             //const local_int_t halo_idx = q++ * n_halo_rows + gid;
 
             halo_col_ind[q * halo_ld_i + gid] = col;
+            ell_col_ind[p * ld_i + row]       = -1; // Set interior invalid index
             halo_val[q * halo_ld_v + gid]     = static_cast<halo_scalar_t>(ell_val[p * ld_v + row]);
             q++;
         }

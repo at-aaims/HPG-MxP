@@ -69,26 +69,6 @@
                 x->d_values());                                                           \
     }
 
-#define LAUNCH_SYMGS_INTERIOR(blocksize, width)                                              \
-    {                                                                                        \
-        dim3 blocks((A->get_independent_set_sizes()[0] - 1) / blocksize + 1);                \
-        dim3 threads(blocksize);                                                             \
-                                                                                             \
-        kernel_symgs_interior<blocksize, width, local_scalar_t, halo_scalar_t, vec_scalar_t> \
-            <<<blocks,                                                                       \
-               threads,                                                                      \
-               0,                                                                            \
-               stream_interior>>>(                                                           \
-                A->get_local_num_rows(),                                                     \
-                A->get_independent_set_sizes()[0],                                           \
-                A->get_ld_indices(), A->get_ld_values(),                                     \
-                A->get_col_idxs(),                                                           \
-                A->get_values(),                                                             \
-                A->get_inverse_diagonal(),                                                   \
-                r->d_values(),                                                               \
-                x->d_values());                                                              \
-    }
-
 #define LAUNCH_SYMGS_HALO(blocksize, width)                                              \
     {                                                                                    \
         dim3 blocks((A->get_num_halo_rows() - 1) / blocksize + 1);                       \
@@ -101,7 +81,6 @@
                stream_interior>>>(                                                       \
                 A->get_num_halo_rows(),                                                  \
                 A->get_local_num_cols(),                                                 \
-                A->get_independent_set_sizes()[0],                                       \
                 A->get_halo_ld_indices(), A->get_halo_ld_values(),                       \
                 A->get_halo_row_indices(),                                               \
                 A->get_halo_col_idxs(),                                                  \
@@ -140,7 +119,7 @@ __launch_bounds__(BLOCKSIZE)
     {
         const local_int_t col = __ldcg(ell_col_ind + row + ldi * p);
 
-        if (col >= 0 && col < n && col != row) {
+        if (col >= 0 && col < m && col != row) {
             sum = fma(-static_cast<vec_scalar_t>(__ldcg(ell_val + row + ldv * p)),
                       y[col], sum);
         }
@@ -152,42 +131,8 @@ __launch_bounds__(BLOCKSIZE)
 template<unsigned int BLOCKSIZE, unsigned int WIDTH,
          typename local_scalar_t, typename halo_scalar_t, typename vec_scalar_t>
 __launch_bounds__(BLOCKSIZE)
-    __global__ void kernel_symgs_interior(const local_int_t m,
-                                          const local_int_t block_nrow,
-                                          const int ldi, const int ldv,
-                                          const local_int_t* ell_col_ind,
-                                          const local_scalar_t* ell_val,
-                                          const local_scalar_t* inv_diag,
-                                          const vec_scalar_t* x,
-                                          vec_scalar_t* y)
-{
-    const local_int_t row = blockIdx.x * BLOCKSIZE + threadIdx.x;
-    if (row >= block_nrow) {
-        return;
-    }
-
-    vec_scalar_t sum = __ldcg(x + row);
-
-#pragma unroll
-    for (local_int_t p = 0; p < WIDTH; ++p)
-    {
-        const local_int_t col = __ldcg(ell_col_ind + row + p * ldi);
-
-        if (col >= 0 && col < m && col != row) {
-            sum = fma(-static_cast<vec_scalar_t>(__ldcg(ell_val + row + p * ldv)),
-                      __ldg(y + col), sum);
-        }
-    }
-    __stcg(y + row,
-           sum * static_cast<vec_scalar_t>(__ldcg(inv_diag + row)));
-}
-
-template<unsigned int BLOCKSIZE, unsigned int WIDTH,
-         typename local_scalar_t, typename halo_scalar_t, typename vec_scalar_t>
-__launch_bounds__(BLOCKSIZE)
     __global__ void kernel_symgs_halo(const local_int_t m,
                                       const local_int_t n,
-                                      const local_int_t block_nrow,
                                       const int ldi, const int ldv,
                                       const local_int_t* halo_row_ind,
                                       const local_int_t* halo_col_ind,
@@ -204,9 +149,6 @@ __launch_bounds__(BLOCKSIZE)
 
     const local_int_t halo_idx = __ldcg(halo_row_ind + row);
     const local_int_t perm_idx = perm[halo_idx];
-    if (perm_idx >= block_nrow) {
-        return;
-    }
 
     vec_scalar_t sum = 0.0;
 
@@ -215,7 +157,7 @@ __launch_bounds__(BLOCKSIZE)
     {
         const local_int_t col = __ldcg(halo_col_ind + row + p * ldi);
 
-        if (col >= 0 && col < n) {
+        if (col >= m && col < n) {
             sum = fma(-static_cast<vec_scalar_t>(__ldcg(halo_val + row + p * ldv)),
                       y[col], sum);
         }
@@ -320,40 +262,37 @@ int ell_multicolor_gs(const bool symmetric, const ELLMatrix<local_scalar_t, halo
     auto dctx            = A->get_device_context();
     auto stream_interior = dctx->get_compute_stream();
 
-    local_int_t i = 0;
-
+    // Solve L
 #ifndef HPGMP_NO_MPI
     if (A->get_geometry()->size > 1)
     {
         x->update_halos_pack_send_buffer(A);
+    }
+#endif
 
-        if (A->get_ell_width() == 27) {
-            LAUNCH_SYMGS_INTERIOR(1024, 27);
+    if (A->get_ell_width() == 27) {
+        for (local_int_t i = 0; i < A->get_num_independent_sets(); ++i)
+        {
+            LAUNCH_SYMGS_SWEEP(1024, 27);
         }
+    }
 
+#ifndef HPGMP_NO_MPI
+    if (A->get_geometry()->size > 1)
+    {
         x->update_halos_send_receive(A);
         x->update_halos_finalize(A);
 
         if (A->get_ell_width() == 27) {
             LAUNCH_SYMGS_HALO(256, 27);
         }
-
-        ++i;
     }
 #endif
-
-    // Solve L
-    for (; i < A->get_num_independent_sets(); ++i)
-    {
-        if (A->get_ell_width() == 27) {
-            LAUNCH_SYMGS_SWEEP(1024, 27);
-        }
-    }
 
     if (symmetric) {
         throw std::runtime_error("symmetric not yet tested!");
         // Solve U
-        //for(i = A.ublocks; i >= 0; --i)
+        //for(local_int_t i = A.ublocks; i >= 0; --i)
         //{
         //    if(A->get_ell_width() == 27) LAUNCH_SYMGS_SWEEP(1024, 27);
         //}
