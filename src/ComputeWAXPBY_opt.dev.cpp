@@ -177,4 +177,10 @@ template int ComputeWAXPBY_opt< Vector<float>, Vector<float>, Vector<float> >(
 template int ComputeWAXPBY_opt< Vector<double>, Vector<float>, Vector<double> >(
     int, double, Vector<double> const&, float, Vector<float> const&, Vector<double>&);
 
+template int ComputeWAXPBY_opt< Vector<half>, Vector<half>, Vector<half> >(
+    int, half, Vector<half> const&, half, Vector<half> const&, Vector<half>&);
+
+template int ComputeWAXPBY_opt< Vector<double>, Vector<half>, Vector<double> >(
+    int, double, Vector<double> const&, half, Vector<half> const&, Vector<double>&);
+
 #endif

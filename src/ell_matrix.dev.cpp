@@ -407,7 +407,7 @@ __launch_bounds__(BLOCKSIZE)
         const local_int_t col = ell_col_ind[p * ldi + row];
         if (col == row) {
             diag_idx[row] = p;
-            inv_diag[row] = 1.0 / static_cast<diag_scalar>(ell_val[p * ldv + row]);
+            inv_diag[row] = static_cast<diag_scalar>(1.0) / static_cast<diag_scalar>(ell_val[p * ldv + row]);
             break;
         }
     }
@@ -429,6 +429,7 @@ void ELLMatrix<local_scalar_t, halo_scalar_t>::extract_diagonal()
 
 template class ELLMatrix<double, double>;
 template class ELLMatrix<float, float>;
+template class ELLMatrix<half, half>;
 template class ELLMatrix<double, float>;
 
 template<typename local_scalar_t, typename halo_scalar_t, typename vec_scalar_t>
@@ -441,7 +442,7 @@ __global__ void simple_ell_spmv(const local_int_t nrows, const int ldv, const in
     if (row_idx >= nrows) {
         return;
     }
-    vec_scalar_t partial = 0;
+    vec_scalar_t partial(0.0);
     for (int j = 0; j < width; j++) {
         //const auto col = col_idxs[row_idx + j*ldi];
         const local_int_t col = __ldcg(col_idxs + row_idx + j * ldi);
@@ -469,7 +470,7 @@ __global__ void simple_ell_spmv_halo(const local_int_t nrows, const int ldv, con
     if (row_idx >= nrows) {
         return;
     }
-    vec_scalar_t partial = 0;
+    vec_scalar_t partial(0.0);
     for (int j = 0; j < width; j++) {
         const auto col = col_idxs[row_idx + j * ldi];
         if (col < 0) {
@@ -560,3 +561,6 @@ template int ComputeSPMV_ell< SparseMatrix<double>, Vector<double> >(
 
 template int ComputeSPMV_ell< SparseMatrix<float>, Vector<float> >(
     const SparseMatrix<float>&, Vector<float>&, Vector<float>&);
+
+template int ComputeSPMV_ell< SparseMatrix<half>, Vector<half> >(
+    const SparseMatrix<half>&, Vector<half>&, Vector<half>&);

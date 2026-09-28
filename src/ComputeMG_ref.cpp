@@ -154,3 +154,6 @@ template int ComputeMG< SparseMatrix<double>, Vector<double> >(
 
 template int ComputeMG< SparseMatrix<float>, Vector<float> >(
     SparseMatrix<float> const&, Vector<float> const&, Vector<float>&, bool, perf_counters&);
+
+template int ComputeMG< SparseMatrix<half>, Vector<half> >(
+    SparseMatrix<half> const&, Vector<half> const&, Vector<half>&, bool, perf_counters&);

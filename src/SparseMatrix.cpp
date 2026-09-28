@@ -153,8 +153,10 @@ void DeleteMatrix(SparseMatrix_type& A)
 
 template void DeleteMatrix(SparseMatrix<double>&);
 template void DeleteMatrix(SparseMatrix<float>&);
+template void DeleteMatrix(SparseMatrix<half>&);
 template void DeleteMatrix(SparseMatrix<double, float>&);
 
 template class SparseMatrix<double>;
 template class SparseMatrix<float>;
+template class SparseMatrix<half>;
 template class SparseMatrix<double, float>;

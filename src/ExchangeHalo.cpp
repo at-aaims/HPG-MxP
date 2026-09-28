@@ -52,4 +52,7 @@ template void ExchangeHalo< SparseMatrix<double>, Vector<double> >(
 template void ExchangeHalo< SparseMatrix<float>, Vector<float> >(
     SparseMatrix<float> const&, Vector<float>&);
 
+template void ExchangeHalo< SparseMatrix<half>, Vector<half> >(
+    SparseMatrix<half> const&, Vector<half>&);
+
 #endif // ifndef HPGMP_NO_MPI

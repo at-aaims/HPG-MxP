@@ -181,3 +181,4 @@ MultiVector<scalar>::~MultiVector()
 
 template class MultiVector<double>;
 template class MultiVector<float>;
+template class MultiVector<half>;

@@ -61,22 +61,23 @@ int ComputeDotProduct_ref(const local_int_t n, const Vector_type& x, const Vecto
 
     scalar_type local_result(0.0);
 
-    const scalar_type* xv = x.values();
-    const scalar_type* yv = y.values();
+    typedef typename Vector_type::scalar_type vector_scalar_type;
+    const vector_scalar_type* xv = x.values();
+    const vector_scalar_type* yv = y.values();
     if (yv == xv) {
 #ifndef HPGMP_NO_OPENMP
         // clang-format off
         #pragma omp parallel for reduction(+ : local_result)
         // clang-format on
 #endif
-        for (local_int_t i = 0; i < n; i++) local_result += xv[i] * xv[i];
+        for (local_int_t i = 0; i < n; i++) local_result += static_cast<scalar_type>(xv[i]) * static_cast<scalar_type>(xv[i]);
     } else {
 #ifndef HPGMP_NO_OPENMP
         // clang-format off
         #pragma omp parallel for reduction(+ : local_result)
         // clang-format on
 #endif
-        for (local_int_t i = 0; i < n; i++) local_result += xv[i] * yv[i];
+        for (local_int_t i = 0; i < n; i++) local_result += static_cast<scalar_type>(xv[i]) * static_cast<scalar_type>(yv[i]);
     }
 
 #ifndef HPGMP_NO_MPI
@@ -110,5 +111,7 @@ template int ComputeDotProduct_ref<Vector<double> >(
 
 template int ComputeDotProduct_ref<Vector<float> >(
     int, Vector<float> const&, Vector<float> const&, float&, double&);
+template int ComputeDotProduct_ref<Vector<half>, float>(
+    int, Vector<half> const&, Vector<half> const&, float&, double&);
 
 #endif

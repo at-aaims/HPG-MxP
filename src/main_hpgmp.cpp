@@ -47,7 +47,7 @@
 #include "mytimer.hpp"
 
 using scalar_type  = double;
-using scalar_type2 = float;
+using scalar_type2 = half;
 
 typedef Vector<scalar_type> Vector_type;
 typedef SparseMatrix<scalar_type> SparseMatrix_type;

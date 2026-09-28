@@ -38,8 +38,8 @@ int ComputeGEMVT_ref(const local_int_t m, const local_int_t n,
     HPGMP_RANGE_PUSH(__FUNCTION__);
 
     typedef typename MultiVector_type::scalar_type scalarA_type;
-    typedef typename SerialDenseMatrix_type::scalar_type scalarX_type;
-    typedef typename Vector_type::scalar_type scalarY_type;
+    typedef typename Vector_type::scalar_type scalarX_type;
+    typedef typename SerialDenseMatrix_type::scalar_type scalarY_type;
 
     const scalarA_type one(1.0);
     const scalarA_type zero(0.0);
@@ -65,12 +65,12 @@ int ComputeGEMVT_ref(const local_int_t m, const local_int_t n,
     if (alpha == one) {
         for (local_int_t j = 0; j < n; j++)
             for (local_int_t i = 0; i < m; i++) {
-                yv[j] += Av[i + j * m] * xv[i];
+                yv[j] += static_cast<scalarY_type>(Av[i + j * m]) * static_cast<scalarY_type>(xv[i]);
             }
     } else {
         for (local_int_t i = 0; i < m; i++) {
             for (local_int_t j = 0; j < n; j++)
-                yv[j] += alpha * Av[i + j * m] * xv[i];
+                yv[j] += static_cast<scalarY_type>(alpha * Av[i + j * m]) * static_cast<scalarY_type>(xv[i]);
         }
     }
     TIME(y.time1);
@@ -105,5 +105,8 @@ template int ComputeGEMVT_ref< MultiVector<double>, Vector<double>, SerialDenseM
 
 template int ComputeGEMVT_ref< MultiVector<float>, Vector<float>, SerialDenseMatrix<float> >(
     int, int, float, MultiVector<float> const&, Vector<float> const&, float, SerialDenseMatrix<float>&);
+
+template int ComputeGEMVT_ref< MultiVector<half>, Vector<half>, SerialDenseMatrix<float> >(
+    int, int, half, MultiVector<half> const&, Vector<half> const&, float, SerialDenseMatrix<float>&);
 
 #endif

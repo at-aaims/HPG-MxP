@@ -45,3 +45,6 @@ template int ComputeGEMVT< MultiVector<double>, Vector<double>, SerialDenseMatri
 
 template int ComputeGEMVT< MultiVector<float>, Vector<float>, SerialDenseMatrix<float> >(
     int, int, float, MultiVector<float> const&, Vector<float> const&, const float, SerialDenseMatrix<float>&, bool&);
+
+template int ComputeGEMVT< MultiVector<half>, Vector<half>, SerialDenseMatrix<float> >(
+    int, int, half, MultiVector<half> const&, Vector<half> const&, const float, SerialDenseMatrix<float>&, bool&);

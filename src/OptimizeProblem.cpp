@@ -28,12 +28,19 @@ int OptimizeProblem(SparseMatrix_type& A, GMRESData_type& data, Vector_type& b, 
 template int OptimizeProblem(
     SparseMatrix<double>&, GMRESData<double, double, double>&, Vector<double>&, Vector<double>&,
     Vector<double>&, const HPGMP_gen_opts&);
+
 template int OptimizeProblem(
     SparseMatrix<float>&, GMRESData<float, float, float>&, Vector<float>&, Vector<float>&,
     Vector<float>&, const HPGMP_gen_opts&);
+
 template int OptimizeProblem(
     SparseMatrix<float>&, GMRESData<double, double, double>&, Vector<double>&, Vector<double>&,
     Vector<double>&, const HPGMP_gen_opts&);
+
+template int OptimizeProblem(
+    SparseMatrix<half>&, GMRESData<double, double, double>&, Vector<double>&, Vector<double>&,
+    Vector<double>&, const HPGMP_gen_opts&);
+
 #ifdef HPGMP_WITH_GINKGO_AMP
 template int OptimizeProblem(
     SparseMatrix<double, float>&, GMRESData<double, double, double>&, Vector<double>&, Vector<double>&,

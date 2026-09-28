@@ -3,6 +3,15 @@
 
 #include "DataTypes.hpp"
 
+#include <array>
+#include <type_traits>
+
+/// std::is_floating_point, extended to include half (not covered by the standard trait in C++17).
+template<typename T>
+struct is_hpgmp_floating_point
+    : std::integral_constant<bool, std::is_floating_point<T>::value || std::is_same<T, half>::value> {
+};
+
 /** Stores the number of floating point operations (flops) and
  * loads and stores from memory (mem_traffic) in any kernel.
  *
@@ -12,32 +21,30 @@
 class flops_and_traffic
 {
 public:
-    static constexpr int n_precs = 2;
+    static constexpr int n_precs = 3;
 
     /// Get index in counter arrays based on precision type.
     template<typename T>
-    static constexpr std::enable_if_t<std::is_floating_point<T>::value, int> index()
+    static constexpr std::enable_if_t<is_hpgmp_floating_point<T>::value, int> index()
     {
         if constexpr (std::is_same<T, double>::value) {
             return 0;
         } else if constexpr (std::is_same<T, float>::value) {
             return 1;
-#if 0 // TODO: Revisit half-precision support
-        } else if constexpr (std::is_same<T,half>::value) {
+        } else if constexpr (std::is_same<T, half>::value) {
             return 2;
-#endif
         }
     }
 
     template<typename T>
-    std::enable_if_t<std::is_floating_point<T>::value> add_flops(const double count)
+    std::enable_if_t<is_hpgmp_floating_point<T>::value> add_flops(const double count)
     {
         constexpr int idx = index<T>();
         flops[idx] += count;
     }
 
     template<typename T>
-    std::enable_if_t<std::is_floating_point<T>::value, double> get_flops() const
+    std::enable_if_t<is_hpgmp_floating_point<T>::value, double> get_flops() const
     {
         constexpr int idx = index<T>();
         return flops[idx];
@@ -53,7 +60,7 @@ public:
     }
 
     template<typename T>
-    std::enable_if_t<std::is_floating_point<T>::value> add_memory_traffic(const double count)
+    std::enable_if_t<is_hpgmp_floating_point<T>::value> add_memory_traffic(const double count)
     {
         constexpr int idx = index<T>();
         f_mem_traffic[idx] += count;
@@ -66,7 +73,7 @@ public:
     }
 
     template<typename T>
-    std::enable_if_t<std::is_floating_point<T>::value, double> get_memory_traffic() const
+    std::enable_if_t<is_hpgmp_floating_point<T>::value, double> get_memory_traffic() const
     {
         constexpr int idx = index<T>();
         return f_mem_traffic[idx];
@@ -81,11 +88,7 @@ public:
     double get_total_memory_bytes() const
     {
         double total = i_mem_traffic * sizeof(int);
-#if 0 // TODO: Revisit half-precision support
-        constexpr std::array<size_t,3> sizes{sizeof(double), sizeof(float), sizeof(half)};
-#else
-        constexpr std::array<size_t, 2> sizes{sizeof(double), sizeof(float)};
-#endif
+        constexpr std::array<size_t, n_precs> sizes{sizeof(double), sizeof(float), sizeof(half)};
         for (int i = 0; i < n_precs; i++) {
             total += static_cast<double>(f_mem_traffic[i]) * sizes[i];
         }

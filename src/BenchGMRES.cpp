@@ -406,6 +406,9 @@ template int BenchGMRES<float, float, float >(int, char**, comm_type, DeviceCtx*
 template int BenchGMRES<double, float, float >(int, char**, comm_type, DeviceCtx*, int, bool, bool,
                                                const HPGMP_gen_opts&, TestGMRESData&);
 
+template int BenchGMRES<double, half, float >(int, char**, comm_type, DeviceCtx*, int, bool, bool,
+                                               const HPGMP_gen_opts&, TestGMRESData&);
+
 
 template<class SparseMatrixType, class VectorType>
 void test_mg_spmv(comm_type comm, DeviceCtx* const dctx, const Geometry* const geom,

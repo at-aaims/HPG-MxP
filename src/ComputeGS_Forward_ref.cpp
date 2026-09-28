@@ -107,4 +107,7 @@ template int ComputeGS_Forward_ref< SparseMatrix<double>, Vector<double> >(
 template int ComputeGS_Forward_ref< SparseMatrix<float>, Vector<float> >(
     SparseMatrix<float> const&, Vector<float> const&, Vector<float>&);
 
+template int ComputeGS_Forward_ref< SparseMatrix<half>, Vector<half> >(
+    SparseMatrix<half> const&, Vector<half> const&, Vector<half>&);
+
 #endif

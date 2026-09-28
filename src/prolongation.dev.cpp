@@ -93,5 +93,6 @@ int prolongation(const SparseMatrix<local_scalar_t, halo_scalar_t>& Af, Vector<v
 
 template int prolongation(const SparseMatrix<double>& Af, Vector<double>& xf);
 template int prolongation(const SparseMatrix<float>& Af, Vector<float>& xf);
+template int prolongation(const SparseMatrix<half>& Af, Vector<half>& xf);
 template int prolongation(const SparseMatrix<double, float>& Af, Vector<float>& xf);
 template int prolongation(const SparseMatrix<double, float>& Af, Vector<double>& xf);

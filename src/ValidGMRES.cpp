@@ -249,3 +249,6 @@ template int ValidGMRES<float, float, float >(
 // mixed version
 template int ValidGMRES<double, float, float >(
     int, char**, validation_t, comm_type, DeviceCtx*, int, bool, TestGMRESData&, const HPGMP_gen_opts& gopts);
+
+template int ValidGMRES<double, half, float >(
+    int, char**, validation_t, comm_type, DeviceCtx*, int, bool, TestGMRESData&, const HPGMP_gen_opts& gopts);

@@ -144,6 +144,9 @@ template int OptimizeProblemELL(SparseMatrix<float>& A, GMRESData<float, float, 
 template int OptimizeProblemELL(SparseMatrix<float>& A, GMRESData<double, double, double>& data,
                                 Vector<double>& b, Vector<double>& x, Vector<double>& xexact, const HPGMP_gen_opts&);
 
+template int OptimizeProblemELL(SparseMatrix<half>& A, GMRESData<double, double, double>& data,
+                                Vector<double>& b, Vector<double>& x, Vector<double>& xexact, const HPGMP_gen_opts&);
+
 template int OptimizeProblemELL(SparseMatrix<double, float>& A, GMRESData<double, float, float>& data,
                                 Vector<double>& b, Vector<double>& x, Vector<double>& xexact, const HPGMP_gen_opts&);
 
@@ -298,4 +301,5 @@ double OptimizeProblemMemoryUse(const SparseMatrix_type& A, const HPGMP_gen_opts
 
 template double OptimizeProblemMemoryUse(const SparseMatrix<double>&, const HPGMP_gen_opts&);
 template double OptimizeProblemMemoryUse(const SparseMatrix<float>&, const HPGMP_gen_opts&);
+template double OptimizeProblemMemoryUse(const SparseMatrix<half>&, const HPGMP_gen_opts&);
 template double OptimizeProblemMemoryUse(const SparseMatrix<double, float>&, const HPGMP_gen_opts&);
