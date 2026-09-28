@@ -359,6 +359,10 @@ template int ell_multicolor_gs(
     bool sym, const ELLMatrix<float, float>* const A, const Vector<float>* const r,
     Vector<float>* const x);
 
+template int ell_multicolor_gs(
+    bool sym, const ELLMatrix<half, half>* const A, const Vector<half>* const r,
+    Vector<half>* const x);
+
 template int ell_multicolor_gs_zero_initial(
     bool sym, const ELLMatrix<double, double>* const A,
     const Vector<double>* const r, Vector<double>* const x);
@@ -366,3 +370,7 @@ template int ell_multicolor_gs_zero_initial(
 template int ell_multicolor_gs_zero_initial(
     bool sym, const ELLMatrix<float, float>* const A,
     const Vector<float>* const r, Vector<float>* const x);
+
+template int ell_multicolor_gs_zero_initial(
+    bool sym, const ELLMatrix<half, half>* const A,
+    const Vector<half>* const r, Vector<half>* const x);

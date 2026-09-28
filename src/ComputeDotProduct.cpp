@@ -60,3 +60,6 @@ template int ComputeDotProduct< Vector<double> >(
 
 template int ComputeDotProduct< Vector<float> >(
     int, Vector<float> const&, Vector<float> const&, float&, double&, bool&);
+
+template int ComputeDotProduct< Vector<half>, float >(
+    int, Vector<half> const&, Vector<half> const&, float&, double&, bool&);

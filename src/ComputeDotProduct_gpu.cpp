@@ -163,4 +163,7 @@ template int ComputeDotProduct_ref<Vector<double> >(
 template int ComputeDotProduct_ref<Vector<float> >(
     int, Vector<float> const&, Vector<float> const&, float&, double&);
 
+template int ComputeDotProduct_ref<Vector<half>, float>(
+    int, Vector<half> const&, Vector<half> const&, float&, double&);
+
 #endif

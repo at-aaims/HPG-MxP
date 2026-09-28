@@ -100,4 +100,10 @@ template double estimate_run_time(comm_type comm,
                                   GMRESData<double, double, double>& data, GMRESData<float, float, float>& data_lo,
                                   const Vector<double>& b, Vector<double>& x, int max_iters,
                                   int restart_length, bool verbose);
+
+template double estimate_run_time(comm_type comm,
+                                  const SparseMatrix<double, double>& A, const SparseMatrix<half, half>& A_lo,
+                                  GMRESData<double, double, double>& data, GMRESData<half, half, float>& data_lo,
+                                  const Vector<double>& b, Vector<double>& x, int max_iters,
+                                  int restart_length, bool verbose);
 #endif

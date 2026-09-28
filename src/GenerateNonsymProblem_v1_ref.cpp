@@ -176,7 +176,7 @@ void GenerateNonsymProblem_v1_ref(DeviceCtx* const dctx, SparseMatrix_type& A, V
 #endif
                 local_int_t numberOfNonzerosInRow       = 0;
                 matrix_scalar_type* currentValuePointer = matrixValues[currentLocalRow]; // Pointer to current value in current row
-                vector_scalar_type bi                   = 0.0;
+                double bi                               = 0.0;
                 global_int_t* currentIndexPointerG      = mtxIndG[currentLocalRow]; // Pointer to current index in current row
                 for (int sz = -1; sz <= 1; sz++) {
                     if (giz + sz > -1 && giz + sz < gnz) {
@@ -225,7 +225,7 @@ void GenerateNonsymProblem_v1_ref(DeviceCtx* const dctx, SparseMatrix_type& A, V
 #endif
                 localNumberOfNonzeros += numberOfNonzerosInRow; // Protect this with an atomic
                 if (init_vect) {
-                    bv[currentLocalRow] = bi; //26.0 - ((double) (numberOfNonzerosInRow-1));
+                    bv[currentLocalRow] = static_cast<vector_scalar_type>(bi); //26.0 - ((double) (numberOfNonzerosInRow-1));
                     //xv[currentLocalRow] = 0.0;
                     xexactv[currentLocalRow] = 1.0;
                 }
@@ -289,6 +289,8 @@ template void GenerateNonsymProblem_v1_ref< SparseMatrix<double>, Vector<double>
 template void GenerateNonsymProblem_v1_ref< SparseMatrix<float>, Vector<float> >(
     DeviceCtx*, SparseMatrix<float>&, Vector<float>*, Vector<float>*, Vector<float>*, bool);
 
+template void GenerateNonsymProblem_v1_ref< SparseMatrix<half>, Vector<half> >(
+    DeviceCtx*, SparseMatrix<half>&, Vector<half>*, Vector<half>*, Vector<half>*, bool);
 
 // mixed
 template void GenerateNonsymProblem_v1_ref< SparseMatrix<double, float>, Vector<double> >(
@@ -299,3 +301,6 @@ template void GenerateNonsymProblem_v1_ref< SparseMatrix<double, float>, Vector<
 
 template void GenerateNonsymProblem_v1_ref< SparseMatrix<float>, Vector<double> >(
     DeviceCtx*, SparseMatrix<float>&, Vector<double>*, Vector<double>*, Vector<double>*, bool);
+
+template void GenerateNonsymProblem_v1_ref< SparseMatrix<half>, Vector<double> >(
+    DeviceCtx*, SparseMatrix<half>&, Vector<double>*, Vector<double>*, Vector<double>*, bool);
