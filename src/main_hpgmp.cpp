@@ -194,7 +194,7 @@ int main(int argc, char* argv[])
 #endif
 
     // Use this array for collecting timing information
-    TestGMRESData test_data;
+    TestGMRESData test_data{};
     //test_data.times = NULL;
     //test_data.flops = NULL;
     test_data.validation_nprocs = sizeValidComm;
