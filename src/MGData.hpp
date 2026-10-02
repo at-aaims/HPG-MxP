@@ -71,6 +71,11 @@ public:
         delete xc;
         dctx_->device_free(buffer_R);
         dctx_->device_free(buffer_P);
+#if defined(HPGMP_WITH_CUDA) | defined(HPGMP_WITH_HIP)
+        dctx_->device_free(d_row_ptr);
+        dctx_->device_free(d_col_idx);
+        dctx_->device_free(d_nzvals);
+#endif
     }
 
     DeviceCtx* dctx_              = nullptr;

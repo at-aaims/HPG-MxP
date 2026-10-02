@@ -102,20 +102,6 @@ void DeleteMatrix(SparseMatrix_type& A)
 
 #ifdef HPGMP_REFERENCE
 #ifdef HPGMP_WITH_CUDA
-    cudaFree(A.d_row_ptr);
-    cudaFree(A.d_col_idx);
-    cudaFree(A.d_nzvals);
-    cudaFree(A.d_sendBuffer);
-    cudaFree(A.d_elementsToSend);
-
-    cudaFree(A.d_Lrow_ptr);
-    cudaFree(A.d_Lcol_idx);
-    cudaFree(A.d_Lnzvals);
-
-    cudaFree(A.d_Urow_ptr);
-    cudaFree(A.d_Ucol_idx);
-    cudaFree(A.d_Unzvals);
-
     //cusparseDestroyMatDescr(A.descrA);
     //cusparseDestroyMatDescr(A.descrL);
     //cusparseDestroyMatDescr(A.descrU);
@@ -125,23 +111,25 @@ void DeleteMatrix(SparseMatrix_type& A)
     //cusparseDestroySolveAnalysisInfo(A.infoL);
     //#endif
 #elif defined(HPGMP_WITH_HIP)
-    hipFree(A.d_row_ptr);
-    hipFree(A.d_col_idx);
-    hipFree(A.d_nzvals);
-    hipFree(A.d_sendBuffer);
-    hipFree(A.d_elementsToSend);
-
-    hipFree(A.d_Lrow_ptr);
-    hipFree(A.d_Lcol_idx);
-    hipFree(A.d_Lnzvals);
-
-    hipFree(A.d_Urow_ptr);
-    hipFree(A.d_Ucol_idx);
-    hipFree(A.d_Unzvals);
-
     //rocsparse_destroy_spmat_descr(A.descrA);
     //rocsparse_destroy_spmat_descr(A.descrL);
     //rocsparse_destroy_spmat_descr(A.descrU);
+#endif
+
+#if defined(HPGMP_WITH_CUDA) || defined(HPGMP_WITH_HIP)
+    A.dctx->device_free(A.d_row_ptr);
+    A.dctx->device_free(A.d_col_idx);
+    A.dctx->device_free(A.d_nzvals);
+    A.dctx->device_free(A.d_sendBuffer);
+    A.dctx->device_free(A.d_elementsToSend);
+
+    A.dctx->device_free(A.d_Lrow_ptr);
+    A.dctx->device_free(A.d_Lcol_idx);
+    A.dctx->device_free(A.d_Lnzvals);
+
+    A.dctx->device_free(A.d_Urow_ptr);
+    A.dctx->device_free(A.d_Ucol_idx);
+    A.dctx->device_free(A.d_Unzvals);
 #endif
 #else // HPGMP_REFERENCE
 
