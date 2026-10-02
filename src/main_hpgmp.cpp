@@ -135,6 +135,10 @@ int main(int argc, char* argv[])
         if (myRank == 0) {
             std::cout << "Running standalone reference (DP) mode." << std::endl;
         }
+    } else if (gopts.run_type == run_t::validation) {
+        if (myRank == 0) {
+            std::cout << "Running validation only mode." << std::endl;
+        }
     } else {
         if (myRank == 0) {
             std::cout << "Running standalone MxP mode." << std::endl;
@@ -208,7 +212,8 @@ int main(int argc, char* argv[])
     const scalar_type tolerance = 1e-9;
     test_data.restart_length    = restart_length;
     test_data.tolerance         = tolerance;
-    const bool to_validate      = (gopts.run_type == run_t::benchmark || gopts.run_type == run_t::benchmark_no_ref);
+    const bool to_validate      = (gopts.run_type == run_t::benchmark || gopts.run_type == run_t::benchmark_no_ref ||
+                              gopts.run_type == run_t::validation);
 
     if (myRank < sizeValidComm && to_validate) {
         TICK();
@@ -227,10 +232,21 @@ int main(int argc, char* argv[])
     }
 
 
+    if (gopts.run_type == run_t::validation) {
+        if (myRank == 0) {
+            const double iter_ratio = ((double)test_data.optNumIters) / ((double)test_data.refNumIters);
+            std::cout << "Main: Validation " << (global_failure ? "FAILED" : "passed")
+                      << ": reference iterations " << test_data.refNumIters
+                      << ", optimized iterations " << test_data.optNumIters
+                      << ", penalty factor " << (iter_ratio < 1.0 ? 1.0 : iter_ratio) << "." << std::endl;
+        }
+    }
+
+
     /////////////////////
     // Benchmark phase //
     /////////////////////
-    {
+    if (gopts.run_type != run_t::validation) {
         const bool runReference = true;
         TICK();
         BenchGMRES<scalar_type, scalar_type2, project_type>(argc, argv,

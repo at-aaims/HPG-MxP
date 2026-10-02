@@ -104,7 +104,8 @@ enum class run_t {
     benchmark, ///< Official benchmark mode (with standard or fullscale validation)
     benchmark_no_ref, ///< Official benchmark mode without timed reference run
     standalone_ref, ///< Only double precision GMRES without validation
-    standalone_mxp ///< Only mixed precision GMRES-IR without validation
+    standalone_mxp, ///< Only mixed precision GMRES-IR without validation
+    validation ///< Only validation (standard or fullscale), no benchmark runs
 };
 
 std::string get_string(run_t run_type);
