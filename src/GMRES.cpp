@@ -137,6 +137,7 @@ int GMRES(const SparseMatrix_type& A, GMRESData_type& data, const Vector_type& b
         TICK();
         ComputeSPMV(A, p, Ap);
         TOCK(t3);
+        test_data.numOfSPCalls++;
         flops_spmv += (2 * A.totalNumberOfNonzeros);
         ctrs.spmv.add_memory_traffic<scalar_type>(A.totalNumberOfNonzeros + 2 * A.totalNumberOfRows);
         ctrs.spmv.add_memory_traffic<local_int_t>(A.totalNumberOfNonzeros);
@@ -197,6 +198,7 @@ int GMRES(const SparseMatrix_type& A, GMRESData_type& data, const Vector_type& b
             if (doPreconditioning) {
                 z.time1_ = z.time2_ = z.time3_ = z.time4_ = 0.0;
                 ComputeMG(A, Qkm1, z, symmetric, ctrs);
+                test_data.numOfMGCalls++;
                 t7 += z.time1_;
                 t8 += z.time2_;
                 t9 += z.time3_;
@@ -210,6 +212,7 @@ int GMRES(const SparseMatrix_type& A, GMRESData_type& data, const Vector_type& b
             // Qk = A*z
             TICK();
             ComputeSPMV(A, z, Qk);
+            test_data.numOfSPCalls++;
             flops_spmv += (2 * A.totalNumberOfNonzeros);
             TOCK(t3);
             ctrs.spmv.add_memory_traffic<scalar_type>(A.totalNumberOfNonzeros + 2 * A.totalNumberOfRows);
@@ -358,6 +361,7 @@ int GMRES(const SparseMatrix_type& A, GMRESData_type& data, const Vector_type& b
             TICK();
             ComputeMG(A, r, z, symmetric, ctrs);
             TOCK(t5); // Preconditioner apply time
+            test_data.numOfMGCalls++;
             t7 += z.time1_;
             t8 += z.time2_;
             t9 += z.time3_;

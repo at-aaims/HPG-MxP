@@ -274,6 +274,8 @@ int BenchGMRES(int argc, char** argv, comm_type comm, DeviceCtx* const dctx, int
               verbose, test_data);
 
         double time_solve_total = 0.0;
+        test_data.numOfMGCalls  = 0;
+        test_data.numOfSPCalls  = 0;
 
         for (int i = 0; i < n_fl_ops; i++) {
             test_data.flops[i] = 0.0;
