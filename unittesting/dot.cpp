@@ -118,16 +118,9 @@ int main(int argc, char* argv[])
 
     const int numberOfMgLevels = 4; // Number of levels including first
 
-    std::string working_precision = "double", inner_precision = "double", project_precision = "double";
-    if (std::is_same<scalar_type, float>::value) {
-        working_precision = "float";
-    }
-    if (std::is_same<scalar_type2, float>::value) {
-        inner_precision = "float";
-    }
-    if (std::is_same<project_type, float>::value) {
-        project_precision = "float";
-    }
+    std::string working_precision = precision_name<scalar_type>();
+    std::string inner_precision   = precision_name<scalar_type2>();
+    std::string project_precision = precision_name<project_type>();
     if (myRank == 0) {
         std::cout << "Running HPG-MxP benchmark with working precision " << working_precision
                   << ",\n  inner precision " << inner_precision

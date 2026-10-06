@@ -135,6 +135,10 @@ int main(int argc, char* argv[])
         if (myRank == 0) {
             std::cout << "Running standalone reference (DP) mode." << std::endl;
         }
+    } else if (gopts.run_type == run_t::validation) {
+        if (myRank == 0) {
+            std::cout << "Running validation only mode." << std::endl;
+        }
     } else {
         if (myRank == 0) {
             std::cout << "Running standalone MxP mode." << std::endl;
@@ -166,15 +170,13 @@ int main(int argc, char* argv[])
     // If the running time is set to zero, we minimize all paths through the program
     const int numberOfMgLevels = 4; // Number of levels including first
 
-    std::string working_precision = "double", inner_precision = "double", project_precision = "double";
-    if (std::is_same<scalar_type, float>::value) {
-        working_precision = "float";
-    }
-    if (std::is_same<scalar_type2, float>::value) {
-        inner_precision = "float";
-    }
-    if (std::is_same<project_type, float>::value) {
-        project_precision = "float";
+    std::string working_precision = precision_name<scalar_type>();
+    std::string inner_precision   = precision_name<scalar_type2>();
+    std::string project_precision = precision_name<project_type>();
+    // Inner vectors may be stored in a different precision than the inner matrix
+    typedef Vector_type2::scalar_type inner_vector_type;
+    if (!std::is_same<inner_vector_type, scalar_type2>::value) {
+        inner_precision += std::string(" (") + precision_name<inner_vector_type>() + " vectors)";
     }
     if (myRank == 0) {
         std::cout << "Running HPG-MxP benchmark with working precision " << working_precision
@@ -196,7 +198,7 @@ int main(int argc, char* argv[])
 #endif
 
     // Use this array for collecting timing information
-    TestGMRESData test_data;
+    TestGMRESData test_data{};
     //test_data.times = NULL;
     //test_data.flops = NULL;
     test_data.validation_nprocs = sizeValidComm;
@@ -210,7 +212,8 @@ int main(int argc, char* argv[])
     const scalar_type tolerance = 1e-9;
     test_data.restart_length    = restart_length;
     test_data.tolerance         = tolerance;
-    const bool to_validate      = (gopts.run_type == run_t::benchmark || gopts.run_type == run_t::benchmark_no_ref);
+    const bool to_validate      = (gopts.run_type == run_t::benchmark || gopts.run_type == run_t::benchmark_no_ref ||
+                              gopts.run_type == run_t::validation);
 
     if (myRank < sizeValidComm && to_validate) {
         TICK();
@@ -229,10 +232,21 @@ int main(int argc, char* argv[])
     }
 
 
+    if (gopts.run_type == run_t::validation) {
+        if (myRank == 0) {
+            const double iter_ratio = ((double)test_data.optNumIters) / ((double)test_data.refNumIters);
+            std::cout << "Main: Validation " << (global_failure ? "FAILED" : "passed")
+                      << ": reference iterations " << test_data.refNumIters
+                      << ", optimized iterations " << test_data.optNumIters
+                      << ", penalty factor " << (iter_ratio < 1.0 ? 1.0 : iter_ratio) << "." << std::endl;
+        }
+    }
+
+
     /////////////////////
     // Benchmark phase //
     /////////////////////
-    {
+    if (gopts.run_type != run_t::validation) {
         const bool runReference = true;
         TICK();
         BenchGMRES<scalar_type, scalar_type2, project_type>(argc, argv,

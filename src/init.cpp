@@ -102,6 +102,8 @@ HPGMP_Init(int* argc_p, char*** argv_p)
         opts.run_type = run_t::standalone_ref;
     } else if (values[1] == "standalone_mxp") {
         opts.run_type = run_t::standalone_mxp;
+    } else if (values[1] == "validation") {
+        opts.run_type = run_t::validation;
     } else {
         throw std::runtime_error("Invalid value for run_type!");
     }

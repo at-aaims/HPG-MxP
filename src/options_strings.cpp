@@ -17,6 +17,8 @@ std::string get_string(const run_t run_type)
         return "benchmark_no_ref";
     } else if (run_type == run_t::standalone_ref) {
         return "standalone_ref";
+    } else if (run_type == run_t::validation) {
+        return "validation";
     } else {
         return "standalone_mxp";
     }

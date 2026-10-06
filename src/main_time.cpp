@@ -195,7 +195,7 @@ int main(int argc, char* argv[])
     //////////////////////////////
     bool test_diagonal_exaggeration = false;
     bool test_noprecond             = true;
-    TestGMRESData test_data;
+    TestGMRESData test_data{};
 
 #ifdef HPGMP_DEBUG
     t1 = mytimer();

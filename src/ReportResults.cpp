@@ -276,26 +276,30 @@ void ReportResults(const SparseMatrix_type& A, int numberOfMgLevels,
         doc.add("Benchmark Time Summary", "");
         doc.get("Benchmark Time Summary")->add("Run time requested (benchmark)", test_data.runningTime);
         doc.get("Benchmark Time Summary")->add("Min run time required (benchmark)", test_data.minOfficialTime);
-        doc.get("Benchmark Time Summary")->add("Number of GMRES calls (benchmark)", test_data.numOfCalls);
+        if (test_data.optTotalTime > 0.0) {
+            doc.get("Benchmark Time Summary")->add("Number of GMRES calls (benchmark)", test_data.numOfCalls);
+        }
         doc.get("Benchmark Time Summary")->add("Mximum number of iterations (benchmark)", test_data.maxNumIters);
         doc.get("Benchmark Time Summary")->add("Optimization phase", test_data.OptimizeTime);
-        doc.get("Benchmark Time Summary")->add("Num SpMVs", test_data.optNumOfSPCalls);
-        doc.get("Benchmark Time Summary")->add("Num MGs", test_data.optNumOfMGCalls);
-        doc.get("Benchmark Time Summary")->add("Ortho", test_data.opt_times[3]);
-        doc.get("Benchmark Time Summary")->add(" DDOT", test_data.opt_times[1]);
-        doc.get("Benchmark Time Summary")->add("  DDOT (comp)", test_data.opt_times_comp[1]);
-        doc.get("Benchmark Time Summary")->add("  DDOT (comm)", test_data.opt_times_comm[1]);
-        doc.get("Benchmark Time Summary")->add("  GEMV", test_data.opt_times[2]);
-        doc.get("Benchmark Time Summary")->add("SpMV", test_data.opt_times[4]);
-        doc.get("Benchmark Time Summary")->add("  SpMV (copy)", test_data.opt_times_comm[2]);
-        doc.get("Benchmark Time Summary")->add("  SpMV (halo)", test_data.opt_times_comm[3]);
-        doc.get("Benchmark Time Summary")->add("MG", test_data.opt_times[6]);
-        doc.get("Benchmark Time Summary")->add(" SpMV", test_data.opt_times[7]);
-        doc.get("Benchmark Time Summary")->add(" SpTRSV", test_data.opt_times[8]);
-        doc.get("Benchmark Time Summary")->add(" Restic", test_data.opt_times[9]);
-        doc.get("Benchmark Time Summary")->add(" Prlong", test_data.opt_times[10]);
-        doc.get("Benchmark Time Summary")->add("VecUpdate", test_data.opt_times[11]);
-        doc.get("Benchmark Time Summary")->add("Total", test_data.opt_times[0]);
+        if (test_data.optTotalTime > 0.0) {
+            doc.get("Benchmark Time Summary")->add("Num SpMVs", test_data.optNumOfSPCalls);
+            doc.get("Benchmark Time Summary")->add("Num MGs", test_data.optNumOfMGCalls);
+            doc.get("Benchmark Time Summary")->add("Ortho", test_data.opt_times[3]);
+            doc.get("Benchmark Time Summary")->add(" DDOT", test_data.opt_times[1]);
+            doc.get("Benchmark Time Summary")->add("  DDOT (comp)", test_data.opt_times_comp[1]);
+            doc.get("Benchmark Time Summary")->add("  DDOT (comm)", test_data.opt_times_comm[1]);
+            doc.get("Benchmark Time Summary")->add("  GEMV", test_data.opt_times[2]);
+            doc.get("Benchmark Time Summary")->add("SpMV", test_data.opt_times[4]);
+            doc.get("Benchmark Time Summary")->add("  SpMV (copy)", test_data.opt_times_comm[2]);
+            doc.get("Benchmark Time Summary")->add("  SpMV (halo)", test_data.opt_times_comm[3]);
+            doc.get("Benchmark Time Summary")->add("MG", test_data.opt_times[6]);
+            doc.get("Benchmark Time Summary")->add(" SpMV", test_data.opt_times[7]);
+            doc.get("Benchmark Time Summary")->add(" SpTRSV", test_data.opt_times[8]);
+            doc.get("Benchmark Time Summary")->add(" Restic", test_data.opt_times[9]);
+            doc.get("Benchmark Time Summary")->add(" Prlong", test_data.opt_times[10]);
+            doc.get("Benchmark Time Summary")->add("VecUpdate", test_data.opt_times[11]);
+            doc.get("Benchmark Time Summary")->add("Total", test_data.opt_times[0]);
+        }
         if (test_data.refTotalTime > 0.0) {
             doc.get("Benchmark Time Summary")->add(" - Num SpMVs  (reference)", test_data.refNumOfSPCalls);
             doc.get("Benchmark Time Summary")->add(" - Num MGs    (reference)", test_data.refNumOfMGCalls);
@@ -303,7 +307,7 @@ void ReportResults(const SparseMatrix_type& A, int numberOfMgLevels,
             doc.get("Benchmark Time Summary")->add(" -  DDOT   (reference)", test_data.ref_times[1]);
             doc.get("Benchmark Time Summary")->add(" -   DDOT (comp)", test_data.ref_times_comp[1]);
             doc.get("Benchmark Time Summary")->add(" -   DDOT (comm)", test_data.ref_times_comm[1]);
-            doc.get("Benchmark Time Summary")->add(" -  GEMV (reference)", test_data.opt_times[2]);
+            doc.get("Benchmark Time Summary")->add(" -  GEMV (reference)", test_data.ref_times[2]);
             doc.get("Benchmark Time Summary")->add(" - SpMV    (reference)", test_data.ref_times[4]);
             doc.get("Benchmark Time Summary")->add(" - MG      (reference)", test_data.ref_times[6]);
             doc.get("Benchmark Time Summary")->add(" -  SpMV   (reference)", test_data.ref_times[7]);
@@ -314,10 +318,12 @@ void ReportResults(const SparseMatrix_type& A, int numberOfMgLevels,
         }
 
         doc.add("Floating Point Operations Summary", "");
-        doc.get("Floating Point Operations Summary")->add("Raw Ortho", test_data.opt_flops[3]);
-        doc.get("Floating Point Operations Summary")->add("Raw SpMV", test_data.opt_flops[2]);
-        doc.get("Floating Point Operations Summary")->add("Raw MG", test_data.opt_flops[1]);
-        doc.get("Floating Point Operations Summary")->add("Total", test_data.opt_flops[0]);
+        if (test_data.optTotalTime > 0.0) {
+            doc.get("Floating Point Operations Summary")->add("Raw Ortho", test_data.opt_flops[3]);
+            doc.get("Floating Point Operations Summary")->add("Raw SpMV", test_data.opt_flops[2]);
+            doc.get("Floating Point Operations Summary")->add("Raw MG", test_data.opt_flops[1]);
+            doc.get("Floating Point Operations Summary")->add("Total", test_data.opt_flops[0]);
+        }
         if (test_data.refTotalTime > 0.0) {
             doc.get("Floating Point Operations Summary")->add(" - Raw Ortho (reference)", test_data.ref_flops[3]);
             doc.get("Floating Point Operations Summary")->add(" - Raw SpMV  (reference)", test_data.ref_flops[2]);
@@ -329,7 +335,7 @@ void ReportResults(const SparseMatrix_type& A, int numberOfMgLevels,
         doc.add(memtrstr, "");
         const perf_counters& c_opt = test_data.ctrs_bench;
         const double optMGBytes    = c_opt.mg_rp.get_total_memory_bytes() + c_opt.mg_gs.get_total_memory_bytes();
-        if (test_data.refTotalTime > 0.0) {
+        if (test_data.optTotalTime > 0.0) {
             doc.get(memtrstr)->add(" - Raw Ortho  (mxp)", c_opt.ortho.get_total_memory_bytes() / 1.0e9);
             doc.get(memtrstr)->add(" - Raw SpMV   (mxp)", c_opt.spmv.get_total_memory_bytes() / 1.0e9);
             doc.get(memtrstr)->add(" - Raw MG     (mxp)", optMGBytes / 1.0e9);
@@ -401,7 +407,9 @@ void ReportResults(const SparseMatrix_type& A, int numberOfMgLevels,
             //doc.get(membwstr)->add(" - Raw QRhost (reference)",c_ref.qr_host.get_total_memory_bytes()/1.0e9);
             doc.get(membwstr)->add(" - Raw Total  (reference)", refTotalBytes / test_data.refTotalTime / 1.0e9);
         }
-        doc.get(membwstr)->add("Total for benchmark", optTotalBytes / test_data.opt_times[0] / 1e9 / penalGflops);
+        if (test_data.optTotalTime > 0.0) {
+            doc.get(membwstr)->add("Total for benchmark", optTotalBytes / test_data.opt_times[0] / 1e9 / penalGflops);
+        }
 
         doc.add("GFLOP/s Summary", "");
         if (test_data.optTotalTime > 0.0) {

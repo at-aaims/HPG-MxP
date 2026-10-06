@@ -24,15 +24,16 @@ then you can run the following::
 
 ### Running modes
 
-There are 4 possible run modes for the code, selected at run time by the `xhpgmp` flag `--run_type` with 4 possible values:
+There are 5 possible run modes for the code, selected at run time by the `xhpgmp` flag `--run_type` with 5 possible values:
 - `benchmark`: The regular benchmark run with the timed double precision GMRES run in the end. Includes validation. Default.
 - `benchmark_no_ref`: Regular benchmark but without double precision GMRES run in the end. Includes validation.
 - `standalone_mxp`: Excludes validation, and only performs 10 timed MxP GMRES-IR runs. Ignores running time.
 - `standalone_ref`: Excludes validation, and only performs 10 repetitions of double precision GMRES.
+- `validation`: Only performs the validation phase (see below) and prints the iteration counts and penalty factor. No benchmark runs and no YAML report.
 
 ### Validation modes
 
-The standard benchmark by Yamazaki et al. defines the validation phase on a small fixed number of ranks, typically 1 node. It then converges the double-precision GMRES on that sub-communicator of processes to 9 orders of magnitude, followed by mixed-precision GMRES-IR to 9 orders of magnitude. The ratio of iterations requried, $ n_d / n_{mxp} $ is taken as the ratio to penalize the final attained GFLOPS number.
+The standard benchmark by Yamazaki et al. defines the validation phase on a small fixed number of ranks, typically 1 node. It then converges the double-precision GMRES on that sub-communicator of processes to 9 orders of magnitude, followed by mixed-precision GMRES-IR to 9 orders of magnitude. The ratio of iterations required, $ n_d / n_{mxp} $ is taken as the ratio to penalize the final attained GFLOPS number.
 
 However, there may be a concern that this may underestimate the degradation of convergence in real applications. We introduced validation at full scale to address this issue. All the processes available in the run, and used for the benchmarking phase, are also used for the validation phase. The global problem size used for the two phases is also the same. Two modes are provided:
 - `standard`: Standard 1-node validation of Yamazaki et al.
