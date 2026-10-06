@@ -112,11 +112,11 @@ std::string get_string(run_t run_type);
 
 /// Name of a floating point type, for output
 template<typename T>
-const char* precision_name()
+constexpr const char* precision_name()
 {
-    if (std::is_same<T, double>::value) {
+    if constexpr (std::is_same<T, double>::value) {
         return "double";
-    } else if (std::is_same<T, float>::value) {
+    } else if constexpr (std::is_same<T, float>::value) {
         return "float";
     }
     return "unknown";
