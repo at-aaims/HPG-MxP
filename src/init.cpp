@@ -41,7 +41,6 @@ const char* NULLDEVICE = "/dev/null";
 #include "hpgmp.hpp"
 #include "DataTypes.hpp"
 #include "Utils_MPI.hpp"
-
 #include "ReadHpgmpDat.hpp"
 
 
@@ -64,12 +63,14 @@ HPGMP_Init(int* argc_p, char*** argv_p)
     const int argc = *argc_p;
     char** argv    = *argv_p;
     // Options to be read
-    constexpr int nparams                          = 2;
-    const std::array<std::string, nparams> cparams = {"--validation_type", "--run_type"};
+    constexpr int nparams                          = 3;
+    const std::array<std::string, nparams> cparams = {"--validation_type",
+        "--run_type", "--result_file"};
     std::array<std::string, nparams> values;
     // Default values
     values[0] = "standard";
     values[1] = "benchmark";
+    values[2] = " ";
 
     // Read cmd line args
     for (int i = 1; i <= argc && argv[i]; ++i) {
@@ -107,6 +108,7 @@ HPGMP_Init(int* argc_p, char*** argv_p)
     } else {
         throw std::runtime_error("Invalid value for run_type!");
     }
+    opts.outfile_path = values[2];
     return opts;
 }
 

@@ -16,9 +16,7 @@
 
 
 #include <fstream>
-#include <list>
 #include <sstream>
-#include <string>
 
 #include "OutputFile.hpp"
 
@@ -27,16 +25,19 @@ using std::stringstream;
 using std::list;
 using std::ofstream;
 
-OutputFile::OutputFile(const string& name_arg, const string& version_arg)
+OutputFile::OutputFile(const string& name_arg, const string& version_arg,
+                       const string& outfile_path)
     : name(name_arg),
       version(version_arg),
       eol("\n"),
-      keySeparator("::")
+      keySeparator("::"),
+      outfile_path_(outfile_path)
 { }
 
 OutputFile::OutputFile(void)
     : eol("\n"),
-      keySeparator("::")
+      keySeparator("::"),
+      outfile_path_(" ")
 { }
 
 OutputFile::~OutputFile()
@@ -123,16 +124,22 @@ OutputFile::generate(void)
         result += (*it)->generateRecursive("");
     }
 
-    time_t rawtime;
-    time(&rawtime);
-    tm* ptm = localtime(&rawtime);
-    char sdate[25];
-    //use tm_mon+1 because tm_mon is 0 .. 11 instead of 1 .. 12
-    sprintf(sdate, "%04d-%02d-%02d_%02d-%02d-%02d", ptm->tm_year + 1900, ptm->tm_mon + 1,
-            ptm->tm_mday, ptm->tm_hour, ptm->tm_min, ptm->tm_sec);
+    string filename;
 
-    string filename = name + "_" + version + "_";
-    filename += string(sdate) + ".txt";
+    if(outfile_path_ == " ") {
+        time_t rawtime;
+        time(&rawtime);
+        tm* ptm = localtime(&rawtime);
+        char sdate[25];
+        //use tm_mon+1 because tm_mon is 0 .. 11 instead of 1 .. 12
+        sprintf(sdate, "%04d-%02d-%02d_%02d-%02d-%02d", ptm->tm_year + 1900, ptm->tm_mon + 1,
+                ptm->tm_mday, ptm->tm_hour, ptm->tm_min, ptm->tm_sec);
+
+        string filename = name + "_" + version + "_";
+        filename += string(sdate) + ".txt";
+    } else {
+        filename = outfile_path_;
+    }
 
     ofstream myfile(filename.c_str());
     myfile << result;

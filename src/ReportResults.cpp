@@ -173,7 +173,7 @@ void ReportResults(const SparseMatrix_type& A, int numberOfMgLevels,
         // Run type and validation type
 
         // Instantiate YAML document
-        OutputFile doc("HPGMP-Benchmark", "0.1");
+        OutputFile doc("HPGMP-Benchmark", "0.1", gopts.outfile_path);
         doc.add("Release date", "May 5, 2023");
         doc.add("Run type", get_string(gopts.run_type));
         const bool is_benchmark = (gopts.run_type == run_t::benchmark || gopts.run_type == run_t::benchmark_no_ref);

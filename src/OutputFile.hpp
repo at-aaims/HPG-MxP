@@ -60,6 +60,7 @@ protected:
     std::string value; //!< the value of the stored element
     std::string eol; //!< end-of-line character sequence in the output file
     std::string keySeparator; //!< character sequence to separate keys in the output file
+    std::string outfile_path_; //!< User-specified result file name. " " to use default.
 
     //! Recursively generate output string from descendant list, and their descendants and so on
     std::string generateRecursive(std::string prefix);
@@ -75,7 +76,8 @@ public:
     \param name (in) string containing name of the benchmark
     \param version (in) string containing the version of the benchmark
   */
-    OutputFile(const std::string& name, const std::string& version);
+    OutputFile(const std::string& name, const std::string& version,
+               const std::string& output_file_path);
 
     //! Default constructor: no-arguments accepted, should be used for descendant nodes
     /*!

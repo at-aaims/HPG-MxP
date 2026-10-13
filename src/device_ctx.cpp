@@ -110,11 +110,11 @@ void* DeviceCtx::device_alloc(const size_t bytes)
     void* ptr;
 #if defined(HPGMP_WITH_CUDA)
     if (cudaSuccess != cudaMalloc(&ptr, bytes)) {
-        throw std::bad_alloc();
+        throw DeviceMemoryError("Could not allocate GPU memory!");
     }
 #elif defined(HPGMP_WITH_HIP)
     if (hipSuccess != hipMalloc(&ptr, bytes)) {
-        throw std::bad_alloc();
+        throw DeviceMemoryError("Could not allocate GPU memory!");
     }
 #else
     ptr = std::malloc(bytes);

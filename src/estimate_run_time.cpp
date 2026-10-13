@@ -35,7 +35,7 @@ double estimate_run_time(comm_type comm,
         HPGMP_fout << "Warm-up runs" << std::endl;
     }
 
-    const int timing_calls  = 10;
+    const int timing_calls  = 5;
     double gmresir_run_time = 0;
 
     for (int i = 0; i < timing_calls; ++i) {
