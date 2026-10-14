@@ -9,7 +9,8 @@
 /// std::is_floating_point, extended to include half (not covered by the standard trait in C++17).
 template<typename T>
 struct is_hpgmp_floating_point
-    : std::integral_constant<bool, std::is_floating_point<T>::value || std::is_same<T, half>::value> {
+    : std::integral_constant<bool, std::is_floating_point<T>::value || std::is_same<T, half>::value>
+{
 };
 
 /** Stores the number of floating point operations (flops) and

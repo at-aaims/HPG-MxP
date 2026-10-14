@@ -122,14 +122,14 @@ void Vector<scalar>::fill_random()
 
 #if defined(HPGMP_WITH_HALF) && (defined(HPGMP_WITH_CUDA) || defined(HPGMP_WITH_HIP))
 namespace {
-/// x = alpha * x for a half-precision x, computed in single precision.
-__global__ void kernel_scale_half(const local_int_t n, const half alpha, half* const __restrict__ x)
-{
-    const local_int_t i = blockIdx.x * blockDim.x + threadIdx.x;
-    if (i < n) {
-        x[i] = static_cast<half>(static_cast<float>(alpha) * static_cast<float>(x[i]));
+    /// x = alpha * x for a half-precision x, computed in single precision.
+    __global__ void kernel_scale_half(const local_int_t n, const half alpha, half* const __restrict__ x)
+    {
+        const local_int_t i = blockIdx.x * blockDim.x + threadIdx.x;
+        if (i < n) {
+            x[i] = static_cast<half>(static_cast<float>(alpha) * static_cast<float>(x[i]));
+        }
     }
-}
 } // namespace
 #endif
 

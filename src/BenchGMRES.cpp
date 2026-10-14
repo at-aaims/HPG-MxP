@@ -416,7 +416,7 @@ template int BenchGMRES<double, float, float >(int, char**, comm_type, DeviceCtx
 
 #ifdef HPGMP_WITH_HALF
 template int BenchGMRES<double, half, float >(int, char**, comm_type, DeviceCtx*, int, bool, bool,
-                                               const HPGMP_gen_opts&, TestGMRESData&);
+                                              const HPGMP_gen_opts&, TestGMRESData&);
 #endif
 
 

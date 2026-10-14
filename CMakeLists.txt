@@ -34,7 +34,8 @@ option(HPGMP_ENABLE_PROFILING "Enable profiling" OFF)
 option(HPGMP_ENABLE_GINKGO "Enable Ginkgo for linear algebra operations" OFF)
 option(HPGMP_ENABLE_GINKGO_AMP "Enable Ginkgo Adaptive Mixed Precision" OFF)
 option(HPGMP_ENABLE_HALF "Use half precision for the inner (low-precision) solver" OFF)
-option(HPGMP_ENABLE_HALF_VECTORS "Use half instead of single precision for the inner solver vectors (requires HPGMP_ENABLE_HALF)" OFF)
+option(HPGMP_ENABLE_HALF_VECTORS
+       "Use half instead of single precision for the inner solver vectors (requires HPGMP_ENABLE_HALF)" OFF)
 option(HPGMP_ENABLE_BFLOAT16 "Use bfloat16 instead of fp16 as the half-precision type (requires HPGMP_ENABLE_HALF)" OFF)
 option(CMAKE_DEBUG "Enable CMake script debugging" OFF)
 
@@ -184,8 +185,14 @@ set(host_sources
     src/options_strings.cpp)
 
 if(HPGMP_ENABLE_HIP OR HPGMP_ENABLE_CUDA)
-    set(host_sources ${host_sources} src/ComputeDotProduct_gpu.cpp src/ComputeGEMMT_gpu.cpp src/ComputeGEMVT_gpu.cpp
-                     src/ComputeGEMV_gpu.cpp src/ComputeWAXPBY_gpu.cpp src/random_gpu.cpp)
+    set(host_sources
+        ${host_sources}
+        src/ComputeDotProduct_gpu.cpp
+        src/ComputeGEMMT_gpu.cpp
+        src/ComputeGEMVT_gpu.cpp
+        src/ComputeGEMV_gpu.cpp
+        src/ComputeWAXPBY_gpu.cpp
+        src/random_gpu.cpp)
 endif()
 
 if(HPGMP_BUILD_REFERENCE)

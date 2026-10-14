@@ -46,7 +46,7 @@
 #include "BenchGMRES.hpp"
 #include "mytimer.hpp"
 
-using scalar_type  = double;
+using scalar_type = double;
 #ifdef HPGMP_WITH_HALF
 using scalar_type2 = half;
 #else

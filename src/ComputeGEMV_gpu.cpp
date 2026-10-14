@@ -81,8 +81,9 @@ int ComputeGEMV_ref(const local_int_t m, const local_int_t n,
         ComputeGEMV_half_dev(m, n, static_cast<float>(alpha), d_Av, d_xv, beta, d_yv);
     } else
 #endif
-    if ((std::is_same<scalarX_type, double>::value && std::is_same<scalarY_type, double>::value && std::is_same<scalarA_type, double>::value) ||
-        (std::is_same<scalarX_type, float >::value && std::is_same<scalarY_type, float >::value && std::is_same<scalarA_type, float >::value)) {
+        if ((std::is_same<scalarX_type, double>::value && std::is_same<scalarY_type, double>::value && std::is_same<scalarA_type, double>::value) ||
+            (std::is_same<scalarX_type, float >::value && std::is_same<scalarY_type, float >::value && std::is_same<scalarA_type, float >::value))
+    {
         // Copy input serial dense vector to device
         x.update_device_data();
 
