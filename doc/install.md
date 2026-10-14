@@ -25,6 +25,18 @@ Additionally, HPGMP-specific options of interest include:
 * `HPGMP_ENABLE_OPENMP` option enables a build with OPENMP enabled
   (`OFF` by default).
 
+* `HPGMP_ENABLE_HALF` option uses half precision instead of single precision
+  for the matrix in the inner (low-precision) solver, with single-precision vectors
+  (`OFF` by default). Not supported in GPU reference builds.
+
+* `HPGMP_ENABLE_HALF_VECTORS` option also uses half precision for the vectors
+  of the inner solver (`OFF` by default). Requires `HPGMP_ENABLE_HALF`, and is
+  required by `HPGMP_ENABLE_HALF` in the CPU reference build. With half-precision
+  vectors, GMRES-IR may not converge.
+
+* `HPGMP_ENABLE_BFLOAT16` option uses bfloat16 instead of fp16 wherever half
+  precision is used (`OFF` by default). Requires `HPGMP_ENABLE_HALF`.
+
 * Compile with modest debugging turned on: `-DHPGMP_DEBUG`
 
 * Compile with sparse matrix arrays allocated contiguously. This option
@@ -38,7 +50,7 @@ Additionally, HPGMP-specific options of interest include:
 
 * Enable detail timers: `-DHPGMP_DETAILED_TIMING`
 
-* Use reference implementations (as opposed to optimized versions): `HPGMP_BUILD_REFERENCE`
+* Use reference implementations (as opposed to optimized versions): `HPGMP_BUILD_REFERENCE`. CPU-only builds require it.
 
 By default HPGMP will::
 

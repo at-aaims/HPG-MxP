@@ -72,6 +72,10 @@ template void GenerateNonsymProblem< SparseMatrix<double>, Vector<double> >(
 template void GenerateNonsymProblem< SparseMatrix<float>, Vector<float> >(
     DeviceCtx*, SparseMatrix<float>&, Vector<float>*, Vector<float>*, Vector<float>*, bool);
 
+#ifdef HPGMP_WITH_HALF
+template void GenerateNonsymProblem< SparseMatrix<half>, Vector<half> >(
+    DeviceCtx*, SparseMatrix<half>&, Vector<half>*, Vector<half>*, Vector<half>*, bool);
+#endif
 
 // mixed
 template void GenerateNonsymProblem< SparseMatrix<double, float>, Vector<double> >(
@@ -82,3 +86,14 @@ template void GenerateNonsymProblem< SparseMatrix<double, float>, Vector<float> 
 
 template void GenerateNonsymProblem< SparseMatrix<float>, Vector<double> >(
     DeviceCtx*, SparseMatrix<float>&, Vector<double>*, Vector<double>*, Vector<double>*, bool);
+
+#ifdef HPGMP_WITH_HALF
+template void GenerateNonsymProblem< SparseMatrix<half>, Vector<double> >(
+    DeviceCtx*, SparseMatrix<half>&, Vector<double>*, Vector<double>*, Vector<double>*, bool);
+
+template void GenerateNonsymProblem< SparseMatrix<half, float>, Vector<double> >(
+    DeviceCtx*, SparseMatrix<half, float>&, Vector<double>*, Vector<double>*, Vector<double>*, bool);
+
+template void GenerateNonsymProblem< SparseMatrix<half, float>, Vector<float> >(
+    DeviceCtx*, SparseMatrix<half, float>&, Vector<float>*, Vector<float>*, Vector<float>*, bool);
+#endif

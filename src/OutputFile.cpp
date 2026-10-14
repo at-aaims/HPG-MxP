@@ -126,7 +126,7 @@ OutputFile::generate(void)
 
     string filename;
 
-    if(outfile_path_ == " ") {
+    if (outfile_path_ == " ") {
         time_t rawtime;
         time(&rawtime);
         tm* ptm = localtime(&rawtime);

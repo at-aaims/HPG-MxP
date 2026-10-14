@@ -176,6 +176,17 @@ template void SetupProblem< SparseMatrix<double>,
     GMRESData<double, double, double>&, SparseMatrix<float>&, GMRESData<float, float, float>&,
     Vector<double>&, Vector<double>&, TestGMRESData&, const HPGMP_gen_opts& gopts);
 
+#ifdef HPGMP_WITH_HALF
+template void SetupProblem< SparseMatrix<double>,
+                            SparseMatrix<half, inner_vector_scalar_t<half>>,
+                            GMRESData<double, double, double>,
+                            GMRESData<half, inner_vector_scalar_t<half>, float>,
+                            Vector<double>>(
+    const char*, int, char**, comm_type, DeviceCtx*, int, bool, Geometry*, SparseMatrix<double>&,
+    GMRESData<double, double, double>&, SparseMatrix<half, inner_vector_scalar_t<half>>&, GMRESData<half, inner_vector_scalar_t<half>, float>&,
+    Vector<double>&, Vector<double>&, TestGMRESData&, const HPGMP_gen_opts& gopts);
+#endif
+
 #ifdef HPGMP_WITH_GINKGO_AMP
 template void SetupProblem< SparseMatrix<double, double>,
                             SparseMatrix<double, float>,

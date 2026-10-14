@@ -16,16 +16,14 @@
 //@HEADER
 
 #include "Vector.hpp"
+#include "ComputeGEMV_ref.hpp"
+#include "ComputeDotProduct_ref.hpp"
 
 #include <cassert>
 #include <string>
 #include <iostream>
 
-#ifdef HPGMP_WITH_HIP
-#include <rocrand/rocrand.hpp>
-#elif defined HPGMP_WITH_CUDA
-#include <curand.h>
-#endif
+#include "random_gpu.hpp"
 
 #include "Utils_MPI.hpp"
 #include "mytimer.hpp"
@@ -108,48 +106,12 @@ void Vector<scalar>::fill_zero()
 template<typename scalar>
 void Vector<scalar>::fill_random()
 {
-#ifdef HPGMP_WITH_HIP
-    rocrand_generator generator;
-    rocrand_create_generator(&generator, ROCRAND_RNG_PSEUDO_DEFAULT);
-    rocrand_set_stream(generator, dctx_->get_compute_stream());
-    rocrand_initialize_generator(generator);
-    //const rocblas_datatype alpha_type = rocblas_datatype_f64_r;
-    //rocblas_datatype x_type;
-    //auto handle = dctx_->get_blas_handle();
-    rocrand_status status = ROCRAND_STATUS_SUCCESS;
-    if constexpr (std::is_same<scalar, double>::value) {
-        status = rocrand_generate_uniform_double(generator, d_values_, localLength_);
-        //x_type = rocblas_datatype_f_64_r;
-    } else if constexpr (std::is_same<scalar, float>::value) {
-        status = rocrand_generate_uniform(generator, d_values_, localLength_);
-        //x_type = rocblas_datatype_f_32_r;
+#if defined(HPGMP_WITH_CUDA) || defined(HPGMP_WITH_HIP)
+    if constexpr (std::is_same<scalar, double>::value || std::is_same<scalar, float>::value) {
+        fill_random_gpu(d_values_, localLength_, dctx_->get_compute_stream());
     } else {
         throw std::runtime_error("fill_random: Unsupported scalar type");
     }
-    if (status != ROCRAND_STATUS_SUCCESS) {
-        throw std::runtime_error("random vector generation failed!");
-    }
-    dctx_->synchronize_compute_stream();
-    // TODO: Add 1 to generated vector
-    rocrand_destroy_generator(generator);
-#elif defined HPGMP_WITH_CUDA
-    curandGenerator_t generator;
-    curandCreateGenerator(&generator, CURAND_RNG_PSEUDO_DEFAULT);
-    curandSetStream(generator, dctx_->get_compute_stream());
-    curandStatus status = CURAND_STATUS_SUCCESS;
-    if constexpr (std::is_same<scalar, double>::value) {
-        status = curandGenerateUniformDouble(generator, d_values_, localLength_);
-    } else if constexpr (std::is_same<scalar, float>::value) {
-        status = curandGenerateUniform(generator, d_values_, localLength_);
-    } else {
-        throw std::runtime_error("fill_random: Unsupported scalar type");
-    }
-    if (status != CURAND_STATUS_SUCCESS) {
-        throw std::runtime_error("random vector generation failed!");
-    }
-    dctx_->synchronize_compute_stream();
-    // TODO: Add 1 to generated vector
-    curandDestroyGenerator(generator);
 #else
     scalar* vv = values_;
     for (int i = 0; i < localLength_; ++i) {
@@ -158,8 +120,21 @@ void Vector<scalar>::fill_random()
 #endif
 }
 
+#if defined(HPGMP_WITH_HALF) && (defined(HPGMP_WITH_CUDA) || defined(HPGMP_WITH_HIP))
+namespace {
+    /// x = alpha * x for a half-precision x, computed in single precision.
+    __global__ void kernel_scale_half(const local_int_t n, const half alpha, half* const __restrict__ x)
+    {
+        const local_int_t i = blockIdx.x * blockDim.x + threadIdx.x;
+        if (i < n) {
+            x[i] = static_cast<half>(static_cast<float>(alpha) * static_cast<float>(x[i]));
+        }
+    }
+} // namespace
+#endif
+
 template<typename scalar_type>
-void Vector<scalar_type>::scale(const scalar_type value)
+void Vector<scalar_type>::scale(const scalar_type& value)
 {
     auto handle = dctx_->get_blas_handle();
 
@@ -185,6 +160,16 @@ void Vector<scalar_type>::scale(const scalar_type value)
             printf(" Failed rocblas_sscal\n");
         }
 #endif
+#ifdef HPGMP_WITH_HALF
+    } else if constexpr (std::is_same<scalar_type, half>::value) {
+        constexpr int threads_per_block = 1024;
+        if (localLength_ > 0) {
+            kernel_scale_half<<<(localLength_ - 1) / threads_per_block + 1, threads_per_block>>>(
+                localLength_, value, d_vv);
+        }
+#endif
+    } else {
+        throw std::runtime_error("scale: Unsupported scalar type");
     }
 #else
     // host CPU
@@ -658,9 +643,11 @@ void Vector<scalar>::permute(const local_int_t* const perm)
 }
 
 // Explicit instantiations
-// TODO: add half
 template class Vector<double>;
 template class Vector<float>;
+#ifdef HPGMP_WITH_HALF
+template class Vector<half>;
+#endif
 
 //template void Vector<double>::scale(double);
 //template void Vector<double>::scale(float);
@@ -774,3 +761,97 @@ template void CopyVector(const Vector<double>& v, Vector<float>& w);
 template void CopyVector(const Vector<double>& v, Vector<double>& w);
 template void CopyVector(const Vector<float>& v, Vector<float>& w);
 template void CopyVector(const Vector<float>& v, Vector<double>& w);
+#ifdef HPGMP_WITH_HALF
+template void CopyVector(const Vector<double>& v, Vector<half>& w);
+template void CopyVector(const Vector<half>& v, Vector<half>& w);
+#endif
+
+#if defined(HPGMP_WITH_HALF) && (defined(HPGMP_WITH_CUDA) || defined(HPGMP_WITH_HIP))
+namespace {
+    /// y = alpha * A * x + beta * y for a half A and a float x.
+    template<typename y_type>
+    __global__ void kernel_gemv_half(const local_int_t m, const local_int_t n, const float alpha,
+                                     const half* const __restrict__ A, const float* const __restrict__ x,
+                                     const y_type beta, y_type* const __restrict__ y)
+    {
+        using compute_type  = typename std::conditional<std::is_same<y_type, double>::value, double, float>::type;
+        const local_int_t i = blockIdx.x * blockDim.x + threadIdx.x;
+        if (i < m) {
+            float sum = 0.0f;
+            for (local_int_t j = 0; j < n; j++) {
+                sum = fmaf(static_cast<float>(A[i + j * m]), x[j], sum);
+            }
+            compute_type result       = static_cast<compute_type>(alpha) * static_cast<compute_type>(sum);
+            const compute_type beta_c = static_cast<compute_type>(beta);
+            if (beta_c != compute_type(0)) { // Do not read y when beta is zero.
+                result += beta_c * static_cast<compute_type>(y[i]);
+            }
+            y[i] = static_cast<y_type>(result);
+        }
+    }
+} // namespace
+
+template<typename y_type>
+void ComputeGEMV_half_dev(const local_int_t m, const local_int_t n, const float alpha, const half* A, const float* x,
+                          const y_type& beta, y_type* y)
+{
+    constexpr int threads_per_block = 1024;
+    if (m > 0) {
+        kernel_gemv_half<<<(m - 1) / threads_per_block + 1, threads_per_block>>>(m, n, alpha, A, x, beta, y);
+    }
+}
+
+template void ComputeGEMV_half_dev<half>(local_int_t, local_int_t, float, const half*, const float*, const half&, half*);
+template void ComputeGEMV_half_dev<double>(local_int_t, local_int_t, float, const half*, const float*, const double&, double*);
+
+namespace {
+    constexpr int dot_threads_per_block = 256;
+    /// Maximum number of partial sums, which must fit in the device workspace.
+    constexpr int dot_max_blocks = 1024;
+
+    /// Computes the partial sums of x .* y for half x and y, in single precision.
+    __global__ void kernel_dot_half_partial(const local_int_t n, const half* const __restrict__ x,
+                                            const half* const __restrict__ y, float* const __restrict__ partial)
+    {
+        __shared__ float sums[dot_threads_per_block];
+        float sum = 0.0f;
+        for (local_int_t i = blockIdx.x * blockDim.x + threadIdx.x; i < n; i += (local_int_t)gridDim.x * blockDim.x) {
+            sum = fmaf(static_cast<float>(x[i]), static_cast<float>(y[i]), sum);
+        }
+        sums[threadIdx.x] = sum;
+        __syncthreads();
+        for (int stride = blockDim.x / 2; stride > 0; stride /= 2) {
+            if (threadIdx.x < stride) sums[threadIdx.x] += sums[threadIdx.x + stride];
+            __syncthreads();
+        }
+        if (threadIdx.x == 0) partial[blockIdx.x] = sums[0];
+    }
+
+    /// Sums the partial sums into partial[0].
+    __global__ void kernel_dot_half_final(const int num_partials, float* const __restrict__ partial)
+    {
+        __shared__ float sums[dot_max_blocks];
+        sums[threadIdx.x] = threadIdx.x < num_partials ? partial[threadIdx.x] : 0.0f;
+        __syncthreads();
+        for (int stride = blockDim.x / 2; stride > 0; stride /= 2) {
+            if (threadIdx.x < stride) sums[threadIdx.x] += sums[threadIdx.x + stride];
+            __syncthreads();
+        }
+        if (threadIdx.x == 0) partial[0] = sums[0];
+    }
+} // namespace
+
+float ComputeDotProduct_half_dev(const local_int_t n, const half* x, const half* y, DeviceCtx* dctx)
+{
+    float result = 0.0f;
+    if (n > 0) {
+        float* const partial = reinterpret_cast<float*>(dctx->get_device_workspace());
+        const int num_blocks = static_cast<int>(
+            std::min<local_int_t>((n - 1) / dot_threads_per_block + 1, dot_max_blocks));
+        kernel_dot_half_partial<<<num_blocks, dot_threads_per_block>>>(n, x, y, partial);
+        kernel_dot_half_final<<<1, dot_max_blocks>>>(num_blocks, partial);
+        dctx->copy_device_to_host_sync(&result, partial, sizeof(float));
+    }
+    return result;
+}
+#endif

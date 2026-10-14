@@ -141,8 +141,16 @@ void DeleteMatrix(SparseMatrix_type& A)
 
 template void DeleteMatrix(SparseMatrix<double>&);
 template void DeleteMatrix(SparseMatrix<float>&);
+#ifdef HPGMP_WITH_HALF
+template void DeleteMatrix(SparseMatrix<half>&);
+template void DeleteMatrix(SparseMatrix<half, float>&);
+#endif
 template void DeleteMatrix(SparseMatrix<double, float>&);
 
 template class SparseMatrix<double>;
 template class SparseMatrix<float>;
+#ifdef HPGMP_WITH_HALF
+template class SparseMatrix<half>;
+template class SparseMatrix<half, float>;
+#endif
 template class SparseMatrix<double, float>;
