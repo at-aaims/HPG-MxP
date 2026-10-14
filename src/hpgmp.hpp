@@ -120,7 +120,7 @@ constexpr const char* precision_name()
         return "double";
     } else if constexpr (std::is_same<T, float>::value) {
         return "float";
-    } else if (std::is_same<T, half>::value) {
+    } else if constexpr (std::is_same<T, half>::value) {
 #ifdef HPGMP_WITH_BFLOAT16
         return "half (bfloat16)";
 #else
