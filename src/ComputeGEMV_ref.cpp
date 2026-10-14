@@ -91,10 +91,12 @@ template int ComputeGEMV_ref< MultiVector<float>, Vector<float>, SerialDenseMatr
 template int ComputeGEMV_ref< MultiVector<float>, Vector<double>, SerialDenseMatrix<float> >(
     int, int, float, const MultiVector<float>&, const SerialDenseMatrix<float>&, const double, Vector<double>&);
 
+#ifdef HPGMP_WITH_HALF
 template int ComputeGEMV_ref< MultiVector<half>, Vector<half>, SerialDenseMatrix<float> >(
     int, int, half, const MultiVector<half>&, const SerialDenseMatrix<float>&, const half, Vector<half>&);
 
 template int ComputeGEMV_ref< MultiVector<half>, Vector<double>, SerialDenseMatrix<float> >(
     int, int, half, const MultiVector<half>&, const SerialDenseMatrix<float>&, const double, Vector<double>&);
+#endif
 
 #endif

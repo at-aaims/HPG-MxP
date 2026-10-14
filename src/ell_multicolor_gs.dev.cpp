@@ -359,6 +359,7 @@ template int ell_multicolor_gs(
     bool sym, const ELLMatrix<float, float>* const A, const Vector<float>* const r,
     Vector<float>* const x);
 
+#ifdef HPGMP_WITH_HALF
 template int ell_multicolor_gs(
     bool sym, const ELLMatrix<half, half>* const A, const Vector<half>* const r,
     Vector<half>* const x);
@@ -366,6 +367,7 @@ template int ell_multicolor_gs(
 template int ell_multicolor_gs(
     bool sym, const ELLMatrix<half, float>* const A, const Vector<float>* const r,
     Vector<float>* const x);
+#endif
 
 template int ell_multicolor_gs_zero_initial(
     bool sym, const ELLMatrix<double, double>* const A,
@@ -375,6 +377,7 @@ template int ell_multicolor_gs_zero_initial(
     bool sym, const ELLMatrix<float, float>* const A,
     const Vector<float>* const r, Vector<float>* const x);
 
+#ifdef HPGMP_WITH_HALF
 template int ell_multicolor_gs_zero_initial(
     bool sym, const ELLMatrix<half, half>* const A,
     const Vector<half>* const r, Vector<half>* const x);
@@ -382,3 +385,4 @@ template int ell_multicolor_gs_zero_initial(
 template int ell_multicolor_gs_zero_initial(
     bool sym, const ELLMatrix<half, float>* const A,
     const Vector<float>* const r, Vector<float>* const x);
+#endif

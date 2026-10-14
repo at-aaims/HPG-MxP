@@ -106,7 +106,9 @@ template int ComputeGEMVT_ref< MultiVector<double>, Vector<double>, SerialDenseM
 template int ComputeGEMVT_ref< MultiVector<float>, Vector<float>, SerialDenseMatrix<float> >(
     int, int, float, MultiVector<float> const&, Vector<float> const&, float, SerialDenseMatrix<float>&);
 
+#ifdef HPGMP_WITH_HALF
 template int ComputeGEMVT_ref< MultiVector<half>, Vector<half>, SerialDenseMatrix<float> >(
     int, int, half, MultiVector<half> const&, Vector<half> const&, float, SerialDenseMatrix<float>&);
+#endif
 
 #endif

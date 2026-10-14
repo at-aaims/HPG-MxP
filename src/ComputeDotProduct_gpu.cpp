@@ -99,9 +99,11 @@ int ComputeDotProduct_ref(const local_int_t n, const Vector_type& x, const Vecto
             printf(" Failed cublasSdot\n");
         }
         local_result = float_result;
+#ifdef HPGMP_WITH_HALF
     } else if (std::is_same<input_scalar_type, half>::value) {
         // Half inputs with a single-precision result.
         local_result = ComputeDotProduct_half_dev(n, (const half*)d_x, (const half*)d_y, x.get_device_context());
+#endif
     }
 #elif defined(HPGMP_WITH_HIP)
     // Compute dot on AMD GPU
@@ -117,9 +119,11 @@ int ComputeDotProduct_ref(const local_int_t n, const Vector_type& x, const Vecto
             printf(" Failed rocblas_sdot\n");
         }
         local_result = float_result;
+#ifdef HPGMP_WITH_HALF
     } else if (std::is_same<input_scalar_type, half>::value) {
         // Half inputs with a single-precision result.
         local_result = ComputeDotProduct_half_dev(n, (const half*)d_x, (const half*)d_y, x.get_device_context());
+#endif
     }
 #endif
 
@@ -169,7 +173,9 @@ template int ComputeDotProduct_ref<Vector<double> >(
 template int ComputeDotProduct_ref<Vector<float> >(
     int, Vector<float> const&, Vector<float> const&, float&, double&);
 
+#ifdef HPGMP_WITH_HALF
 template int ComputeDotProduct_ref<Vector<half>, float>(
     int, Vector<half> const&, Vector<half> const&, float&, double&);
+#endif
 
 #endif

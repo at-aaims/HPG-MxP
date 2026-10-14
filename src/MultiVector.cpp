@@ -181,4 +181,6 @@ MultiVector<scalar>::~MultiVector()
 
 template class MultiVector<double>;
 template class MultiVector<float>;
+#ifdef HPGMP_WITH_HALF
 template class MultiVector<half>;
+#endif

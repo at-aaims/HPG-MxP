@@ -71,7 +71,9 @@ template int ComputeProlongation_ref< SparseMatrix<double>, Vector<double> >(
 template int ComputeProlongation_ref< SparseMatrix<float>, Vector<float> >(
     SparseMatrix<float> const&, Vector<float>&);
 
+#ifdef HPGMP_WITH_HALF
 template int ComputeProlongation_ref< SparseMatrix<half>, Vector<half> >(
     SparseMatrix<half> const&, Vector<half>&);
+#endif
 
 #endif

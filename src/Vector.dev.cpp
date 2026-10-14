@@ -120,7 +120,7 @@ void Vector<scalar>::fill_random()
 #endif
 }
 
-#if defined(HPGMP_WITH_CUDA) || defined(HPGMP_WITH_HIP)
+#if defined(HPGMP_WITH_HALF) && (defined(HPGMP_WITH_CUDA) || defined(HPGMP_WITH_HIP))
 namespace {
 /// x = alpha * x for a half-precision x, computed in single precision.
 __global__ void kernel_scale_half(const local_int_t n, const half alpha, half* const __restrict__ x)
@@ -160,12 +160,14 @@ void Vector<scalar_type>::scale(const scalar_type& value)
             printf(" Failed rocblas_sscal\n");
         }
 #endif
+#ifdef HPGMP_WITH_HALF
     } else if constexpr (std::is_same<scalar_type, half>::value) {
         constexpr int threads_per_block = 1024;
         if (localLength_ > 0) {
             kernel_scale_half<<<(localLength_ - 1) / threads_per_block + 1, threads_per_block>>>(
                 localLength_, value, d_vv);
         }
+#endif
     } else {
         throw std::runtime_error("scale: Unsupported scalar type");
     }
@@ -643,7 +645,9 @@ void Vector<scalar>::permute(const local_int_t* const perm)
 // Explicit instantiations
 template class Vector<double>;
 template class Vector<float>;
+#ifdef HPGMP_WITH_HALF
 template class Vector<half>;
+#endif
 
 //template void Vector<double>::scale(double);
 //template void Vector<double>::scale(float);
@@ -757,10 +761,12 @@ template void CopyVector(const Vector<double>& v, Vector<float>& w);
 template void CopyVector(const Vector<double>& v, Vector<double>& w);
 template void CopyVector(const Vector<float>& v, Vector<float>& w);
 template void CopyVector(const Vector<float>& v, Vector<double>& w);
+#ifdef HPGMP_WITH_HALF
 template void CopyVector(const Vector<double>& v, Vector<half>& w);
 template void CopyVector(const Vector<half>& v, Vector<half>& w);
+#endif
 
-#if defined(HPGMP_WITH_CUDA) || defined(HPGMP_WITH_HIP)
+#if defined(HPGMP_WITH_HALF) && (defined(HPGMP_WITH_CUDA) || defined(HPGMP_WITH_HIP))
 namespace {
     /// y = alpha * A * x + beta * y for a half A and a float x.
     template<typename y_type>

@@ -107,6 +107,7 @@ int ComputeGEMVT_ref(const local_int_t m, const local_int_t n,
                                                  (float*)&beta, (float*)d_yv, 1)) {
             printf(" Failed cublasSgemv\n");
         }
+#ifdef HPGMP_WITH_HALF
     } else if (std::is_same<scalarX_type, half>::value) {
         // Half A and x with a single-precision y and computation.
         const float alpha_f = static_cast<float>(alpha);
@@ -126,6 +127,7 @@ int ComputeGEMVT_ref(const local_int_t m, const local_int_t n,
                                                                  (const float*)&beta, (float*)d_yv, 1, 0, 1)) {
             printf(" Failed cublasHSSgemvStridedBatched\n");
         }
+#endif
 #endif
     }
 
@@ -147,6 +149,7 @@ int ComputeGEMVT_ref(const local_int_t m, const local_int_t n,
                                                     (float*)&beta, (float*)d_yv, 1)) {
             printf(" Failed rocblas_sgemv\n");
         }
+#ifdef HPGMP_WITH_HALF
     } else if (std::is_same<scalarX_type, half>::value) {
         // Half A and x with a single-precision y and computation.
         const float alpha_f = static_cast<float>(alpha);
@@ -166,6 +169,7 @@ int ComputeGEMVT_ref(const local_int_t m, const local_int_t n,
                                                                       (const float*)&beta, (float*)d_yv, 1, 0, 1)) {
             printf(" Failed rocblas_hssgemv_strided_batched\n");
         }
+#endif
 #endif
     }
 #endif
@@ -209,7 +213,9 @@ template int ComputeGEMVT_ref< MultiVector<float>, Vector<float>, SerialDenseMat
     int, int, float, MultiVector<float> const&, Vector<float> const&, float, SerialDenseMatrix<float>&);
 
 // mixed
+#ifdef HPGMP_WITH_HALF
 template int ComputeGEMVT_ref< MultiVector<half>, Vector<half>, SerialDenseMatrix<float> >(
     int, int, half, MultiVector<half> const&, Vector<half> const&, float, SerialDenseMatrix<float>&);
+#endif
 
 #endif

@@ -32,8 +32,10 @@ DistMatrixBase::DistMatrixBase(const SparseMatrix<local_scalar_t, halo_scalar_t>
 
 template DistMatrixBase::DistMatrixBase(const SparseMatrix<double>& A);
 template DistMatrixBase::DistMatrixBase(const SparseMatrix<float>& A);
+#ifdef HPGMP_WITH_HALF
 template DistMatrixBase::DistMatrixBase(const SparseMatrix<half>& A);
 template DistMatrixBase::DistMatrixBase(const SparseMatrix<half, float>& A);
+#endif
 template DistMatrixBase::DistMatrixBase(const SparseMatrix<double, float>& A);
 
 DistMatrixBase::~DistMatrixBase()

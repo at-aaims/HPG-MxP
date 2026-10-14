@@ -440,8 +440,10 @@ void multicolor_JPL(SparseMatrix<local_scalar_t, halo_scalar_t>& A)
 
 template void multicolor_JPL(SparseMatrix<double>&);
 template void multicolor_JPL(SparseMatrix<float>&);
+#ifdef HPGMP_WITH_HALF
 template void multicolor_JPL(SparseMatrix<half>&);
 template void multicolor_JPL(SparseMatrix<half, float>&);
+#endif
 template void multicolor_JPL(SparseMatrix<double, float>&);
 
 template<typename local_scalar_t, typename halo_scalar_t>
@@ -498,6 +500,8 @@ void multicolor_ref(SparseMatrix<local_scalar_t, halo_scalar_t>& A)
 
 template void multicolor_ref(SparseMatrix<double>&);
 template void multicolor_ref(SparseMatrix<float>&);
+#ifdef HPGMP_WITH_HALF
 template void multicolor_ref(SparseMatrix<half>&);
 template void multicolor_ref(SparseMatrix<half, float>&);
+#endif
 template void multicolor_ref(SparseMatrix<double, float>&);
