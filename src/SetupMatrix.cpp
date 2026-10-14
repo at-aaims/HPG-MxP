@@ -119,7 +119,9 @@ template void SetupMatrix< SparseMatrix<float>, GMRESData<float, float, float>, 
     GMRESData<float, float, float>& data, Vector<double>* b, Vector<double>* x, Vector<double>* xexact,
     bool init_vect, comm_type comm);
 
-template void SetupMatrix< SparseMatrix<half>, GMRESData<half, half, float>, class Vector<double> >(
-    DeviceCtx* dctx, int numberOfMgLevels, SparseMatrix<half>& A, Geometry* geom,
-    GMRESData<half, half, float>& data, Vector<double>* b, Vector<double>* x, Vector<double>* xexact,
+#ifdef HPGMP_WITH_HALF
+template void SetupMatrix< SparseMatrix<half, inner_vector_scalar_t<half>>, GMRESData<half, inner_vector_scalar_t<half>, float>, class Vector<double> >(
+    DeviceCtx* dctx, int numberOfMgLevels, SparseMatrix<half, inner_vector_scalar_t<half>>& A, Geometry* geom,
+    GMRESData<half, inner_vector_scalar_t<half>, float>& data, Vector<double>* b, Vector<double>* x, Vector<double>* xexact,
     bool init_vect, comm_type comm);
+#endif

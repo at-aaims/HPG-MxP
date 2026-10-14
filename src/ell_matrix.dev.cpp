@@ -431,6 +431,7 @@ template class ELLMatrix<double, double>;
 template class ELLMatrix<float, float>;
 template class ELLMatrix<half, half>;
 template class ELLMatrix<double, float>;
+template class ELLMatrix<half, float>;
 
 template<typename local_scalar_t, typename halo_scalar_t, typename vec_scalar_t>
 __global__ void simple_ell_spmv(const local_int_t nrows, const int ldv, const int ldi,
@@ -564,3 +565,6 @@ template int ComputeSPMV_ell< SparseMatrix<float>, Vector<float> >(
 
 template int ComputeSPMV_ell< SparseMatrix<half>, Vector<half> >(
     const SparseMatrix<half>&, Vector<half>&, Vector<half>&);
+
+template int ComputeSPMV_ell< SparseMatrix<half, float>, Vector<float> >(
+    const SparseMatrix<half, float>&, Vector<float>&, Vector<float>&);

@@ -5,6 +5,7 @@
 
 #ifndef HPGMP_NO_MPI
 #include <mpi.h>
+#include <cstdint>
 #include "DataTypes.hpp"
 
 // MpiTypeTraits (from Teuchos)
@@ -51,6 +52,23 @@ public:
     static MPI_Op getSumOp()
     {
         return MPI_SUM;
+    }
+};
+
+//! Specialization for T = half, sent as 16-bit words (half values are not reduced).
+template<>
+class MpiTypeTraits<half>
+{
+public:
+    static_assert(sizeof(half) == sizeof(uint16_t), "half must be 16 bits");
+    //! MPI_Datatype with the size of the type T.
+    static MPI_Datatype getType()
+    {
+        return MPI_UINT16_T;
+    }
+    static MPI_Op getSumOp()
+    {
+        return MPI_OP_NULL;
     }
 };
 

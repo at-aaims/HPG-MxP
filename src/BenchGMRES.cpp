@@ -58,7 +58,7 @@ inline int get_num_iterations(comm_type comm,
 #ifdef HPGMP_WITH_GINKGO_AMP
                               const SparseMatrix<scalar_type, scalar_type2>& A_lo,
 #else
-                              const SparseMatrix<scalar_type2, scalar_type2>& A_lo,
+                              const SparseMatrix<scalar_type2, inner_vector_scalar_t<scalar_type2>>& A_lo,
 #endif
                               GMRESData_type& data, GMRESData_type2& data_lo,
                               const Vector<scalar_type>& b, Vector<scalar_type>& x, int max_iters,
@@ -100,13 +100,13 @@ int BenchGMRES(int argc, char** argv, comm_type comm, DeviceCtx* const dctx, int
     typedef SparseMatrix<scalar_type> SparseMatrix_type;
     typedef GMRESData<scalar_type, scalar_type, scalar_type> GMRESData_type;
 
-    typedef Vector<scalar_type2> Vector_type2;
+    typedef Vector<inner_vector_scalar_t<scalar_type2>> Vector_type2;
 #ifdef HPGMP_WITH_GINKGO_AMP
     typedef SparseMatrix<scalar_type, scalar_type2> SparseMatrix_type2;
     typedef GMRESData<scalar_type, scalar_type2, project_type> GMRESData_type2;
 #else
-    typedef SparseMatrix<scalar_type2> SparseMatrix_type2;
-    typedef GMRESData<scalar_type2, scalar_type2, project_type> GMRESData_type2;
+    typedef SparseMatrix<scalar_type2, inner_vector_scalar_t<scalar_type2>> SparseMatrix_type2;
+    typedef GMRESData<scalar_type2, inner_vector_scalar_t<scalar_type2>, project_type> GMRESData_type2;
 #endif
 
     const double benchmark_begin_time = mytimer();
@@ -414,8 +414,10 @@ template int BenchGMRES<float, float, float >(int, char**, comm_type, DeviceCtx*
 template int BenchGMRES<double, float, float >(int, char**, comm_type, DeviceCtx*, int, bool, bool,
                                                const HPGMP_gen_opts&, TestGMRESData&);
 
+#ifdef HPGMP_WITH_HALF
 template int BenchGMRES<double, half, float >(int, char**, comm_type, DeviceCtx*, int, bool, bool,
                                                const HPGMP_gen_opts&, TestGMRESData&);
+#endif
 
 
 template<class SparseMatrixType, class VectorType>

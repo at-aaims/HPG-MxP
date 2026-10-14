@@ -59,4 +59,5 @@ void SetupHalo(SparseMatrix_type& A)
 template void SetupHalo< SparseMatrix<double> >(SparseMatrix<double>&);
 template void SetupHalo< SparseMatrix<float> >(SparseMatrix<float>&);
 template void SetupHalo< SparseMatrix<half> >(SparseMatrix<half>&);
+template void SetupHalo< SparseMatrix<half, float> >(SparseMatrix<half, float>&);
 template void SetupHalo< SparseMatrix<double, float> >(SparseMatrix<double, float>&);

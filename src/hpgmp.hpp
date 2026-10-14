@@ -28,6 +28,8 @@
 #include <array>
 #include <type_traits>
 
+#include "DataTypes.hpp"
+
 /*!
   This defines the type for integers that have local subdomain dimension.
 
@@ -118,6 +120,12 @@ constexpr const char* precision_name()
         return "double";
     } else if constexpr (std::is_same<T, float>::value) {
         return "float";
+    } else if (std::is_same<T, half>::value) {
+#ifdef HPGMP_WITH_BFLOAT16
+        return "half (bfloat16)";
+#else
+        return "half (fp16)";
+#endif
     }
     return "unknown";
 }

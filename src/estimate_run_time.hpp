@@ -14,7 +14,7 @@ double estimate_run_time(comm_type comm,
 #ifdef HPGMP_WITH_GINKGO_AMP
                          const SparseMatrix<scalar_type, scalar_type2>& A_lo,
 #else
-                         const SparseMatrix<scalar_type2, scalar_type2>& A_lo,
+                         const SparseMatrix<scalar_type2, inner_vector_scalar_t<scalar_type2>>& A_lo,
 #endif
                          GMRESData_type& data, GMRESData_type2& data_lo,
                          const Vector<scalar_type>& b, Vector<scalar_type>& x, int max_iters,

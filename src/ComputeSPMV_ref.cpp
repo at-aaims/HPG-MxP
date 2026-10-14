@@ -97,7 +97,9 @@ template int ComputeSPMV_ref< SparseMatrix<double>, Vector<double> >(
 template int ComputeSPMV_ref< SparseMatrix<float>, Vector<float> >(
     const SparseMatrix<float>&, Vector<float>&, Vector<float>&);
 
+#ifdef HPGMP_WITH_HALF
 template int ComputeSPMV_ref< SparseMatrix<half>, Vector<half> >(
     const SparseMatrix<half>&, Vector<half>&, Vector<half>&);
+#endif
 
 #endif

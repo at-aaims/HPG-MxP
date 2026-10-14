@@ -34,6 +34,7 @@
  */
 
 #include "permute.hpp"
+#include "kernel_helpers.hpp.inc"
 
 #define LAUNCH_PERM_COLS(blocksizex, blocksizey)                       \
     {                                                                  \
@@ -167,4 +168,5 @@ void permute_columns(SparseMatrix<local_scalar_t, halo_scalar_t>& A)
 template void permute_columns(SparseMatrix<double>& A);
 template void permute_columns(SparseMatrix<float>& A);
 template void permute_columns(SparseMatrix<half>& A);
+template void permute_columns(SparseMatrix<half, float>& A);
 template void permute_columns(SparseMatrix<double, float>& A);

@@ -37,9 +37,11 @@ template int OptimizeProblem(
     SparseMatrix<float>&, GMRESData<double, double, double>&, Vector<double>&, Vector<double>&,
     Vector<double>&, const HPGMP_gen_opts&);
 
+#ifdef HPGMP_WITH_HALF
 template int OptimizeProblem(
-    SparseMatrix<half>&, GMRESData<double, double, double>&, Vector<double>&, Vector<double>&,
+    SparseMatrix<half, inner_vector_scalar_t<half>>&, GMRESData<double, double, double>&, Vector<double>&, Vector<double>&,
     Vector<double>&, const HPGMP_gen_opts&);
+#endif
 
 #ifdef HPGMP_WITH_GINKGO_AMP
 template int OptimizeProblem(

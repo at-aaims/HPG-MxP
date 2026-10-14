@@ -82,8 +82,10 @@ template int ComputeWAXPBY< Vector<float>, Vector<float>, Vector<float> >(
 template int ComputeWAXPBY< Vector<double>, Vector<float>, Vector<double> >(
     int, double, Vector<double> const&, float, Vector<float> const&, Vector<double>&, bool&);
 
+#ifdef HPGMP_WITH_HALF
 template int ComputeWAXPBY< Vector<half>, Vector<half>, Vector<half> >(
     int, half, Vector<half> const&, half, Vector<half> const&, Vector<half>&, bool&);
 
 template int ComputeWAXPBY< Vector<double>, Vector<half>, Vector<double> >(
     int, double, Vector<double> const&, half, Vector<half> const&, Vector<double>&, bool&);
+#endif

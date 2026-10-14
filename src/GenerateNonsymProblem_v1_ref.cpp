@@ -304,3 +304,9 @@ template void GenerateNonsymProblem_v1_ref< SparseMatrix<float>, Vector<double> 
 
 template void GenerateNonsymProblem_v1_ref< SparseMatrix<half>, Vector<double> >(
     DeviceCtx*, SparseMatrix<half>&, Vector<double>*, Vector<double>*, Vector<double>*, bool);
+
+template void GenerateNonsymProblem_v1_ref< SparseMatrix<half, float>, Vector<double> >(
+    DeviceCtx*, SparseMatrix<half, float>&, Vector<double>*, Vector<double>*, Vector<double>*, bool);
+
+template void GenerateNonsymProblem_v1_ref< SparseMatrix<half, float>, Vector<float> >(
+    DeviceCtx*, SparseMatrix<half, float>&, Vector<float>*, Vector<float>*, Vector<float>*, bool);

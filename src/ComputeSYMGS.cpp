@@ -63,5 +63,7 @@ template int ComputeSYMGS< SparseMatrix<double>, Vector<double> >(
 template int ComputeSYMGS< SparseMatrix<float>, Vector<float> >(
     SparseMatrix<float> const&, Vector<float> const&, Vector<float>&);
 
+#ifdef HPGMP_WITH_HALF
 template int ComputeSYMGS< SparseMatrix<half>, Vector<half> >(
     SparseMatrix<half> const&, Vector<half> const&, Vector<half>&);
+#endif

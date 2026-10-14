@@ -29,6 +29,15 @@ __device__ __forceinline__ void __stcg(half* ptr, const half value)
     __builtin_nontemporal_store(*reinterpret_cast<const unsigned short*>(&value), reinterpret_cast<unsigned short*>(ptr));
 }
 
+#ifdef HPGMP_WITH_BFLOAT16
+/// Bfloat16 overload of __shfl_xor, which HIP only provides for fp16.
+__device__ __forceinline__ half __shfl_xor(const half var, const int lane_mask)
+{
+    const int bits = __builtin_bit_cast(unsigned short, var);
+    return __builtin_bit_cast(half, static_cast<unsigned short>(__shfl_xor(bits, lane_mask)));
+}
+#endif
+
 #endif
 
 #if defined(HPGMP_WITH_CUDA) || defined(HPGMP_WITH_HIP)
@@ -36,7 +45,11 @@ __device__ __forceinline__ void __stcg(half* ptr, const half value)
 /// Half overload of fma.
 __device__ __forceinline__ half fma(const half a, const half b, const half c)
 {
+#if defined(HPGMP_WITH_BFLOAT16) && defined(HPGMP_WITH_HIP)
+    return static_cast<half>(fmaf(static_cast<float>(a), static_cast<float>(b), static_cast<float>(c)));
+#else
     return __hfma(a, b, c);
+#endif
 }
 
 #endif

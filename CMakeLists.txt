@@ -33,7 +33,17 @@ option(HPGMP_ENABLE_ASAN "Build address sanitizer" OFF)
 option(HPGMP_ENABLE_PROFILING "Enable profiling" OFF)
 option(HPGMP_ENABLE_GINKGO "Enable Ginkgo for linear algebra operations" OFF)
 option(HPGMP_ENABLE_GINKGO_AMP "Enable Ginkgo Adaptive Mixed Precision" OFF)
+option(HPGMP_ENABLE_HALF "Use half precision for the inner (low-precision) solver" OFF)
+option(HPGMP_ENABLE_HALF_VECTORS "Use half instead of single precision for the inner solver vectors (requires HPGMP_ENABLE_HALF)" OFF)
+option(HPGMP_ENABLE_BFLOAT16 "Use bfloat16 instead of fp16 as the half-precision type (requires HPGMP_ENABLE_HALF)" OFF)
 option(CMAKE_DEBUG "Enable CMake script debugging" OFF)
+
+if(NOT HPGMP_BUILD_REFERENCE AND NOT (HPGMP_ENABLE_HIP OR HPGMP_ENABLE_CUDA))
+    message(
+        FATAL_ERROR
+            "The optimized build requires HPGMP_ENABLE_HIP or HPGMP_ENABLE_CUDA; use HPGMP_BUILD_REFERENCE=On for CPU-only builds!"
+    )
+endif()
 
 # set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-unused-result")
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -ggdb")
@@ -175,7 +185,7 @@ set(host_sources
 
 if(HPGMP_ENABLE_HIP OR HPGMP_ENABLE_CUDA)
     set(host_sources ${host_sources} src/ComputeDotProduct_gpu.cpp src/ComputeGEMMT_gpu.cpp src/ComputeGEMVT_gpu.cpp
-                     src/ComputeGEMV_gpu.cpp src/ComputeWAXPBY_gpu.cpp)
+                     src/ComputeGEMV_gpu.cpp src/ComputeWAXPBY_gpu.cpp src/random_gpu.cpp)
 endif()
 
 if(HPGMP_BUILD_REFERENCE)
@@ -212,6 +222,27 @@ if(HPGMP_BUILD_REFERENCE)
     message(WARNING "Building reference mode without optimizations.")
     target_compile_definitions(hpgmp PUBLIC HPGMP_REFERENCE)
     target_compile_definitions(hpgmp_device PUBLIC HPGMP_REFERENCE)
+endif()
+
+if(HPGMP_ENABLE_HALF)
+    if(HPGMP_BUILD_REFERENCE AND (HPGMP_ENABLE_HIP OR HPGMP_ENABLE_CUDA))
+        message(SEND_ERROR "Half precision is not supported in GPU reference builds!")
+    endif()
+    if(HPGMP_BUILD_REFERENCE AND NOT HPGMP_ENABLE_HALF_VECTORS)
+        message(SEND_ERROR "The reference build requires HPGMP_ENABLE_HALF_VECTORS=On with half precision!")
+    endif()
+    target_compile_definitions(hpgmp PUBLIC HPGMP_WITH_HALF)
+    if(HPGMP_ENABLE_HALF_VECTORS)
+        target_compile_definitions(hpgmp PUBLIC HPGMP_WITH_HALF_VECTORS)
+    endif()
+    if(HPGMP_ENABLE_BFLOAT16)
+        # HIP_NO_HALF stops HIP from defining its own global half type.
+        target_compile_definitions(hpgmp PUBLIC HPGMP_WITH_BFLOAT16 HIP_NO_HALF)
+        # Host conversions to __bf16 need the GCC runtime (__truncdfbf2).
+        target_link_libraries(hpgmp PUBLIC gcc_s)
+    endif()
+elseif(HPGMP_ENABLE_HALF_VECTORS OR HPGMP_ENABLE_BFLOAT16)
+    message(SEND_ERROR "HPGMP_ENABLE_HALF_VECTORS and HPGMP_ENABLE_BFLOAT16 require HPGMP_ENABLE_HALF=On!")
 endif()
 
 if(HPGMP_ENABLE_CONTIGUOUS_ARRAYS)

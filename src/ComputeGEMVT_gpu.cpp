@@ -110,6 +110,15 @@ int ComputeGEMVT_ref(const local_int_t m, const local_int_t n,
     } else if (std::is_same<scalarX_type, half>::value) {
         // Half A and x with a single-precision y and computation.
         const float alpha_f = static_cast<float>(alpha);
+#ifdef HPGMP_WITH_BFLOAT16
+        if (CUBLAS_STATUS_SUCCESS != cublasTSSgemvStridedBatched(handle, CUBLAS_OP_T,
+                                                                 m, n,
+                                                                 &alpha_f, (const __nv_bfloat16*)d_Av, m, 0,
+                                                                 (const __nv_bfloat16*)d_xv, 1, 0,
+                                                                 (const float*)&beta, (float*)d_yv, 1, 0, 1)) {
+            printf(" Failed cublasTSSgemvStridedBatched\n");
+        }
+#else
         if (CUBLAS_STATUS_SUCCESS != cublasHSSgemvStridedBatched(handle, CUBLAS_OP_T,
                                                                  m, n,
                                                                  &alpha_f, (const __half*)d_Av, m, 0,
@@ -117,6 +126,7 @@ int ComputeGEMVT_ref(const local_int_t m, const local_int_t n,
                                                                  (const float*)&beta, (float*)d_yv, 1, 0, 1)) {
             printf(" Failed cublasHSSgemvStridedBatched\n");
         }
+#endif
     }
 
 #elif defined(HPGMP_WITH_HIP)
@@ -140,6 +150,15 @@ int ComputeGEMVT_ref(const local_int_t m, const local_int_t n,
     } else if (std::is_same<scalarX_type, half>::value) {
         // Half A and x with a single-precision y and computation.
         const float alpha_f = static_cast<float>(alpha);
+#ifdef HPGMP_WITH_BFLOAT16
+        if (rocblas_status_success != rocblas_tssgemv_strided_batched(handle, rocblas_operation_transpose,
+                                                                      m, n,
+                                                                      &alpha_f, (const rocblas_bfloat16*)d_Av, m, 0,
+                                                                      (const rocblas_bfloat16*)d_xv, 1, 0,
+                                                                      (const float*)&beta, (float*)d_yv, 1, 0, 1)) {
+            printf(" Failed rocblas_tssgemv_strided_batched\n");
+        }
+#else
         if (rocblas_status_success != rocblas_hssgemv_strided_batched(handle, rocblas_operation_transpose,
                                                                       m, n,
                                                                       &alpha_f, (const rocblas_half*)d_Av, m, 0,
@@ -147,6 +166,7 @@ int ComputeGEMVT_ref(const local_int_t m, const local_int_t n,
                                                                       (const float*)&beta, (float*)d_yv, 1, 0, 1)) {
             printf(" Failed rocblas_hssgemv_strided_batched\n");
         }
+#endif
     }
 #endif
 

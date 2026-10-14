@@ -23,11 +23,7 @@
 #include <string>
 #include <iostream>
 
-#ifdef HPGMP_WITH_HIP
-#include <rocrand/rocrand.hpp>
-#elif defined HPGMP_WITH_CUDA
-#include <curand.h>
-#endif
+#include "random_gpu.hpp"
 
 #include "Utils_MPI.hpp"
 #include "mytimer.hpp"
@@ -110,48 +106,12 @@ void Vector<scalar>::fill_zero()
 template<typename scalar>
 void Vector<scalar>::fill_random()
 {
-#ifdef HPGMP_WITH_HIP
-    rocrand_generator generator;
-    rocrand_create_generator(&generator, ROCRAND_RNG_PSEUDO_DEFAULT);
-    rocrand_set_stream(generator, dctx_->get_compute_stream());
-    rocrand_initialize_generator(generator);
-    //const rocblas_datatype alpha_type = rocblas_datatype_f64_r;
-    //rocblas_datatype x_type;
-    //auto handle = dctx_->get_blas_handle();
-    rocrand_status status = ROCRAND_STATUS_SUCCESS;
-    if constexpr (std::is_same<scalar, double>::value) {
-        status = rocrand_generate_uniform_double(generator, d_values_, localLength_);
-        //x_type = rocblas_datatype_f_64_r;
-    } else if constexpr (std::is_same<scalar, float>::value) {
-        status = rocrand_generate_uniform(generator, d_values_, localLength_);
-        //x_type = rocblas_datatype_f_32_r;
+#if defined(HPGMP_WITH_CUDA) || defined(HPGMP_WITH_HIP)
+    if constexpr (std::is_same<scalar, double>::value || std::is_same<scalar, float>::value) {
+        fill_random_gpu(d_values_, localLength_, dctx_->get_compute_stream());
     } else {
         throw std::runtime_error("fill_random: Unsupported scalar type");
     }
-    if (status != ROCRAND_STATUS_SUCCESS) {
-        throw std::runtime_error("random vector generation failed!");
-    }
-    dctx_->synchronize_compute_stream();
-    // TODO: Add 1 to generated vector
-    rocrand_destroy_generator(generator);
-#elif defined HPGMP_WITH_CUDA
-    curandGenerator_t generator;
-    curandCreateGenerator(&generator, CURAND_RNG_PSEUDO_DEFAULT);
-    curandSetStream(generator, dctx_->get_compute_stream());
-    curandStatus status = CURAND_STATUS_SUCCESS;
-    if constexpr (std::is_same<scalar, double>::value) {
-        status = curandGenerateUniformDouble(generator, d_values_, localLength_);
-    } else if constexpr (std::is_same<scalar, float>::value) {
-        status = curandGenerateUniform(generator, d_values_, localLength_);
-    } else {
-        throw std::runtime_error("fill_random: Unsupported scalar type");
-    }
-    if (status != CURAND_STATUS_SUCCESS) {
-        throw std::runtime_error("random vector generation failed!");
-    }
-    dctx_->synchronize_compute_stream();
-    // TODO: Add 1 to generated vector
-    curandDestroyGenerator(generator);
 #else
     scalar* vv = values_;
     for (int i = 0; i < localLength_; ++i) {
@@ -167,7 +127,7 @@ __global__ void kernel_scale_half(const local_int_t n, const half alpha, half* c
 {
     const local_int_t i = blockIdx.x * blockDim.x + threadIdx.x;
     if (i < n) {
-        x[i] = __float2half(__half2float(alpha) * __half2float(x[i]));
+        x[i] = static_cast<half>(static_cast<float>(alpha) * static_cast<float>(x[i]));
     }
 }
 } // namespace
