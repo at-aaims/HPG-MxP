@@ -84,7 +84,9 @@ int ComputeGEMVT_ref(const local_int_t m, const local_int_t n,
     scalarY_type* const d_yv       = y.d_values();
     auto handle                    = x.get_blas_handle();
 
-    static_assert(std::is_same<scalarX_type, scalarY_type>::value, "! MxP GEMVT not supported!");
+    static_assert(std::is_same<scalarX_type, scalarY_type>::value ||
+                      (std::is_same<scalarX_type, half>::value && std::is_same<scalarY_type, float>::value),
+                  "! MxP GEMVT not supported!");
     double t0;
     TICK();
 #if defined(HPGMP_WITH_CUDA)
@@ -105,6 +107,16 @@ int ComputeGEMVT_ref(const local_int_t m, const local_int_t n,
                                                  (float*)&beta, (float*)d_yv, 1)) {
             printf(" Failed cublasSgemv\n");
         }
+    } else if (std::is_same<scalarX_type, half>::value) {
+        // Half A and x with a single-precision y and computation.
+        const float alpha_f = static_cast<float>(alpha);
+        if (CUBLAS_STATUS_SUCCESS != cublasHSSgemvStridedBatched(handle, CUBLAS_OP_T,
+                                                                 m, n,
+                                                                 &alpha_f, (const __half*)d_Av, m, 0,
+                                                                 (const __half*)d_xv, 1, 0,
+                                                                 (const float*)&beta, (float*)d_yv, 1, 0, 1)) {
+            printf(" Failed cublasHSSgemvStridedBatched\n");
+        }
     }
 
 #elif defined(HPGMP_WITH_HIP)
@@ -124,6 +136,16 @@ int ComputeGEMVT_ref(const local_int_t m, const local_int_t n,
                                                     (float*)d_xv, 1,
                                                     (float*)&beta, (float*)d_yv, 1)) {
             printf(" Failed rocblas_sgemv\n");
+        }
+    } else if (std::is_same<scalarX_type, half>::value) {
+        // Half A and x with a single-precision y and computation.
+        const float alpha_f = static_cast<float>(alpha);
+        if (rocblas_status_success != rocblas_hssgemv_strided_batched(handle, rocblas_operation_transpose,
+                                                                      m, n,
+                                                                      &alpha_f, (const rocblas_half*)d_Av, m, 0,
+                                                                      (const rocblas_half*)d_xv, 1, 0,
+                                                                      (const float*)&beta, (float*)d_yv, 1, 0, 1)) {
+            printf(" Failed rocblas_hssgemv_strided_batched\n");
         }
     }
 #endif

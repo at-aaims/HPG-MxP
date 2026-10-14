@@ -23,6 +23,22 @@ __device__ __forceinline__ void __stcg(T* ptr, const T value)
     __builtin_nontemporal_store(value, ptr);
 }
 
+/// Half overload, since the Clang builtin does not accept 16-bit floating-point types.
+__device__ __forceinline__ void __stcg(half* ptr, const half value)
+{
+    __builtin_nontemporal_store(*reinterpret_cast<const unsigned short*>(&value), reinterpret_cast<unsigned short*>(ptr));
+}
+
+#endif
+
+#if defined(HPGMP_WITH_CUDA) || defined(HPGMP_WITH_HIP)
+
+/// Half overload of fma.
+__device__ __forceinline__ half fma(const half a, const half b, const half c)
+{
+    return __hfma(a, b, c);
+}
+
 #endif
 
 #if 0

@@ -99,6 +99,9 @@ int ComputeDotProduct_ref(const local_int_t n, const Vector_type& x, const Vecto
             printf(" Failed cublasSdot\n");
         }
         local_result = float_result;
+    } else if (std::is_same<input_scalar_type, half>::value) {
+        // Half inputs with a single-precision result.
+        local_result = ComputeDotProduct_half_dev(n, (const half*)d_x, (const half*)d_y, x.get_device_context());
     }
 #elif defined(HPGMP_WITH_HIP)
     // Compute dot on AMD GPU
@@ -114,6 +117,9 @@ int ComputeDotProduct_ref(const local_int_t n, const Vector_type& x, const Vecto
             printf(" Failed rocblas_sdot\n");
         }
         local_result = float_result;
+    } else if (std::is_same<input_scalar_type, half>::value) {
+        // Half inputs with a single-precision result.
+        local_result = ComputeDotProduct_half_dev(n, (const half*)d_x, (const half*)d_y, x.get_device_context());
     }
 #endif
 

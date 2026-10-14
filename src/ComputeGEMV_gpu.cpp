@@ -74,8 +74,12 @@ int ComputeGEMV_ref(const local_int_t m, const local_int_t n,
     const scalarA_type* const d_Av = A.d_values();
     const scalarX_type* const d_xv = x.d_values();
     scalarY_type* const d_yv       = y.d_values();
-    if ((std::is_same<scalarX_type, double>::value && std::is_same<scalarY_type, double>::value && std::is_same<scalarA_type, double>::value) ||
-        (std::is_same<scalarX_type, float >::value && std::is_same<scalarY_type, float >::value && std::is_same<scalarA_type, float >::value)) {
+    if constexpr (std::is_same<scalarA_type, half>::value && std::is_same<scalarX_type, float>::value) {
+        // No BLAS routine takes a half A and a float x, so use the HPGMP kernel.
+        x.update_device_data();
+        ComputeGEMV_half_dev(m, n, static_cast<float>(alpha), d_Av, d_xv, beta, d_yv);
+    } else if ((std::is_same<scalarX_type, double>::value && std::is_same<scalarY_type, double>::value && std::is_same<scalarA_type, double>::value) ||
+               (std::is_same<scalarX_type, float >::value && std::is_same<scalarY_type, float >::value && std::is_same<scalarA_type, float >::value)) {
         // Copy input serial dense vector to device
         x.update_device_data();
 

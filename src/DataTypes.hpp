@@ -24,6 +24,8 @@
 //using half_float::half;               // This clashes with rocrand which uses __half.
 #if defined HPGMP_WITH_HIP
 #include <hip/hip_fp16.h>
+#else
+#include <cuda_fp16.h>
 #endif
 // CUDA/HIP
 using half = __half;

@@ -25,4 +25,9 @@ int ComputeDotProduct_ref(const local_int_t n,
                           scalar_type& result,
                           double& time_allreduce);
 
+#if defined(HPGMP_WITH_CUDA) || defined(HPGMP_WITH_HIP)
+/// Local dot product of two half vectors on device, computed in single precision.
+float ComputeDotProduct_half_dev(const local_int_t n, const half* x, const half* y, DeviceCtx* dctx);
+#endif
+
 #endif // COMPUTEDOTPRODUCT_REF_HPP
