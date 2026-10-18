@@ -212,4 +212,8 @@ void SetupHalo_ref(SparseMatrix_type& A)
 
 template void SetupHalo_ref< SparseMatrix<double> >(SparseMatrix<double>&);
 template void SetupHalo_ref< SparseMatrix<float> >(SparseMatrix<float>&);
+#ifdef HPGMP_WITH_HALF
+template void SetupHalo_ref< SparseMatrix<half> >(SparseMatrix<half>&);
+template void SetupHalo_ref< SparseMatrix<half, float> >(SparseMatrix<half, float>&);
+#endif
 template void SetupHalo_ref< SparseMatrix<double, float> >(SparseMatrix<double, float>&);

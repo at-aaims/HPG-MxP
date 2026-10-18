@@ -165,18 +165,18 @@ __launch_bounds__(BLOCKSIZE)
     y[perm_idx] = fma(sum, static_cast<vec_scalar_t>(inv_diag[halo_idx]), y[perm_idx]);
 }
 
-template<unsigned int BLOCKSIZE, typename scalar>
+template<unsigned int BLOCKSIZE, typename scalar, typename y_scalar>
 __launch_bounds__(BLOCKSIZE)
     __global__ void kernel_pointwise_mult(const local_int_t size,
                                           const scalar* __restrict__ x,
-                                          const scalar* __restrict__ y,
+                                          const y_scalar* __restrict__ y,
                                           scalar* __restrict__ out)
 {
     const local_int_t gid = blockIdx.x * BLOCKSIZE + threadIdx.x;
     if (gid >= size) {
         return;
     }
-    out[gid] = x[gid] * y[gid];
+    out[gid] = x[gid] * static_cast<scalar>(y[gid]);
 }
 
 template<unsigned int BLOCKSIZE, typename local_scalar_t, typename halo_scalar_t, typename vec_scalar_t>
@@ -359,6 +359,16 @@ template int ell_multicolor_gs(
     bool sym, const ELLMatrix<float, float>* const A, const Vector<float>* const r,
     Vector<float>* const x);
 
+#ifdef HPGMP_WITH_HALF
+template int ell_multicolor_gs(
+    bool sym, const ELLMatrix<half, half>* const A, const Vector<half>* const r,
+    Vector<half>* const x);
+
+template int ell_multicolor_gs(
+    bool sym, const ELLMatrix<half, float>* const A, const Vector<float>* const r,
+    Vector<float>* const x);
+#endif
+
 template int ell_multicolor_gs_zero_initial(
     bool sym, const ELLMatrix<double, double>* const A,
     const Vector<double>* const r, Vector<double>* const x);
@@ -366,3 +376,13 @@ template int ell_multicolor_gs_zero_initial(
 template int ell_multicolor_gs_zero_initial(
     bool sym, const ELLMatrix<float, float>* const A,
     const Vector<float>* const r, Vector<float>* const x);
+
+#ifdef HPGMP_WITH_HALF
+template int ell_multicolor_gs_zero_initial(
+    bool sym, const ELLMatrix<half, half>* const A,
+    const Vector<half>* const r, Vector<half>* const x);
+
+template int ell_multicolor_gs_zero_initial(
+    bool sym, const ELLMatrix<half, float>* const A,
+    const Vector<float>* const r, Vector<float>* const x);
+#endif

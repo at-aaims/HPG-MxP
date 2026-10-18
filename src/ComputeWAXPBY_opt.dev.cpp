@@ -66,9 +66,9 @@ __global__ void waxpby(const local_int_t n, const x_type alpha, const x_type* co
 */
 template<class VectorX_type, class VectorY_type, class VectorW_type>
 int ComputeWAXPBY_opt(const local_int_t n,
-                      const typename VectorX_type::scalar_type alpha,
+                      const typename VectorX_type::scalar_type& alpha,
                       const VectorX_type& x,
-                      const typename VectorY_type::scalar_type beta,
+                      const typename VectorY_type::scalar_type& beta,
                       const VectorY_type& y,
                       VectorW_type& w)
 {
@@ -167,14 +167,22 @@ int ComputeWAXPBY_opt(const local_int_t n,
 
 // uniform
 template int ComputeWAXPBY_opt< Vector<double>, Vector<double>, Vector<double> >(
-    int, double, Vector<double> const&, double, Vector<double> const&, Vector<double>&);
+    int, double const&, Vector<double> const&, double const&, Vector<double> const&, Vector<double>&);
 
 template int ComputeWAXPBY_opt< Vector<float>, Vector<float>, Vector<float> >(
-    int, float, Vector<float> const&, float, Vector<float> const&, Vector<float>&);
+    int, float const&, Vector<float> const&, float const&, Vector<float> const&, Vector<float>&);
 
 
 // mixed
 template int ComputeWAXPBY_opt< Vector<double>, Vector<float>, Vector<double> >(
-    int, double, Vector<double> const&, float, Vector<float> const&, Vector<double>&);
+    int, double const&, Vector<double> const&, float const&, Vector<float> const&, Vector<double>&);
+
+#ifdef HPGMP_WITH_HALF
+template int ComputeWAXPBY_opt< Vector<half>, Vector<half>, Vector<half> >(
+    int, half const&, Vector<half> const&, half const&, Vector<half> const&, Vector<half>&);
+
+template int ComputeWAXPBY_opt< Vector<double>, Vector<half>, Vector<double> >(
+    int, double const&, Vector<double> const&, half const&, Vector<half> const&, Vector<double>&);
+#endif
 
 #endif

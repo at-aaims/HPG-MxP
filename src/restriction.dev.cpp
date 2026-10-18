@@ -192,6 +192,10 @@ int restriction(const SparseMatrix<local_scalar_t, halo_scalar_t>& A, const Vect
 
 template int restriction(const SparseMatrix<float>& A, const Vector<float>& rf);
 template int restriction(const SparseMatrix<double>& A, const Vector<double>& rf);
+#ifdef HPGMP_WITH_HALF
+template int restriction(const SparseMatrix<half>& A, const Vector<half>& rf);
+template int restriction(const SparseMatrix<half, float>& A, const Vector<float>& rf);
+#endif
 template int restriction(const SparseMatrix<double, float>& A, const Vector<float>& rf);
 template int restriction(const SparseMatrix<double, float>& A, const Vector<double>& rf);
 
@@ -256,6 +260,14 @@ template int fused_spmv_restriction(const SparseMatrix<double>& A, const Vector<
 
 template int fused_spmv_restriction(const SparseMatrix<float>& A, const Vector<float>& rf,
                                     const Vector<float>& xf);
+
+#ifdef HPGMP_WITH_HALF
+template int fused_spmv_restriction(const SparseMatrix<half>& A, const Vector<half>& rf,
+                                    const Vector<half>& xf);
+
+template int fused_spmv_restriction(const SparseMatrix<half, float>& A, const Vector<float>& rf,
+                                    const Vector<float>& xf);
+#endif
 
 template int fused_spmv_restriction(const SparseMatrix<double, float>& A, const Vector<float>& rf,
                                     const Vector<float>& xf);

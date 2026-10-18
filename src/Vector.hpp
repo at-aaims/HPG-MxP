@@ -121,8 +121,8 @@ public:
     /// Fills vector with random values between 1 and 2.
     void fill_random();
 
-    /// Scales the vector by multiplying with a scalar.
-    void scale(scalar_type value);
+    /// Scales the vector by multiplying with a scalar, passed by reference to support half with HIP.
+    void scale(const scalar_type& value);
 
     /** @brief Permutes a vector based on given indices.
    *

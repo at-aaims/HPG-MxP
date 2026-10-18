@@ -72,4 +72,9 @@ template int ComputeRestriction_ref< SparseMatrix<double>, Vector<double> >(
 template int ComputeRestriction_ref< SparseMatrix<float>, Vector<float> >(
     SparseMatrix<float> const&, Vector<float> const&);
 
+#ifdef HPGMP_WITH_HALF
+template int ComputeRestriction_ref< SparseMatrix<half>, Vector<half> >(
+    SparseMatrix<half> const&, Vector<half> const&);
+#endif
+
 #endif

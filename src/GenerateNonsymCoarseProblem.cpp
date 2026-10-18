@@ -156,5 +156,13 @@ template void GenerateNonsymCoarseProblem< SparseMatrix<double> >(
 template void GenerateNonsymCoarseProblem< SparseMatrix<float> >(
     DeviceCtx*, SparseMatrix<float> const&);
 
+#ifdef HPGMP_WITH_HALF
+template void GenerateNonsymCoarseProblem< SparseMatrix<half> >(
+    DeviceCtx*, SparseMatrix<half> const&);
+
+template void GenerateNonsymCoarseProblem< SparseMatrix<half, float> >(
+    DeviceCtx*, SparseMatrix<half, float> const&);
+#endif
+
 template void GenerateNonsymCoarseProblem< SparseMatrix<double, float> >(
     DeviceCtx*, SparseMatrix<double, float> const&);

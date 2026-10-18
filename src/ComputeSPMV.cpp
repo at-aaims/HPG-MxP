@@ -75,6 +75,18 @@ template int ComputeSPMV< SparseMatrix<double>, Vector<double> >(
 template int ComputeSPMV< SparseMatrix<float>, Vector<float> >(
     const SparseMatrix<float>&, Vector<float>&, Vector<float>&);
 
+#ifdef HPGMP_WITH_HALF
+template int ComputeSPMV< SparseMatrix<half>, Vector<half> >(
+    const SparseMatrix<half>&, Vector<half>&, Vector<half>&);
+#endif
+
+#ifndef HPGMP_REFERENCE // ComputeSPMV_ref requires the vector and matrix precisions to match
+#ifdef HPGMP_WITH_HALF
+template int ComputeSPMV< SparseMatrix<half, float>, Vector<float> >(
+    const SparseMatrix<half, float>&, Vector<float>&, Vector<float>&);
+#endif
+#endif
+
 #ifdef HPGMP_WITH_GINKGO_AMP
 template int ComputeSPMV< SparseMatrix<double, float>, Vector<float> >(
     const SparseMatrix<double, float>&, Vector<float>&, Vector<float>&);
