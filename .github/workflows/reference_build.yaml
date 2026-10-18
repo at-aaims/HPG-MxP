@@ -10,9 +10,17 @@ jobs:
         uses: actions/checkout@v4
       - name: Install MPI library
         run: sudo apt-get update && sudo apt-get install -y mpich
+      - name: Show runner hardware
+        run: |
+          lscpu | grep -E 'Model name|^CPU\(s\)'
+          lspci | grep -i -E 'ethernet|infiniband|network' || true
+          for d in /sys/class/infiniband/*; do echo "$d -> $(readlink -f $d/device/driver)"; done
       - name: Configure CMake project
         run: cmake -DHPGMP_ENABLE_MPI=On -DHPGMP_BUILD_REFERENCE=On -B ${{github.workspace}}/build
       - name: Build project
         run: cmake --build ${{github.workspace}}/build
       - name: Run tests with CTest
+        # Remove UCX_TLS once the runner or the MPI package handles it.
+        env:
+          UCX_TLS: self,sm,tcp
         run: ctest --verbose --test-dir ${{github.workspace}}/build --output-on-failure
