@@ -33,7 +33,7 @@ __device__ __forceinline__ void __stcg(half* ptr, const half value)
 /// Bfloat16 overload of __shfl_xor, which HIP only provides for fp16.
 __device__ __forceinline__ half __shfl_xor(const half var, const int lane_mask)
 {
-    const int bits = __builtin_bit_cast(unsigned short, var);
+    const unsigned int bits = __builtin_bit_cast(unsigned short, var);
     return __builtin_bit_cast(half, static_cast<unsigned short>(__shfl_xor(bits, lane_mask)));
 }
 #endif

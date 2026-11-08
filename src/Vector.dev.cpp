@@ -134,7 +134,7 @@ namespace {
 #endif
 
 template<typename scalar_type>
-void Vector<scalar_type>::scale(const scalar_type& value)
+void Vector<scalar_type>::scale(const scalar_type value)
 {
     auto handle = dctx_->get_blas_handle();
 

@@ -66,10 +66,6 @@ public:
     {
         return MPI_UINT16_T;
     }
-    static MPI_Op getSumOp()
-    {
-        return MPI_OP_NULL;
-    }
 };
 
 #endif // ifndef HPGMP_NO_MPI

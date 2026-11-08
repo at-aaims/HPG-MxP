@@ -8,7 +8,7 @@
 
 /// std::is_floating_point, extended to include half (not covered by the standard trait in C++17).
 template<typename T>
-struct is_hpgmp_floating_point
+struct is_floating_point
     : std::integral_constant<bool, std::is_floating_point<T>::value || std::is_same<T, half>::value>
 {
 };
@@ -26,7 +26,7 @@ public:
 
     /// Get index in counter arrays based on precision type.
     template<typename T>
-    static constexpr std::enable_if_t<is_hpgmp_floating_point<T>::value, int> index()
+    static constexpr std::enable_if_t<is_floating_point<T>::value, int> index()
     {
         if constexpr (std::is_same<T, double>::value) {
             return 0;
@@ -38,14 +38,14 @@ public:
     }
 
     template<typename T>
-    std::enable_if_t<is_hpgmp_floating_point<T>::value> add_flops(const double count)
+    std::enable_if_t<is_floating_point<T>::value> add_flops(const double count)
     {
         constexpr int idx = index<T>();
         flops[idx] += count;
     }
 
     template<typename T>
-    std::enable_if_t<is_hpgmp_floating_point<T>::value, double> get_flops() const
+    std::enable_if_t<is_floating_point<T>::value, double> get_flops() const
     {
         constexpr int idx = index<T>();
         return flops[idx];
@@ -61,7 +61,7 @@ public:
     }
 
     template<typename T>
-    std::enable_if_t<is_hpgmp_floating_point<T>::value> add_memory_traffic(const double count)
+    std::enable_if_t<is_floating_point<T>::value> add_memory_traffic(const double count)
     {
         constexpr int idx = index<T>();
         f_mem_traffic[idx] += count;
@@ -74,7 +74,7 @@ public:
     }
 
     template<typename T>
-    std::enable_if_t<is_hpgmp_floating_point<T>::value, double> get_memory_traffic() const
+    std::enable_if_t<is_floating_point<T>::value, double> get_memory_traffic() const
     {
         constexpr int idx = index<T>();
         return f_mem_traffic[idx];
