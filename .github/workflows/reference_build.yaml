@@ -24,3 +24,11 @@ jobs:
         env:
           UCX_TLS: self,sm,tcp
         run: ctest --verbose --test-dir ${{github.workspace}}/build --output-on-failure
+      - name: Configure half-precision matrix project
+        run: cmake -DHPGMP_ENABLE_MPI=On -DHPGMP_BUILD_REFERENCE=On -DHPGMP_ENABLE_HALF=On -B ${{github.workspace}}/build_half
+      - name: Build half-precision matrix project
+        run: cmake --build ${{github.workspace}}/build_half
+      - name: Run half-precision matrix tests with CTest
+        env:
+          UCX_TLS: self,sm,tcp
+        run: ctest --verbose --test-dir ${{github.workspace}}/build_half --output-on-failure
