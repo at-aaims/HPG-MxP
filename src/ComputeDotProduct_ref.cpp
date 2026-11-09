@@ -94,6 +94,7 @@ int ComputeDotProduct_ref(const local_int_t n, const Vector_type& x, const Vecto
     time_allreduce += mytimer() - t0;
 #else
     time_allreduce += 0.0;
+    result = local_result;
 #endif
 
     HPGMP_RANGE_POP(__FUNCTION__);
