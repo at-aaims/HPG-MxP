@@ -72,7 +72,7 @@ int OptimizeProblemELL(SparseMatrix<local_scalar_t, halo_scalar_t, matrix_vec_sc
     const int local_nrows = A.localNumberOfRows;
 
     SparseMatrix<local_scalar_t, halo_scalar_t, matrix_vec_scalar_t>* M = &A;
-    int igrid                                      = 0;
+    int igrid                                                           = 0;
     while (M != NULL)
     {
 

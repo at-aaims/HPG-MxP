@@ -1,5 +1,5 @@
-# Checks arithmetic and conversions of the built-in host half type, used for CPU builds and HIP bfloat16.
-# CUDA and HIP fp16 get their half type from headers.
+# Checks arithmetic and conversions of the built-in host half type, used for CPU builds and HIP bfloat16. CUDA and HIP
+# fp16 get their half type from headers.
 if(NOT HPGMP_ENABLE_CUDA AND (HPGMP_ENABLE_BFLOAT16 OR NOT HPGMP_ENABLE_HIP))
     include(CheckCXXSourceRuns)
     if(HPGMP_ENABLE_BFLOAT16)
@@ -30,8 +30,7 @@ int main()
     const bool correct = float_bits == ${HPGMP_HALF_BITS_OF_0_5} && double_bits == ${HPGMP_HALF_BITS_OF_0_25}
                          && product_bits == ${HPGMP_HALF_BITS_OF_0_25} && back == 0.5f;
     return correct ? 0 : 1;
-}"
-    )
+}")
     check_cxx_source_runs("${HPGMP_HALF_HOST_TEST}" HPGMP_HALF_HOST_WORKS_${HPGMP_HALF_HOST_TYPE})
     if(NOT HPGMP_HALF_HOST_WORKS_${HPGMP_HALF_HOST_TYPE} AND HPGMP_ENABLE_BFLOAT16)
         # Host conversions to __bf16 can need the GCC runtime.
