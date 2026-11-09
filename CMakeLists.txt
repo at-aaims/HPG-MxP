@@ -243,8 +243,16 @@ if(HPGMP_ENABLE_HALF)
         target_compile_definitions(hpgmp PUBLIC HPGMP_WITH_HALF_VECTORS)
     endif()
     if(HPGMP_ENABLE_BFLOAT16)
-        # HIP_NO_HALF stops HIP from defining its own global half type.
-        target_compile_definitions(hpgmp PUBLIC HPGMP_WITH_BFLOAT16 HIP_NO_HALF)
+        # HIP_NO_HALF and CUDA_NO_HALF stop HIP and CUDA from defining their own global half type.
+        target_compile_definitions(hpgmp PUBLIC HPGMP_WITH_BFLOAT16 HIP_NO_HALF CUDA_NO_HALF)
+        if(HPGMP_ENABLE_CUDA)
+            # The CUDA headers only define the device bfloat16 operators and loads from sm_80.
+            foreach(cuda_arch ${CMAKE_CUDA_ARCHITECTURES})
+                if(cuda_arch LESS 80)
+                    message(SEND_ERROR "Bfloat16 with CUDA requires CMAKE_CUDA_ARCHITECTURES >= 80, but got ${cuda_arch}!")
+                endif()
+            endforeach()
+        endif()
     endif()
     include(cmake/CheckHalfHost.cmake)
 elseif(HPGMP_ENABLE_HALF_VECTORS OR HPGMP_ENABLE_BFLOAT16)
