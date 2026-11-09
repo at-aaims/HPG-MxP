@@ -59,7 +59,6 @@ int ComputeMG(const SparseMatrix_type& A, const Vector_type& r, Vector_type& x,
     HPGMP_RANGE_PUSH(__FUNCTION__);
 
     // Matrix traffic is counted in local_scalar_type, which is not exact with Ginkgo AMP.
-    using scalar_type       = typename SparseMatrix_type::scalar_type;
     using local_scalar_type = typename SparseMatrix_type::local_scalar_type;
     using halo_scalar_type  = typename SparseMatrix_type::halo_scalar_type;
     using vec_salar_type    = typename Vector_type::scalar_type;
@@ -100,7 +99,7 @@ int ComputeMG(const SparseMatrix_type& A, const Vector_type& r, Vector_type& x,
                 ierr += ginkgo_multicolor_gs(smoother.get(), mat.get(), &r, &x);
 
                 //ft.mg_gs.flops[0] += 2*A.totalNumberOfNonzeros;
-                ft.mg_gs.add_flops<scalar_type>(2 * A.totalNumberOfNonzeros);
+                ft.mg_gs.add_flops<vec_salar_type>(2 * A.totalNumberOfNonzeros);
                 ft.mg_gs.add_memory_traffic<local_scalar_type>(A.totalNumberOfNonzeros);
                 ft.mg_gs.add_memory_traffic<vec_salar_type>(2 * A.totalNumberOfRows);
                 ft.mg_gs.add_memory_traffic<int>(A.totalNumberOfNonzeros);
@@ -108,7 +107,7 @@ int ComputeMG(const SparseMatrix_type& A, const Vector_type& r, Vector_type& x,
                 ierr += ell_multicolor_gs_zero_initial(symmetric, mat.get(), &r, &x);
 
                 //ft.mg_gs.flops[0] += A.totalNumberOfNonzeros;
-                ft.mg_gs.add_flops<scalar_type>(A.totalNumberOfNonzeros);
+                ft.mg_gs.add_flops<vec_salar_type>(A.totalNumberOfNonzeros);
                 // the first color is treated differently:
                 ft.mg_gs.add_memory_traffic<local_scalar_type>(
                     1.0 * A.totalNumberOfRows / 8 + //
@@ -123,7 +122,7 @@ int ComputeMG(const SparseMatrix_type& A, const Vector_type& r, Vector_type& x,
                 ierr += ell_multicolor_gs(symmetric, mat.get(), &r, &x);
 #endif
                 //ft.mg_gs.flops[0] += 2*A.totalNumberOfNonzeros;
-                ft.mg_gs.add_flops<scalar_type>(2 * A.totalNumberOfNonzeros);
+                ft.mg_gs.add_flops<vec_salar_type>(2 * A.totalNumberOfNonzeros);
                 ft.mg_gs.add_memory_traffic<local_scalar_type>(A.totalNumberOfNonzeros);
                 ft.mg_gs.add_memory_traffic<vec_salar_type>(2 * A.totalNumberOfRows);
                 ft.mg_gs.add_memory_traffic<int>(A.totalNumberOfNonzeros);
@@ -148,7 +147,7 @@ int ComputeMG(const SparseMatrix_type& A, const Vector_type& r, Vector_type& x,
         TOCK(x.time3_);
         //ft.mg_rp.flops[0] += 2*A.Ac->totalNumberOfNonzeros;
         const auto coarse_len = A.Ac->totalNumberOfRows;
-        ft.mg_rp.add_flops<scalar_type>(2 * A.Ac->totalNumberOfNonzeros);
+        ft.mg_rp.add_flops<vec_salar_type>(2 * A.Ac->totalNumberOfNonzeros);
         ft.mg_rp.add_memory_traffic<local_int_t>(3 * coarse_len + A.Ac->totalNumberOfNonzeros);
         ft.mg_rp.add_memory_traffic<local_scalar_type>(A.Ac->totalNumberOfNonzeros);
         ft.mg_rp.add_memory_traffic<vec_salar_type>(coarse_len + A.totalNumberOfRows);
@@ -177,7 +176,7 @@ int ComputeMG(const SparseMatrix_type& A, const Vector_type& r, Vector_type& x,
         ierr = prolongation(A, x);
         TOCK(x.time4_);
         //ft.mg_rp.flops[0] += mpisize*A.mgData->rc->local_length();
-        ft.mg_rp.add_flops<scalar_type>(coarse_len);
+        ft.mg_rp.add_flops<vec_salar_type>(coarse_len);
         ft.mg_rp.add_memory_traffic<local_int_t>(coarse_len * 3);
         ft.mg_rp.add_memory_traffic<vec_salar_type>(coarse_len * 2);
         HPGMP_RANGE_POP("prolongation");
@@ -200,7 +199,7 @@ int ComputeMG(const SparseMatrix_type& A, const Vector_type& r, Vector_type& x,
             ierr += ell_multicolor_gs(symmetric, mat.get(), &r, &x);
 #endif
             //ft.mg_gs.flops[0] += 2*A.totalNumberOfNonzeros;
-            ft.mg_gs.add_flops<scalar_type>(2 * A.totalNumberOfNonzeros);
+            ft.mg_gs.add_flops<vec_salar_type>(2 * A.totalNumberOfNonzeros);
             ft.mg_gs.add_memory_traffic<local_scalar_type>(A.totalNumberOfNonzeros);
             ft.mg_gs.add_memory_traffic<vec_salar_type>(2 * A.totalNumberOfRows);
             ft.mg_gs.add_memory_traffic<local_int_t>(A.totalNumberOfNonzeros);
@@ -232,7 +231,7 @@ int ComputeMG(const SparseMatrix_type& A, const Vector_type& r, Vector_type& x,
         TOCK(x.time2_);
         HPGMP_RANGE_POP("multicolor_gs");
         //ft.mg_gs.flops[0] += 2*A.totalNumberOfNonzeros;
-        ft.mg_gs.add_flops<scalar_type>(2 * A.totalNumberOfNonzeros);
+        ft.mg_gs.add_flops<vec_salar_type>(2 * A.totalNumberOfNonzeros);
         ft.mg_gs.add_memory_traffic<local_scalar_type>(A.totalNumberOfNonzeros);
         ft.mg_gs.add_memory_traffic<vec_salar_type>(2 * A.totalNumberOfRows);
         ft.mg_gs.add_memory_traffic<local_int_t>(A.totalNumberOfNonzeros);

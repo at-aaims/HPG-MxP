@@ -45,7 +45,7 @@ __device__ __forceinline__ half __shfl_xor(const half var, const int lane_mask)
 /// Half overload of fma.
 __device__ __forceinline__ half fma(const half a, const half b, const half c)
 {
-#if defined(HPGMP_WITH_BFLOAT16) && defined(HPGMP_WITH_HIP)
+#ifdef HPGMP_WITH_BFLOAT16
     return static_cast<half>(fmaf(static_cast<float>(a), static_cast<float>(b), static_cast<float>(c)));
 #else
     return __hfma(a, b, c);
