@@ -249,7 +249,8 @@ if(HPGMP_ENABLE_HALF)
             # The CUDA headers only define the device bfloat16 operators and loads from sm_80.
             foreach(cuda_arch ${CMAKE_CUDA_ARCHITECTURES})
                 if(cuda_arch LESS 80)
-                    message(SEND_ERROR "Bfloat16 with CUDA requires CMAKE_CUDA_ARCHITECTURES >= 80, but got ${cuda_arch}!")
+                    message(
+                        SEND_ERROR "Bfloat16 with CUDA requires CMAKE_CUDA_ARCHITECTURES >= 80, but got ${cuda_arch}!")
                 endif()
             endforeach()
         endif()
