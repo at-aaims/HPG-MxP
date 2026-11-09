@@ -88,7 +88,7 @@ void SetupMatrix(DeviceCtx* const dctx, int numberOfMgLevels, SparseMatrix_type&
     }
     #endif */
 
-    data.initialize(A, dctx);
+    data.initialize(A.localNumberOfRows, A.localNumberOfColumns, A.comm, dctx);
 
     HPGMP_RANGE_POP(__FUNCTION__);
 }
@@ -120,8 +120,8 @@ template void SetupMatrix< SparseMatrix<float>, GMRESData<float, float, float>, 
     bool init_vect, comm_type comm);
 
 #ifdef HPGMP_WITH_HALF
-template void SetupMatrix< SparseMatrix<half, inner_vector_scalar_t<half>>, GMRESData<half, inner_vector_scalar_t<half>, float>, class Vector<double> >(
-    DeviceCtx* dctx, int numberOfMgLevels, SparseMatrix<half, inner_vector_scalar_t<half>>& A, Geometry* geom,
+template void SetupMatrix< SparseMatrix<half, half, inner_vector_scalar_t<half>>, GMRESData<half, inner_vector_scalar_t<half>, float>, class Vector<double> >(
+    DeviceCtx* dctx, int numberOfMgLevels, SparseMatrix<half, half, inner_vector_scalar_t<half>>& A, Geometry* geom,
     GMRESData<half, inner_vector_scalar_t<half>, float>& data, Vector<double>* b, Vector<double>* x, Vector<double>* xexact,
     bool init_vect, comm_type comm);
 #endif

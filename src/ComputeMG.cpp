@@ -59,10 +59,11 @@ int ComputeMG(const SparseMatrix_type& A, const Vector_type& r, Vector_type& x,
     HPGMP_RANGE_PUSH(__FUNCTION__);
 
     // Matrix traffic is counted in local_scalar_type, which is not exact with Ginkgo AMP.
-    using local_scalar_type = typename SparseMatrix_type::local_scalar_type;
-    using halo_scalar_type  = typename SparseMatrix_type::halo_scalar_type;
-    using vec_salar_type    = typename Vector_type::scalar_type;
-    const int mpisize       = A.geom->size;
+    using local_scalar_type      = typename SparseMatrix_type::local_scalar_type;
+    using halo_scalar_type       = typename SparseMatrix_type::halo_scalar_type;
+    using matrix_vec_scalar_type = typename SparseMatrix_type::vec_scalar_type;
+    using vec_salar_type         = typename Vector_type::scalar_type;
+    const int mpisize            = A.geom->size;
 
     // Optimized versions of calls
     double t0 = 0.0;
@@ -76,8 +77,8 @@ int ComputeMG(const SparseMatrix_type& A, const Vector_type& r, Vector_type& x,
     std::shared_ptr<const GinkgoSmoother<local_scalar_type, halo_scalar_type>> smoother =
         dynamic_cast<GinkgoOptData<local_scalar_type, halo_scalar_type>*>(A.optimizationData)->smoother;
 #else
-    std::shared_ptr<const ELLMatrix<local_scalar_type, halo_scalar_type>> mat =
-        dynamic_cast<EllOptData<local_scalar_type, halo_scalar_type>*>(A.optimizationData)->mat;
+    std::shared_ptr<const ELLMatrix<local_scalar_type, halo_scalar_type, matrix_vec_scalar_type>> mat =
+        dynamic_cast<EllOptData<local_scalar_type, halo_scalar_type, matrix_vec_scalar_type>*>(A.optimizationData)->mat;
 #endif
 
     int ierr = 0;
@@ -262,7 +263,7 @@ template int ComputeMG(
     SparseMatrix<half> const&, Vector<half> const&, Vector<half>&, bool, perf_counters&);
 
 template int ComputeMG(
-    SparseMatrix<half, float> const&, Vector<float> const&, Vector<float>&, bool, perf_counters&);
+    SparseMatrix<half, half, float> const&, Vector<float> const&, Vector<float>&, bool, perf_counters&);
 #endif
 
 #ifdef HPGMP_WITH_GINKGO_AMP

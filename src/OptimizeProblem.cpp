@@ -5,8 +5,8 @@
 
 #include "OptimizeProblem.hpp"
 
-template<typename local_scalar_type, typename halo_scalar_t, typename GMRESData_type, typename vec_scalar_t>
-int OptimizeProblemELL(SparseMatrix<local_scalar_type, halo_scalar_t>& A, GMRESData_type& data,
+template<typename local_scalar_type, typename halo_scalar_t, typename matrix_vec_scalar_t, typename GMRESData_type, typename vec_scalar_t>
+int OptimizeProblemELL(SparseMatrix<local_scalar_type, halo_scalar_t, matrix_vec_scalar_t>& A, GMRESData_type& data,
                        Vector<vec_scalar_t>& b, Vector<vec_scalar_t>& x, Vector<vec_scalar_t>& xexact, const HPGMP_gen_opts& gopts);
 
 template<typename SparseMatrix_type, typename GMRESData_type, typename Vector_type>
@@ -39,7 +39,7 @@ template int OptimizeProblem(
 
 #ifdef HPGMP_WITH_HALF
 template int OptimizeProblem(
-    SparseMatrix<half, inner_vector_scalar_t<half>>&, GMRESData<double, double, double>&, Vector<double>&, Vector<double>&,
+    SparseMatrix<half, half, inner_vector_scalar_t<half>>&, GMRESData<double, double, double>&, Vector<double>&, Vector<double>&,
     Vector<double>&, const HPGMP_gen_opts&);
 #endif
 

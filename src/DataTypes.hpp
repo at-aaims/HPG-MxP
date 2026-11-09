@@ -60,7 +60,7 @@ struct inner_vector_scalar
 };
 
 // A half matrix uses single-precision vectors, unless HPGMP_WITH_HALF_VECTORS is defined.
-// SparseMatrix takes this vector type as its second parameter, so halo nonzeros use it too.
+// SparseMatrix takes this vector type as its third parameter.
 #ifndef HPGMP_WITH_HALF_VECTORS
 template<>
 struct inner_vector_scalar<half>

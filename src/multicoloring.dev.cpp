@@ -297,8 +297,8 @@ __launch_bounds__(BLOCKSIZEX* BLOCKSIZEY)
 constexpr int RNG_SEED   = 0x586744;
 constexpr int MAX_COLORS = 128;
 
-template<typename local_scalar_t, typename halo_scalar_t>
-void multicolor_JPL(SparseMatrix<local_scalar_t, halo_scalar_t>& A)
+template<typename local_scalar_t, typename halo_scalar_t, typename vec_scalar_t>
+void multicolor_JPL(SparseMatrix<local_scalar_t, halo_scalar_t, vec_scalar_t>& A)
 {
     const local_int_t m = A.localNumberOfRows;
 
@@ -442,12 +442,12 @@ template void multicolor_JPL(SparseMatrix<double>&);
 template void multicolor_JPL(SparseMatrix<float>&);
 #ifdef HPGMP_WITH_HALF
 template void multicolor_JPL(SparseMatrix<half>&);
-template void multicolor_JPL(SparseMatrix<half, float>&);
+template void multicolor_JPL(SparseMatrix<half, half, float>&);
 #endif
 template void multicolor_JPL(SparseMatrix<double, float>&);
 
-template<typename local_scalar_t, typename halo_scalar_t>
-void multicolor_ref(SparseMatrix<local_scalar_t, halo_scalar_t>& A)
+template<typename local_scalar_t, typename halo_scalar_t, typename vec_scalar_t>
+void multicolor_ref(SparseMatrix<local_scalar_t, halo_scalar_t, vec_scalar_t>& A)
 {
     const auto local_nrows = A.localNumberOfRows;
 
@@ -502,6 +502,6 @@ template void multicolor_ref(SparseMatrix<double>&);
 template void multicolor_ref(SparseMatrix<float>&);
 #ifdef HPGMP_WITH_HALF
 template void multicolor_ref(SparseMatrix<half>&);
-template void multicolor_ref(SparseMatrix<half, float>&);
+template void multicolor_ref(SparseMatrix<half, half, float>&);
 #endif
 template void multicolor_ref(SparseMatrix<double, float>&);

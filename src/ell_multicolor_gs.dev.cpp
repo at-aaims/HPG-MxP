@@ -254,8 +254,8 @@ __launch_bounds__(BLOCKSIZE)
     __stcg(x + row, sum);
 }
 
-template<typename local_scalar_t, typename halo_scalar_t, typename vec_scalar_t>
-int ell_multicolor_gs(const bool symmetric, const ELLMatrix<local_scalar_t, halo_scalar_t>* const A,
+template<typename local_scalar_t, typename halo_scalar_t, typename vec_scalar_t, typename matrix_vec_scalar_t>
+int ell_multicolor_gs(const bool symmetric, const ELLMatrix<local_scalar_t, halo_scalar_t, matrix_vec_scalar_t>* const A,
                       const Vector<vec_scalar_t>* const r, Vector<vec_scalar_t>* const x)
 {
     assert(x->local_length() == A->get_local_num_cols());
@@ -303,8 +303,8 @@ int ell_multicolor_gs(const bool symmetric, const ELLMatrix<local_scalar_t, halo
     return 0;
 }
 
-template<typename local_scalar_t, typename halo_scalar_t, typename vec_scalar_t>
-int ell_multicolor_gs_zero_initial(const bool symmetric, const ELLMatrix<local_scalar_t, halo_scalar_t>* const A,
+template<typename local_scalar_t, typename halo_scalar_t, typename vec_scalar_t, typename matrix_vec_scalar_t>
+int ell_multicolor_gs_zero_initial(const bool symmetric, const ELLMatrix<local_scalar_t, halo_scalar_t, matrix_vec_scalar_t>* const A,
                                    const Vector<vec_scalar_t>* const r, Vector<vec_scalar_t>* const x)
 {
     assert(x->local_length() == A->get_local_num_cols());
@@ -365,7 +365,7 @@ template int ell_multicolor_gs(
     Vector<half>* const x);
 
 template int ell_multicolor_gs(
-    bool sym, const ELLMatrix<half, float>* const A, const Vector<float>* const r,
+    bool sym, const ELLMatrix<half, half, float>* const A, const Vector<float>* const r,
     Vector<float>* const x);
 #endif
 
@@ -383,6 +383,6 @@ template int ell_multicolor_gs_zero_initial(
     const Vector<half>* const r, Vector<half>* const x);
 
 template int ell_multicolor_gs_zero_initial(
-    bool sym, const ELLMatrix<half, float>* const A,
+    bool sym, const ELLMatrix<half, half, float>* const A,
     const Vector<float>* const r, Vector<float>* const x);
 #endif

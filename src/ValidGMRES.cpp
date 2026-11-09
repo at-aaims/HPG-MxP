@@ -68,7 +68,7 @@ int ValidGMRES(const int argc, char** argv, const validation_t validation_type, 
     typedef SparseMatrix<scalar_type, scalar_type2> SparseMatrix_type2;
     typedef GMRESData<scalar_type, scalar_type2, project_type> GMRESData_type2;
 #else
-    typedef SparseMatrix<scalar_type2, inner_vector_scalar_t<scalar_type2>> SparseMatrix_type2;
+    typedef SparseMatrix<scalar_type2, scalar_type2, inner_vector_scalar_t<scalar_type2>> SparseMatrix_type2;
     typedef GMRESData<scalar_type2, inner_vector_scalar_t<scalar_type2>, project_type> GMRESData_type2;
 #endif
 

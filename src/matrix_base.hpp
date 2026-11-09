@@ -12,7 +12,7 @@
 #include "hpgmp.hpp"
 
 // Forward declaration
-template<typename local_scalar_t, typename halo_scalar_t>
+template<typename local_scalar_t, typename halo_scalar_t, typename vec_scalar_t>
 class SparseMatrix;
 
 /**
@@ -32,8 +32,8 @@ public:
           geom_{geom}
     { }
 
-    template<typename local_scalar_t, typename halo_scalar_t>
-    DistMatrixBase(const SparseMatrix<local_scalar_t, halo_scalar_t>& A);
+    template<typename local_scalar_t, typename halo_scalar_t, typename vec_scalar_t>
+    DistMatrixBase(const SparseMatrix<local_scalar_t, halo_scalar_t, vec_scalar_t>& A);
 
     virtual ~DistMatrixBase();
 

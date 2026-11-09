@@ -91,9 +91,9 @@ template void GenerateNonsymProblem< SparseMatrix<float>, Vector<double> >(
 template void GenerateNonsymProblem< SparseMatrix<half>, Vector<double> >(
     DeviceCtx*, SparseMatrix<half>&, Vector<double>*, Vector<double>*, Vector<double>*, bool);
 
-template void GenerateNonsymProblem< SparseMatrix<half, float>, Vector<double> >(
-    DeviceCtx*, SparseMatrix<half, float>&, Vector<double>*, Vector<double>*, Vector<double>*, bool);
+template void GenerateNonsymProblem< SparseMatrix<half, half, float>, Vector<double> >(
+    DeviceCtx*, SparseMatrix<half, half, float>&, Vector<double>*, Vector<double>*, Vector<double>*, bool);
 
-template void GenerateNonsymProblem< SparseMatrix<half, float>, Vector<float> >(
-    DeviceCtx*, SparseMatrix<half, float>&, Vector<float>*, Vector<float>*, Vector<float>*, bool);
+template void GenerateNonsymProblem< SparseMatrix<half, half, float>, Vector<float> >(
+    DeviceCtx*, SparseMatrix<half, half, float>&, Vector<float>*, Vector<float>*, Vector<float>*, bool);
 #endif
