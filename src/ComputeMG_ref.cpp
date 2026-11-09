@@ -158,4 +158,7 @@ template int ComputeMG< SparseMatrix<float>, Vector<float> >(
 #ifdef HPGMP_WITH_HALF
 template int ComputeMG< SparseMatrix<half>, Vector<half> >(
     SparseMatrix<half> const&, Vector<half> const&, Vector<half>&, bool, perf_counters&);
+
+template int ComputeMG< SparseMatrix<half, half, float>, Vector<float> >(
+    SparseMatrix<half, half, float> const&, Vector<float> const&, Vector<float>&, bool, perf_counters&);
 #endif

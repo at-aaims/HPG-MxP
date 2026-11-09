@@ -30,9 +30,8 @@ Additionally, HPGMP-specific options of interest include:
   (`OFF` by default). Not supported in GPU reference builds.
 
 * `HPGMP_ENABLE_HALF_VECTORS` option also uses half precision for the vectors
-  of the inner solver (`OFF` by default). Requires `HPGMP_ENABLE_HALF`, and is
-  required by `HPGMP_ENABLE_HALF` in the CPU reference build. With half-precision
-  vectors, GMRES-IR may not converge.
+  of the inner solver (`OFF` by default). Requires `HPGMP_ENABLE_HALF`. With
+  half-precision vectors, GMRES-IR may not converge.
 
 * `HPGMP_ENABLE_BFLOAT16` option uses bfloat16 instead of fp16 wherever half
   precision is used (`OFF` by default). Requires `HPGMP_ENABLE_HALF`.

@@ -59,22 +59,24 @@ int ComputeSYMGS_ref(const SparseMatrix_type& A, const Vector_type& r, Vector_ty
 
     assert(x.local_length() == A.localNumberOfColumns); // Make sure x contain space for halo values
 
-    typedef typename SparseMatrix_type::scalar_type scalar_type;
+    // Matrix values can have lower precision than the vectors.
+    typedef typename SparseMatrix_type::scalar_type matrix_scalar_type;
+    typedef typename Vector_type::scalar_type scalar_type;
 #ifndef HPGMP_NO_MPI
     ExchangeHalo(A, x);
 #endif
 
-    const local_int_t nrow       = A.localNumberOfRows;
-    scalar_type** matrixDiagonal = A.matrixDiagonal; // An array of pointers to the diagonal entries A.matrixValues
-    const scalar_type* const rv  = r.values();
-    scalar_type* const xv        = x.values();
+    const local_int_t nrow              = A.localNumberOfRows;
+    matrix_scalar_type** matrixDiagonal = A.matrixDiagonal; // An array of pointers to the diagonal entries A.matrixValues
+    const scalar_type* const rv         = r.values();
+    scalar_type* const xv               = x.values();
 
     for (local_int_t i = 0; i < nrow; i++) {
-        const scalar_type* const currentValues     = A.matrixValues[i];
-        const local_int_t* const currentColIndices = A.mtxIndL[i];
-        const int currentNumberOfNonzeros          = A.nonzerosInRow[i];
-        const scalar_type currentDiagonal          = matrixDiagonal[i][0]; // Current diagonal value
-        scalar_type sum                            = rv[i]; // RHS value
+        const matrix_scalar_type* const currentValues = A.matrixValues[i];
+        const local_int_t* const currentColIndices    = A.mtxIndL[i];
+        const int currentNumberOfNonzeros             = A.nonzerosInRow[i];
+        const scalar_type currentDiagonal             = matrixDiagonal[i][0]; // Current diagonal value
+        scalar_type sum                               = rv[i]; // RHS value
 
         for (int j = 0; j < currentNumberOfNonzeros; j++) {
             local_int_t curCol = currentColIndices[j];
@@ -88,11 +90,11 @@ int ComputeSYMGS_ref(const SparseMatrix_type& A, const Vector_type& r, Vector_ty
     // Now the back sweep.
 
     for (local_int_t i = nrow - 1; i >= 0; i--) {
-        const scalar_type* const currentValues     = A.matrixValues[i];
-        const local_int_t* const currentColIndices = A.mtxIndL[i];
-        const int currentNumberOfNonzeros          = A.nonzerosInRow[i];
-        const scalar_type currentDiagonal          = matrixDiagonal[i][0]; // Current diagonal value
-        scalar_type sum                            = rv[i]; // RHS value
+        const matrix_scalar_type* const currentValues = A.matrixValues[i];
+        const local_int_t* const currentColIndices    = A.mtxIndL[i];
+        const int currentNumberOfNonzeros             = A.nonzerosInRow[i];
+        const scalar_type currentDiagonal             = matrixDiagonal[i][0]; // Current diagonal value
+        scalar_type sum                               = rv[i]; // RHS value
 
         for (int j = 0; j < currentNumberOfNonzeros; j++) {
             local_int_t curCol = currentColIndices[j];
@@ -120,4 +122,7 @@ template int ComputeSYMGS_ref< SparseMatrix<float>, Vector<float> >(
 #ifdef HPGMP_WITH_HALF
 template int ComputeSYMGS_ref< SparseMatrix<half>, Vector<half> >(
     SparseMatrix<half> const&, Vector<half> const&, Vector<half>&);
+
+template int ComputeSYMGS_ref< SparseMatrix<half, half, float>, Vector<float> >(
+    SparseMatrix<half, half, float> const&, Vector<float> const&, Vector<float>&);
 #endif

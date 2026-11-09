@@ -906,8 +906,8 @@ template int OptimizeProblem_ref< SparseMatrix<float>, GMRESData<double, double,
     SparseMatrix<float>&, GMRESData<double, double, double>&, Vector<double>&, Vector<double>&, Vector<double>&, const HPGMP_gen_opts&);
 
 #ifdef HPGMP_WITH_HALF
-template int OptimizeProblem_ref< SparseMatrix<half>, GMRESData<double, double, double>, Vector<double> >(
-    SparseMatrix<half>&, GMRESData<double, double, double>&, Vector<double>&, Vector<double>&, Vector<double>&, const HPGMP_gen_opts&);
+template int OptimizeProblem_ref< SparseMatrix<half, half, inner_vector_scalar_t<half>>, GMRESData<double, double, double>, Vector<double> >(
+    SparseMatrix<half, half, inner_vector_scalar_t<half>>&, GMRESData<double, double, double>&, Vector<double>&, Vector<double>&, Vector<double>&, const HPGMP_gen_opts&);
 #endif
 
 //#endif // HPGMPG_REFERENCE

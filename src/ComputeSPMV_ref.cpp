@@ -55,7 +55,9 @@ int ComputeSPMV_ref(const SparseMatrix_type& A, Vector_type& x, Vector_type& y)
 
     assert(x.local_length() >= A.localNumberOfColumns); // Test vector lengths
     assert(y.local_length() >= A.localNumberOfRows);
-    typedef typename SparseMatrix_type::scalar_type scalar_type;
+    // Matrix values can have lower precision than the vectors.
+    typedef typename SparseMatrix_type::scalar_type matrix_scalar_type;
+    typedef typename Vector_type::scalar_type scalar_type;
 
     const local_int_t nrow = A.localNumberOfRows;
     scalar_type* const xv  = x.values();
@@ -71,10 +73,10 @@ int ComputeSPMV_ref(const SparseMatrix_type& A, Vector_type& x, Vector_type& y)
 #pragma omp parallel for
 #endif
     for (local_int_t i = 0; i < nrow; i++) {
-        scalar_type sum                   = 0.0;
-        const scalar_type* const cur_vals = A.matrixValues[i];
-        const local_int_t* const cur_inds = A.mtxIndL[i];
-        const local_int_t cur_nnz         = A.nonzerosInRow[i];
+        scalar_type sum                          = 0.0;
+        const matrix_scalar_type* const cur_vals = A.matrixValues[i];
+        const local_int_t* const cur_inds        = A.mtxIndL[i];
+        const local_int_t cur_nnz                = A.nonzerosInRow[i];
 
         for (local_int_t j = 0; j < cur_nnz; j++)
             sum += cur_vals[j] * xv[cur_inds[j]];
@@ -100,6 +102,9 @@ template int ComputeSPMV_ref< SparseMatrix<float>, Vector<float> >(
 #ifdef HPGMP_WITH_HALF
 template int ComputeSPMV_ref< SparseMatrix<half>, Vector<half> >(
     const SparseMatrix<half>&, Vector<half>&, Vector<half>&);
+
+template int ComputeSPMV_ref< SparseMatrix<half, half, float>, Vector<float> >(
+    const SparseMatrix<half, half, float>&, Vector<float>&, Vector<float>&);
 #endif
 
 #endif
