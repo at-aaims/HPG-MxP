@@ -38,11 +38,11 @@
 
 #include "kernel_helpers.hpp.inc"
 
-template<unsigned int BLOCKSIZE, typename local_scalar_t, typename halo_scalar_t, typename vec_scalar_t>
+template<unsigned int BLOCKSIZE, typename local_scalar_t, typename coarse_scalar_t, typename vec_scalar_t>
 __launch_bounds__(BLOCKSIZE)
     __global__ void kernel_prolongation(const local_int_t size,
                                         const local_int_t* __restrict__ f2cOperator,
-                                        const halo_scalar_t* __restrict__ coarse,
+                                        const coarse_scalar_t* __restrict__ coarse,
                                         vec_scalar_t* __restrict__ fine,
                                         const local_int_t* __restrict__ perm_fine,
                                         const local_int_t* __restrict__ perm_coarse)
@@ -71,14 +71,14 @@ __launch_bounds__(BLOCKSIZE)
  *
  * @return Returns zero on success and a non-zero value otherwise.
  */
-template<typename local_scalar_t, typename halo_scalar_t, typename vec_scalar_t>
-int prolongation(const SparseMatrix<local_scalar_t, halo_scalar_t>& Af, Vector<vec_scalar_t>& xf)
+template<typename local_scalar_t, typename halo_scalar_t, typename vec_scalar_t, typename matrix_vec_scalar_t>
+int prolongation(const SparseMatrix<local_scalar_t, halo_scalar_t, matrix_vec_scalar_t>& Af, Vector<vec_scalar_t>& xf)
 {
     auto stream_interior = Af.dctx->get_compute_stream();
     dim3 blocks((Af.mgData->rc->local_length() - 1) / 128 + 1);
     dim3 threads(128);
 
-    kernel_prolongation<128, local_scalar_t, halo_scalar_t, vec_scalar_t>
+    kernel_prolongation<128, local_scalar_t, matrix_vec_scalar_t, vec_scalar_t>
         <<<blocks, threads, 0, stream_interior>>>(
             Af.mgData->rc->local_length(),
             Af.mgData->d_f2cOperator,
@@ -93,5 +93,9 @@ int prolongation(const SparseMatrix<local_scalar_t, halo_scalar_t>& Af, Vector<v
 
 template int prolongation(const SparseMatrix<double>& Af, Vector<double>& xf);
 template int prolongation(const SparseMatrix<float>& Af, Vector<float>& xf);
+#ifdef HPGMP_WITH_HALF
+template int prolongation(const SparseMatrix<half>& Af, Vector<half>& xf);
+template int prolongation(const SparseMatrix<half, half, float>& Af, Vector<float>& xf);
+#endif
 template int prolongation(const SparseMatrix<double, float>& Af, Vector<float>& xf);
 template int prolongation(const SparseMatrix<double, float>& Af, Vector<double>& xf);

@@ -59,7 +59,9 @@ int ComputeGS_Forward_ref(const SparseMatrix_type& A, const Vector_type& r, Vect
 
     assert(x.local_length() == A.localNumberOfColumns); // Make sure x contain space for halo values
 
-    typedef typename SparseMatrix_type::scalar_type scalar_type;
+    // Matrix values can have lower precision than the vectors.
+    typedef typename SparseMatrix_type::scalar_type matrix_scalar_type;
+    typedef typename Vector_type::scalar_type scalar_type;
     const local_int_t nrow = A.localNumberOfRows;
 
     const scalar_type* const rv = r.values();
@@ -71,15 +73,15 @@ int ComputeGS_Forward_ref(const SparseMatrix_type& A, const Vector_type& r, Vect
     ExchangeHalo(A, x);
 #endif
 
-    scalar_type** matrixDiagonal = A.matrixDiagonal; // An array of pointers to the diagonal entries A.matrixValues
+    matrix_scalar_type** matrixDiagonal = A.matrixDiagonal; // An array of pointers to the diagonal entries A.matrixValues
 
     TICK();
     for (local_int_t i = 0; i < nrow; i++) {
-        const scalar_type* const currentValues     = A.matrixValues[i];
-        const local_int_t* const currentColIndices = A.mtxIndL[i];
-        const int currentNumberOfNonzeros          = A.nonzerosInRow[i];
-        const scalar_type currentDiagonal          = matrixDiagonal[i][0]; // Current diagonal value
-        scalar_type sum                            = rv[i]; // RHS value
+        const matrix_scalar_type* const currentValues = A.matrixValues[i];
+        const local_int_t* const currentColIndices    = A.mtxIndL[i];
+        const int currentNumberOfNonzeros             = A.nonzerosInRow[i];
+        const scalar_type currentDiagonal             = matrixDiagonal[i][0]; // Current diagonal value
+        scalar_type sum                               = rv[i]; // RHS value
 
         for (int j = 0; j < currentNumberOfNonzeros; j++) {
             local_int_t curCol = currentColIndices[j];
@@ -106,5 +108,13 @@ template int ComputeGS_Forward_ref< SparseMatrix<double>, Vector<double> >(
 
 template int ComputeGS_Forward_ref< SparseMatrix<float>, Vector<float> >(
     SparseMatrix<float> const&, Vector<float> const&, Vector<float>&);
+
+#ifdef HPGMP_WITH_HALF
+template int ComputeGS_Forward_ref< SparseMatrix<half>, Vector<half> >(
+    SparseMatrix<half> const&, Vector<half> const&, Vector<half>&);
+
+template int ComputeGS_Forward_ref< SparseMatrix<half, half, float>, Vector<float> >(
+    SparseMatrix<half, half, float> const&, Vector<float> const&, Vector<float>&);
+#endif
 
 #endif

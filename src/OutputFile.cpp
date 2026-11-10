@@ -126,7 +126,7 @@ OutputFile::generate(void)
 
     string filename;
 
-    if(outfile_path_ == " ") {
+    if (outfile_path_ == " ") {
         time_t rawtime;
         time(&rawtime);
         tm* ptm = localtime(&rawtime);
@@ -135,7 +135,7 @@ OutputFile::generate(void)
         sprintf(sdate, "%04d-%02d-%02d_%02d-%02d-%02d", ptm->tm_year + 1900, ptm->tm_mon + 1,
                 ptm->tm_mday, ptm->tm_hour, ptm->tm_min, ptm->tm_sec);
 
-        string filename = name + "_" + version + "_";
+        filename = name + "_" + version + "_";
         filename += string(sdate) + ".txt";
     } else {
         filename = outfile_path_;

@@ -120,4 +120,12 @@ template int ComputeWAXPBY_ref< Vector<float>, Vector<float>, Vector<float> >(
 template int ComputeWAXPBY_ref< Vector<double>, Vector<float>, Vector<double> >(
     int, double, Vector<double> const&, float, Vector<float> const&, Vector<double>&);
 
+#ifdef HPGMP_WITH_HALF
+template int ComputeWAXPBY_ref< Vector<half>, Vector<half>, Vector<half> >(
+    int, half, Vector<half> const&, half, Vector<half> const&, Vector<half>&);
+
+template int ComputeWAXPBY_ref< Vector<double>, Vector<half>, Vector<double> >(
+    int, double, Vector<double> const&, half, Vector<half> const&, Vector<double>&);
+#endif
+
 #endif

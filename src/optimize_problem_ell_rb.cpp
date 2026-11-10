@@ -57,8 +57,8 @@
   @see GenerateGeometry
   @see GenerateProblem
 */
-template<typename local_scalar_t, typename halo_scalar_t, class GMRESData_type, typename vec_scalar_t>
-int OptimizeProblemELL(SparseMatrix<local_scalar_t, halo_scalar_t>& A, GMRESData_type& data,
+template<typename local_scalar_t, typename halo_scalar_t, typename matrix_vec_scalar_t, class GMRESData_type, typename vec_scalar_t>
+int OptimizeProblemELL(SparseMatrix<local_scalar_t, halo_scalar_t, matrix_vec_scalar_t>& A, GMRESData_type& data,
                        Vector<vec_scalar_t>& b, Vector<vec_scalar_t>& x, Vector<vec_scalar_t>& xexact,
                        const HPGMP_gen_opts& gopts)
 {
@@ -71,8 +71,8 @@ int OptimizeProblemELL(SparseMatrix<local_scalar_t, halo_scalar_t>& A, GMRESData
     auto dctx             = A.dctx;
     const int local_nrows = A.localNumberOfRows;
 
-    SparseMatrix<local_scalar_t, halo_scalar_t>* M = &A;
-    int igrid                                      = 0;
+    SparseMatrix<local_scalar_t, halo_scalar_t, matrix_vec_scalar_t>* M = &A;
+    int igrid                                                           = 0;
     while (M != NULL)
     {
 
@@ -106,8 +106,8 @@ int OptimizeProblemELL(SparseMatrix<local_scalar_t, halo_scalar_t>& A, GMRESData
         moptdata->smoother  = std::make_shared<GinkgoSmoother<local_scalar_t, halo_scalar_t>>(mat.get());
         M->optimizationData = moptdata;
 #else
-        auto moptdata       = new EllOptData<local_scalar_t, halo_scalar_t>;
-        moptdata->mat       = std::make_shared<ELLMatrix<local_scalar_t, halo_scalar_t>>(*M); // Performs row permutation
+        auto moptdata       = new EllOptData<local_scalar_t, halo_scalar_t, matrix_vec_scalar_t>;
+        moptdata->mat       = std::make_shared<ELLMatrix<local_scalar_t, halo_scalar_t, matrix_vec_scalar_t>>(*M); // Performs row permutation
         M->optimizationData = moptdata;
 #endif
 #ifdef HPGMP_VERBOSE
@@ -143,6 +143,14 @@ template int OptimizeProblemELL(SparseMatrix<float>& A, GMRESData<float, float, 
 
 template int OptimizeProblemELL(SparseMatrix<float>& A, GMRESData<double, double, double>& data,
                                 Vector<double>& b, Vector<double>& x, Vector<double>& xexact, const HPGMP_gen_opts&);
+
+#ifdef HPGMP_WITH_HALF
+template int OptimizeProblemELL(SparseMatrix<half>& A, GMRESData<double, double, double>& data,
+                                Vector<double>& b, Vector<double>& x, Vector<double>& xexact, const HPGMP_gen_opts&);
+
+template int OptimizeProblemELL(SparseMatrix<half, half, float>& A, GMRESData<double, double, double>& data,
+                                Vector<double>& b, Vector<double>& x, Vector<double>& xexact, const HPGMP_gen_opts&);
+#endif
 
 template int OptimizeProblemELL(SparseMatrix<double, float>& A, GMRESData<double, float, float>& data,
                                 Vector<double>& b, Vector<double>& x, Vector<double>& xexact, const HPGMP_gen_opts&);
@@ -298,4 +306,8 @@ double OptimizeProblemMemoryUse(const SparseMatrix_type& A, const HPGMP_gen_opts
 
 template double OptimizeProblemMemoryUse(const SparseMatrix<double>&, const HPGMP_gen_opts&);
 template double OptimizeProblemMemoryUse(const SparseMatrix<float>&, const HPGMP_gen_opts&);
+#ifdef HPGMP_WITH_HALF
+template double OptimizeProblemMemoryUse(const SparseMatrix<half>&, const HPGMP_gen_opts&);
+template double OptimizeProblemMemoryUse(const SparseMatrix<half, half, float>&, const HPGMP_gen_opts&);
+#endif
 template double OptimizeProblemMemoryUse(const SparseMatrix<double, float>&, const HPGMP_gen_opts&);

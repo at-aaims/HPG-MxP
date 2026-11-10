@@ -40,35 +40,35 @@
 
 #include "kernel_helpers.hpp.inc"
 
-#define LAUNCH_FUSED_RESTRICT_SPMV(blocksize, width)                                              \
-    {                                                                                             \
-        dim3 blocks((A.mgData->rc->local_length() - 1) / blocksize + 1);                          \
-        dim3 threads(blocksize);                                                                  \
-                                                                                                  \
-        kernel_fused_restrict_spmv<blocksize, width, local_scalar_t, halo_scalar_t, vec_scalar_t> \
-            <<<blocks, threads, 0, stream_interior>>>(                                            \
-                A.mgData->rc->local_length(),                                                     \
-                A.mgData->d_f2cOperator,                                                          \
-                rf.d_values(),                                                                    \
-                A.localNumberOfRows,                                                              \
-                A.localNumberOfColumns,                                                           \
-                mat->get_ld_indices(),                                                            \
-                mat->get_ld_values(),                                                             \
-                mat->get_col_idxs(),                                                              \
-                mat->get_values(),                                                                \
-                xf.d_values(),                                                                    \
-                A.mgData->rc->d_values(),                                                         \
-                A.perm,                                                                           \
-                A.Ac->perm);                                                                      \
+#define LAUNCH_FUSED_RESTRICT_SPMV(blocksize, width)                                                    \
+    {                                                                                                   \
+        dim3 blocks((A.mgData->rc->local_length() - 1) / blocksize + 1);                                \
+        dim3 threads(blocksize);                                                                        \
+                                                                                                        \
+        kernel_fused_restrict_spmv<blocksize, width, local_scalar_t, matrix_vec_scalar_t, vec_scalar_t> \
+            <<<blocks, threads, 0, stream_interior>>>(                                                  \
+                A.mgData->rc->local_length(),                                                           \
+                A.mgData->d_f2cOperator,                                                                \
+                rf.d_values(),                                                                          \
+                A.localNumberOfRows,                                                                    \
+                A.localNumberOfColumns,                                                                 \
+                mat->get_ld_indices(),                                                                  \
+                mat->get_ld_values(),                                                                   \
+                mat->get_col_idxs(),                                                                    \
+                mat->get_values(),                                                                      \
+                xf.d_values(),                                                                          \
+                A.mgData->rc->d_values(),                                                               \
+                A.perm,                                                                                 \
+                A.Ac->perm);                                                                            \
     }
 
-template<unsigned int BLOCKSIZE, typename local_scalar_t, typename halo_scalar_t, typename vec_scalar_t>
+template<unsigned int BLOCKSIZE, typename local_scalar_t, typename coarse_scalar_t, typename vec_scalar_t>
 __launch_bounds__(BLOCKSIZE)
     __global__ void kernel_restrict(local_int_t size,
                                     const local_int_t* __restrict__ f2cOperator,
                                     const vec_scalar_t* __restrict__ fine,
-                                    const halo_scalar_t* __restrict__ data,
-                                    halo_scalar_t* __restrict__ coarse,
+                                    const coarse_scalar_t* __restrict__ data,
+                                    coarse_scalar_t* __restrict__ coarse,
                                     const local_int_t* __restrict__ perm_fine,
                                     const local_int_t* __restrict__ perm_coarse)
 {
@@ -77,10 +77,10 @@ __launch_bounds__(BLOCKSIZE)
         return;
     }
     const local_int_t idx_fine      = perm_fine[f2cOperator[idx_coarse]];
-    coarse[perm_coarse[idx_coarse]] = static_cast<halo_scalar_t>(fine[idx_fine]) - data[idx_fine];
+    coarse[perm_coarse[idx_coarse]] = static_cast<coarse_scalar_t>(fine[idx_fine]) - data[idx_fine];
 }
 
-template<unsigned int BLOCKSIZE, unsigned int WIDTH, typename local_scalar_t, typename halo_scalar_t, typename vec_scalar_t>
+template<unsigned int BLOCKSIZE, unsigned int WIDTH, typename local_scalar_t, typename coarse_scalar_t, typename vec_scalar_t>
 __launch_bounds__(BLOCKSIZE)
     __global__ void kernel_fused_restrict_spmv(const local_int_t size,
                                                const local_int_t* f2cOperator,
@@ -92,7 +92,7 @@ __launch_bounds__(BLOCKSIZE)
                                                const local_int_t* __restrict__ ell_col_ind,
                                                const local_scalar_t* ell_val,
                                                const vec_scalar_t* xf,
-                                               halo_scalar_t* r_coarse,
+                                               coarse_scalar_t* r_coarse,
                                                const local_int_t* __restrict__ perm_fine,
                                                const local_int_t* __restrict__ perm_coarse)
 {
@@ -117,10 +117,10 @@ __launch_bounds__(BLOCKSIZE)
                       xf[col], sum);
         }
     }
-    __stcg(r_coarse + idx_perm_coarse, static_cast<halo_scalar_t>(sum));
+    __stcg(r_coarse + idx_perm_coarse, static_cast<coarse_scalar_t>(sum));
 }
 
-template<unsigned int BLOCKSIZE, typename local_scalar_t, typename halo_scalar_t, typename vec_scalar_t>
+template<unsigned int BLOCKSIZE, typename local_scalar_t, typename halo_scalar_t, typename coarse_scalar_t, typename vec_scalar_t>
 __launch_bounds__(BLOCKSIZE)
     __global__ void kernel_fused_restrict_spmv_halo(const local_int_t m,
                                                     const local_int_t n,
@@ -132,7 +132,7 @@ __launch_bounds__(BLOCKSIZE)
                                                     const local_int_t* __restrict__ halo_col_ind,
                                                     const halo_scalar_t* __restrict__ halo_val,
                                                     const vec_scalar_t* __restrict__ xf,
-                                                    halo_scalar_t* __restrict__ coarse,
+                                                    coarse_scalar_t* __restrict__ coarse,
                                                     const local_int_t* __restrict__ perm_coarse)
 {
     const local_int_t row = blockIdx.x * BLOCKSIZE + threadIdx.x;
@@ -156,7 +156,7 @@ __launch_bounds__(BLOCKSIZE)
             sum = fma(static_cast<vec_scalar_t>(halo_val[p * ldv + row]), xf[col], sum);
         }
     }
-    coarse[perm_coarse[idx_coarse]] -= static_cast<halo_scalar_t>(sum);
+    coarse[perm_coarse[idx_coarse]] -= static_cast<coarse_scalar_t>(sum);
 }
 
 /*!
@@ -171,14 +171,14 @@ __launch_bounds__(BLOCKSIZE)
 
   @return Returns zero on success and a non-zero value otherwise.
 */
-template<typename local_scalar_t, typename halo_scalar_t, typename vec_scalar_t>
-int restriction(const SparseMatrix<local_scalar_t, halo_scalar_t>& A, const Vector<vec_scalar_t>& rf)
+template<typename local_scalar_t, typename halo_scalar_t, typename vec_scalar_t, typename matrix_vec_scalar_t>
+int restriction(const SparseMatrix<local_scalar_t, halo_scalar_t, matrix_vec_scalar_t>& A, const Vector<vec_scalar_t>& rf)
 {
     auto stream_interior = A.dctx->get_compute_stream();
     dim3 blocks((A.mgData->rc->local_length() - 1) / 128 + 1);
     dim3 threads(128);
 
-    kernel_restrict<128, local_scalar_t, halo_scalar_t, vec_scalar_t><<<blocks, threads, 0, stream_interior>>>(
+    kernel_restrict<128, local_scalar_t, matrix_vec_scalar_t, vec_scalar_t><<<blocks, threads, 0, stream_interior>>>(
         A.mgData->rc->local_length(),
         A.mgData->d_f2cOperator,
         rf.d_values(),
@@ -192,11 +192,15 @@ int restriction(const SparseMatrix<local_scalar_t, halo_scalar_t>& A, const Vect
 
 template int restriction(const SparseMatrix<float>& A, const Vector<float>& rf);
 template int restriction(const SparseMatrix<double>& A, const Vector<double>& rf);
+#ifdef HPGMP_WITH_HALF
+template int restriction(const SparseMatrix<half>& A, const Vector<half>& rf);
+template int restriction(const SparseMatrix<half, half, float>& A, const Vector<float>& rf);
+#endif
 template int restriction(const SparseMatrix<double, float>& A, const Vector<float>& rf);
 template int restriction(const SparseMatrix<double, float>& A, const Vector<double>& rf);
 
-template<typename local_scalar_t, typename halo_scalar_t, typename vec_scalar_t>
-int fused_spmv_restriction(const SparseMatrix<local_scalar_t, halo_scalar_t>& A,
+template<typename local_scalar_t, typename halo_scalar_t, typename vec_scalar_t, typename matrix_vec_scalar_t>
+int fused_spmv_restriction(const SparseMatrix<local_scalar_t, halo_scalar_t, matrix_vec_scalar_t>& A,
                            const Vector<vec_scalar_t>& rf,
                            const Vector<vec_scalar_t>& xf)
 {
@@ -204,8 +208,8 @@ int fused_spmv_restriction(const SparseMatrix<local_scalar_t, halo_scalar_t>& A,
     std::shared_ptr<const GinkgoMatrix<local_scalar_t, halo_scalar_t>> mat =
         dynamic_cast<GinkgoOptData<local_scalar_t, halo_scalar_t>*>(A.optimizationData)->mat;
 #else
-    std::shared_ptr<const ELLMatrix<local_scalar_t, halo_scalar_t>> mat =
-        dynamic_cast<EllOptData<local_scalar_t, halo_scalar_t>*>(A.optimizationData)->mat;
+    std::shared_ptr<const ELLMatrix<local_scalar_t, halo_scalar_t, matrix_vec_scalar_t>> mat =
+        dynamic_cast<EllOptData<local_scalar_t, halo_scalar_t, matrix_vec_scalar_t>*>(A.optimizationData)->mat;
 #endif
     auto stream_interior = mat->get_device_context()->get_compute_stream();
 #ifndef HPGMP_NO_MPI
@@ -228,10 +232,10 @@ int fused_spmv_restriction(const SparseMatrix<local_scalar_t, halo_scalar_t>& A,
         dim3 blocks((mat->get_num_halo_rows() - 1) / 128 + 1);
         dim3 threads(128);
 
-        kernel_fused_restrict_spmv_halo<128, local_scalar_t, halo_scalar_t, vec_scalar_t><<<blocks,
-                                                                                            threads,
-                                                                                            0,
-                                                                                            stream_interior>>>(
+        kernel_fused_restrict_spmv_halo<128, local_scalar_t, halo_scalar_t, matrix_vec_scalar_t, vec_scalar_t><<<blocks,
+                                                                                                                 threads,
+                                                                                                                 0,
+                                                                                                                 stream_interior>>>(
             mat->get_num_halo_rows(),
             mat->get_local_num_cols(),
             A.mgData->d_c2fOperator,
@@ -256,6 +260,14 @@ template int fused_spmv_restriction(const SparseMatrix<double>& A, const Vector<
 
 template int fused_spmv_restriction(const SparseMatrix<float>& A, const Vector<float>& rf,
                                     const Vector<float>& xf);
+
+#ifdef HPGMP_WITH_HALF
+template int fused_spmv_restriction(const SparseMatrix<half>& A, const Vector<half>& rf,
+                                    const Vector<half>& xf);
+
+template int fused_spmv_restriction(const SparseMatrix<half, half, float>& A, const Vector<float>& rf,
+                                    const Vector<float>& xf);
+#endif
 
 template int fused_spmv_restriction(const SparseMatrix<double, float>& A, const Vector<float>& rf,
                                     const Vector<float>& xf);

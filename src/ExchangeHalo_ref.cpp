@@ -42,7 +42,7 @@ void ExchangeHalo_ref(const SparseMatrix_type& A, Vector_type& x)
 
     HPGMP_RANGE_PUSH(__FUNCTION__);
 
-    typedef typename SparseMatrix_type::scalar_type scalar_type;
+    typedef typename Vector_type::scalar_type scalar_type;
     MPI_Datatype MPI_SCALAR_TYPE = MpiTypeTraits<scalar_type>::getType();
 
     // Extract Matrix pieces
@@ -147,5 +147,13 @@ template void ExchangeHalo_ref< SparseMatrix<double>, Vector<double> >(
 
 template void ExchangeHalo_ref< SparseMatrix<float>, Vector<float> >(
     SparseMatrix<float> const&, Vector<float>&);
+
+#ifdef HPGMP_WITH_HALF
+template void ExchangeHalo_ref< SparseMatrix<half>, Vector<half> >(
+    SparseMatrix<half> const&, Vector<half>&);
+
+template void ExchangeHalo_ref< SparseMatrix<half, half, float>, Vector<float> >(
+    SparseMatrix<half, half, float> const&, Vector<float>&);
+#endif
 
 #endif // ifndef HPGMP_NO_MPI

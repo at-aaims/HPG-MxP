@@ -43,7 +43,7 @@ template<class SparseMatrix_type, class Vector_type>
 int ComputeRestriction_ref(const SparseMatrix_type& A, const Vector_type& rf)
 {
 
-    typedef typename SparseMatrix_type::scalar_type scalar_type;
+    typedef typename Vector_type::scalar_type scalar_type;
 
     const scalar_type* Axfv = A.mgData->Axf->values();
     const scalar_type* rfv  = rf.values();
@@ -71,5 +71,13 @@ template int ComputeRestriction_ref< SparseMatrix<double>, Vector<double> >(
 
 template int ComputeRestriction_ref< SparseMatrix<float>, Vector<float> >(
     SparseMatrix<float> const&, Vector<float> const&);
+
+#ifdef HPGMP_WITH_HALF
+template int ComputeRestriction_ref< SparseMatrix<half>, Vector<half> >(
+    SparseMatrix<half> const&, Vector<half> const&);
+
+template int ComputeRestriction_ref< SparseMatrix<half, half, float>, Vector<float> >(
+    SparseMatrix<half, half, float> const&, Vector<float> const&);
+#endif
 
 #endif

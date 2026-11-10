@@ -4,7 +4,7 @@
 #include "SparseMatrix.hpp"
 #include "ell_matrix.hpp"
 
-template<typename local_scalar_t, typename halo_scalar_t>
-void permute_columns(SparseMatrix<local_scalar_t, halo_scalar_t>& A);
+template<typename local_scalar_t, typename halo_scalar_t, typename vec_scalar_t>
+void permute_columns(SparseMatrix<local_scalar_t, halo_scalar_t, vec_scalar_t>& A);
 
 #endif

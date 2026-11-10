@@ -7,7 +7,7 @@
 #include "SparseMatrix.hpp"
 #include "optimization_base.hpp"
 
-template<typename local_scalar_t, typename halo_scalar_t = local_scalar_t>
+template<typename local_scalar_t, typename halo_scalar_t = local_scalar_t, typename vec_scalar_t = halo_scalar_t>
 class ELLMatrix : public DistMatrixBase
 {
 public:
@@ -20,7 +20,7 @@ public:
     /**
      * Initialize this matrix with a conversion of a HPGMP SparseMatrix.
      */
-    ELLMatrix(const SparseMatrix<local_scalar_t, halo_scalar_t>& A);
+    ELLMatrix(const SparseMatrix<local_scalar_t, halo_scalar_t, vec_scalar_t>& A);
 
     ~ELLMatrix();
 
@@ -78,22 +78,22 @@ protected:
     local_int_t* diag_idxs_   = nullptr;
     local_scalar_t* inv_diag_ = nullptr;
 
-    void convert_from_csr(const SparseMatrix<local_scalar_t, halo_scalar_t>& A);
+    void convert_from_csr(const SparseMatrix<local_scalar_t, halo_scalar_t, vec_scalar_t>& A);
 };
 
 //template <typename local_scalar_t, typename halo_scalar_t, typename vec_scalar_t>
 //void ell_spmv(const ELLMatrix<local_scalar_t, halo_scalar_t>* mat, const Vector<vec_scalar_t> *x, Vector<vec_scalar_t>* y);
 
-template<typename local_scalar_t, typename halo_scalar_t, typename vec_scalar_t>
-void ell_halo_spmv(const ELLMatrix<local_scalar_t, halo_scalar_t>* mat, const Vector<vec_scalar_t>* x, Vector<vec_scalar_t>* y);
+template<typename local_scalar_t, typename halo_scalar_t, typename vec_scalar_t, typename matrix_vec_scalar_t>
+void ell_halo_spmv(const ELLMatrix<local_scalar_t, halo_scalar_t, matrix_vec_scalar_t>* mat, const Vector<vec_scalar_t>* x, Vector<vec_scalar_t>* y);
 
-template<typename local_scalar_t, typename halo_scalar_t, typename vec_scalar_t>
-void ell_interior_spmv(const ELLMatrix<local_scalar_t, halo_scalar_t>* mat, const Vector<vec_scalar_t>* x, Vector<vec_scalar_t>* y);
+template<typename local_scalar_t, typename halo_scalar_t, typename vec_scalar_t, typename matrix_vec_scalar_t>
+void ell_interior_spmv(const ELLMatrix<local_scalar_t, halo_scalar_t, matrix_vec_scalar_t>* mat, const Vector<vec_scalar_t>* x, Vector<vec_scalar_t>* y);
 
-template<typename local_scalar_t, typename halo_scalar_t>
+template<typename local_scalar_t, typename halo_scalar_t, typename vec_scalar_t = halo_scalar_t>
 struct EllOptData : public OptimizationData
 {
-    using matrix_type = ELLMatrix<local_scalar_t, halo_scalar_t>;
+    using matrix_type = ELLMatrix<local_scalar_t, halo_scalar_t, vec_scalar_t>;
     std::shared_ptr<matrix_type> mat;
 };
 

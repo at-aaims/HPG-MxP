@@ -37,8 +37,8 @@ int ComputeGEMV_ref(const local_int_t m, const local_int_t n,
     typedef typename SerialDenseMatrix_type::scalar_type scalarX_type;
     typedef typename Vector_type::scalar_type scalarY_type;
 
-    const scalarA_type one(1.0);
-    const scalarA_type zero(0.0);
+    const scalarA_type one  = static_cast<scalarA_type>(1.0);
+    const scalarA_type zero = static_cast<scalarA_type>(0.0);
 
     assert(x.n_rows() >= n); // Test vector lengths
     assert(x.n_cols() == 1);
@@ -60,12 +60,12 @@ int ComputeGEMV_ref(const local_int_t m, const local_int_t n,
     if (alpha == one) {
         for (local_int_t j = 0; j < n; j++)
             for (local_int_t i = 0; i < m; i++) {
-                yv[i] += Av[i + j * m] * xv[j];
+                yv[i] = static_cast<scalarY_type>(yv[i] + Av[i + j * m] * xv[j]);
             }
     } else {
         for (local_int_t j = 0; j < n; j++)
             for (local_int_t i = 0; i < m; i++) {
-                yv[i] += alpha * Av[i + j * m] * xv[j];
+                yv[i] = static_cast<scalarY_type>(yv[i] + alpha * Av[i + j * m] * xv[j]);
             }
     }
 
@@ -90,5 +90,13 @@ template int ComputeGEMV_ref< MultiVector<float>, Vector<float>, SerialDenseMatr
 // mixed
 template int ComputeGEMV_ref< MultiVector<float>, Vector<double>, SerialDenseMatrix<float> >(
     int, int, float, const MultiVector<float>&, const SerialDenseMatrix<float>&, const double, Vector<double>&);
+
+#ifdef HPGMP_WITH_HALF
+template int ComputeGEMV_ref< MultiVector<half>, Vector<half>, SerialDenseMatrix<float> >(
+    int, int, half, const MultiVector<half>&, const SerialDenseMatrix<float>&, const half, Vector<half>&);
+
+template int ComputeGEMV_ref< MultiVector<half>, Vector<double>, SerialDenseMatrix<float> >(
+    int, int, half, const MultiVector<half>&, const SerialDenseMatrix<float>&, const double, Vector<double>&);
+#endif
 
 #endif

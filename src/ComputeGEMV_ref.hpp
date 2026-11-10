@@ -33,4 +33,11 @@ int ComputeGEMV_ref(const local_int_t m, const local_int_t n,
                     const typename MultiVector_type::scalar_type alpha, const MultiVector_type& A, const SerialDenseMatrix_type& x,
                     const typename Vector_type::scalar_type beta, Vector_type& y);
 
+#if defined(HPGMP_WITH_CUDA) || defined(HPGMP_WITH_HIP)
+/// y = alpha * A * x + beta * y on device for a half A and a float x.
+template<typename y_type>
+void ComputeGEMV_half_dev(const local_int_t m, const local_int_t n, const float alpha, const half* A, const float* x,
+                          const y_type& beta, y_type* y);
+#endif
+
 #endif // COMPUTE_GEMV_REF

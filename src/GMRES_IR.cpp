@@ -74,7 +74,8 @@ int GMRES_IR(const SparseMatrix_type& A, const SparseMatrix_type2& A_lo,
     typedef typename SparseMatrix_type::local_scalar_type scalar_type;
     typedef MultiVector<scalar_type> MultiVector_type;
     // (lower) precision for inner loop
-    typedef typename SparseMatrix_type2::halo_scalar_type scalar_type2;
+    typedef typename SparseMatrix_type2::vec_scalar_type scalar_type2;
+    typedef typename SparseMatrix_type2::local_scalar_type matrix_scalar_type2;
     typedef MultiVector<scalar_type2> MultiVector_type2;
     typedef Vector<scalar_type2> Vector_type2;
     // (lower) precision for storing projected matrix
@@ -89,8 +90,8 @@ int GMRES_IR(const SparseMatrix_type& A, const SparseMatrix_type2& A_lo,
     const global_int_t ione  = 1;
     const global_int_t itwo  = 2;
     const global_int_t ifour = 4;
-    const scalar_type2 one(1.0);
-    const scalar_type2 zero(0.0);
+    const scalar_type2 one   = static_cast<scalar_type2>(1.0);
+    const scalar_type2 zero  = static_cast<scalar_type2>(0.0);
     const project_type one_pr(1.0);
     const project_type two_pr(2.0);
     const project_type zero_pr(0.0);
@@ -284,7 +285,9 @@ int GMRES_IR(const SparseMatrix_type& A, const SparseMatrix_type2& A_lo,
             t3_1 += z.time1_;
             t3_2 += z.time2_;
             test_data.numOfSPCalls++;
-            ctrs.spmv.add_memory_traffic<scalar_type2>(A.totalNumberOfNonzeros + 2 * A.totalNumberOfRows);
+            // Not exact with Ginkgo AMP, which may store matrix values in lower precision.
+            ctrs.spmv.add_memory_traffic<matrix_scalar_type2>(A.totalNumberOfNonzeros);
+            ctrs.spmv.add_memory_traffic<scalar_type2>(2 * A.totalNumberOfRows);
             ctrs.spmv.add_memory_traffic<local_int_t>(A.totalNumberOfNonzeros);
 
             // orthogonalize z against Q(:,0:k-1), using dots
@@ -306,7 +309,7 @@ int GMRES_IR(const SparseMatrix_type& A, const SparseMatrix_type2& A_lo,
 
                         // Qk = Qk - beta * Qj
                         START_T();
-                        ComputeWAXPBY(nrow, one, Qk, -beta, Qj, Qk, A.isWaxpbyOptimized);
+                        ComputeWAXPBY(nrow, one, Qk, static_cast<scalar_type2>(-beta), Qj, Qk, A.isWaxpbyOptimized);
                         STOP_T(t2);
                         ctrs.ortho.add_memory_traffic<scalar_type2>(3 * A.totalNumberOfRows);
                         alpha += beta;
@@ -542,7 +545,7 @@ int GMRES_IR(const SparseMatrix_type& A, const SparseMatrix_type2& A_lo,
 #endif
         } else {
             // mixed-precision x += Q*t
-            ComputeGEMV(nrow, k - 1, one_hi, Q, t, one_hi, x_hi, A.isGemvOptimized);
+            ComputeGEMV(nrow, k - 1, one, Q, t, one_hi, x_hi, A.isGemvOptimized);
             flops += (itwo * Nrow * (k - ione));
             ctrs.ortho.add_memory_traffic<scalar_type2>(A.totalNumberOfRows * restart_length);
             ctrs.ortho.add_memory_traffic<scalar_type>(2 * A.totalNumberOfRows);
@@ -629,6 +632,13 @@ template int GMRES_IR< SparseMatrix<double>, SparseMatrix<float>, GMRESData<doub
     SparseMatrix<double> const&, SparseMatrix<float> const&, GMRESData<double, double, double>&, GMRESData<float, float, float>&,
     Vector<double> const&, Vector<double>&, const int, const int, double, int&, double&, double&, bool, bool,
     TestGMRESData&);
+
+#ifdef HPGMP_WITH_HALF
+template int GMRES_IR< SparseMatrix<double>, SparseMatrix<half, half, inner_vector_scalar_t<half>>, GMRESData<double, double, double>, GMRESData<half, inner_vector_scalar_t<half>, float>, Vector<double>>(
+    SparseMatrix<double> const&, SparseMatrix<half, half, inner_vector_scalar_t<half>> const&, GMRESData<double, double, double>&, GMRESData<half, inner_vector_scalar_t<half>, float>&,
+    Vector<double> const&, Vector<double>&, const int, const int, double, int&, double&, double&, bool, bool,
+    TestGMRESData&);
+#endif
 
 #ifdef HPGMP_WITH_GINKGO_AMP
 template int GMRES_IR< SparseMatrix<double, double>, SparseMatrix<double, float>, GMRESData<double, double, double>, GMRESData<double, float, float>, Vector<double>>(

@@ -42,7 +42,7 @@ template<class SparseMatrix_type, class Vector_type>
 int ComputeProlongation_ref(const SparseMatrix_type& Af, Vector_type& xf)
 {
 
-    typedef typename SparseMatrix_type::scalar_type scalar_type;
+    typedef typename Vector_type::scalar_type scalar_type;
 
     scalar_type* xfv       = xf.values();
     const scalar_type* xcv = Af.mgData->xc->values();
@@ -70,5 +70,13 @@ template int ComputeProlongation_ref< SparseMatrix<double>, Vector<double> >(
 
 template int ComputeProlongation_ref< SparseMatrix<float>, Vector<float> >(
     SparseMatrix<float> const&, Vector<float>&);
+
+#ifdef HPGMP_WITH_HALF
+template int ComputeProlongation_ref< SparseMatrix<half>, Vector<half> >(
+    SparseMatrix<half> const&, Vector<half>&);
+
+template int ComputeProlongation_ref< SparseMatrix<half, half, float>, Vector<float> >(
+    SparseMatrix<half, half, float> const&, Vector<float>&);
+#endif
 
 #endif

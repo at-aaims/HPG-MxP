@@ -176,7 +176,7 @@ void GenerateNonsymProblem_v1_ref(DeviceCtx* const dctx, SparseMatrix_type& A, V
 #endif
                 local_int_t numberOfNonzerosInRow       = 0;
                 matrix_scalar_type* currentValuePointer = matrixValues[currentLocalRow]; // Pointer to current value in current row
-                vector_scalar_type bi                   = 0.0;
+                double bi                               = 0.0;
                 global_int_t* currentIndexPointerG      = mtxIndG[currentLocalRow]; // Pointer to current index in current row
                 for (int sz = -1; sz <= 1; sz++) {
                     if (giz + sz > -1 && giz + sz < gnz) {
@@ -187,23 +187,23 @@ void GenerateNonsymProblem_v1_ref(DeviceCtx* const dctx, SparseMatrix_type& A, V
                                         global_int_t curcol = currentGlobalRow + sz * gnx * gny + sy * gnx + sx;
                                         if (curcol == currentGlobalRow) {
                                             matrixDiagonal[currentLocalRow] = currentValuePointer;
-                                            *currentValuePointer++          = 26.0;
+                                            *currentValuePointer++          = static_cast<matrix_scalar_type>(26.0);
                                             bi += 26.0;
                                         } else {
 //#define NONSYMM_NUMERICAL
 #ifdef NONSYMM_NUMERICAL
                                             if (sy == 0 && sx == 0 && sz == -1) {
-                                                *currentValuePointer++ = -1.5;
+                                                *currentValuePointer++ = static_cast<matrix_scalar_type>(-1.5);
                                                 bi -= 1.5;
                                             } else if (sy == 0 && sx == 0 && sz == 1) {
-                                                *currentValuePointer++ = -0.5;
+                                                *currentValuePointer++ = static_cast<matrix_scalar_type>(-0.5);
                                                 bi -= 0.5;
                                             } else {
-                                                *currentValuePointer++ = -1.0;
+                                                *currentValuePointer++ = static_cast<matrix_scalar_type>(-1.0);
                                                 bi -= 1.0;
                                             }
 #else
-                                            *currentValuePointer++ = -1.0;
+                                            *currentValuePointer++ = static_cast<matrix_scalar_type>(-1.0);
                                             bi -= 1.0;
 #endif
                                         }
@@ -225,9 +225,9 @@ void GenerateNonsymProblem_v1_ref(DeviceCtx* const dctx, SparseMatrix_type& A, V
 #endif
                 localNumberOfNonzeros += numberOfNonzerosInRow; // Protect this with an atomic
                 if (init_vect) {
-                    bv[currentLocalRow] = bi; //26.0 - ((double) (numberOfNonzerosInRow-1));
+                    bv[currentLocalRow] = static_cast<vector_scalar_type>(bi); //26.0 - ((double) (numberOfNonzerosInRow-1));
                     //xv[currentLocalRow] = 0.0;
-                    xexactv[currentLocalRow] = 1.0;
+                    xexactv[currentLocalRow] = static_cast<vector_scalar_type>(1.0);
                 }
 
 #ifndef HPGMP_REFERENCE
@@ -289,6 +289,10 @@ template void GenerateNonsymProblem_v1_ref< SparseMatrix<double>, Vector<double>
 template void GenerateNonsymProblem_v1_ref< SparseMatrix<float>, Vector<float> >(
     DeviceCtx*, SparseMatrix<float>&, Vector<float>*, Vector<float>*, Vector<float>*, bool);
 
+#ifdef HPGMP_WITH_HALF
+template void GenerateNonsymProblem_v1_ref< SparseMatrix<half>, Vector<half> >(
+    DeviceCtx*, SparseMatrix<half>&, Vector<half>*, Vector<half>*, Vector<half>*, bool);
+#endif
 
 // mixed
 template void GenerateNonsymProblem_v1_ref< SparseMatrix<double, float>, Vector<double> >(
@@ -299,3 +303,14 @@ template void GenerateNonsymProblem_v1_ref< SparseMatrix<double, float>, Vector<
 
 template void GenerateNonsymProblem_v1_ref< SparseMatrix<float>, Vector<double> >(
     DeviceCtx*, SparseMatrix<float>&, Vector<double>*, Vector<double>*, Vector<double>*, bool);
+
+#ifdef HPGMP_WITH_HALF
+template void GenerateNonsymProblem_v1_ref< SparseMatrix<half>, Vector<double> >(
+    DeviceCtx*, SparseMatrix<half>&, Vector<double>*, Vector<double>*, Vector<double>*, bool);
+
+template void GenerateNonsymProblem_v1_ref< SparseMatrix<half, half, float>, Vector<double> >(
+    DeviceCtx*, SparseMatrix<half, half, float>&, Vector<double>*, Vector<double>*, Vector<double>*, bool);
+
+template void GenerateNonsymProblem_v1_ref< SparseMatrix<half, half, float>, Vector<float> >(
+    DeviceCtx*, SparseMatrix<half, half, float>&, Vector<float>*, Vector<float>*, Vector<float>*, bool);
+#endif

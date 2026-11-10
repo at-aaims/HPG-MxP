@@ -81,7 +81,7 @@ HPGMP_Init(int* argc_p, char*** argv_p)
     // Options to be read
     constexpr int nparams                          = 4;
     const std::array<std::string, nparams> cparams = {"--validation_type",
-        "--run_type", "--result_file", "--amp_tol"};
+                                                      "--run_type", "--result_file", "--amp_tol"};
     std::array<std::string, nparams> values;
     // Default values
     values[0] = "standard";

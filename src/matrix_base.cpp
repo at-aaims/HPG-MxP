@@ -3,8 +3,8 @@
 
 #include "SparseMatrix.hpp"
 
-template<typename local_scalar_t, typename halo_scalar_t>
-DistMatrixBase::DistMatrixBase(const SparseMatrix<local_scalar_t, halo_scalar_t>& A)
+template<typename local_scalar_t, typename halo_scalar_t, typename vec_scalar_t>
+DistMatrixBase::DistMatrixBase(const SparseMatrix<local_scalar_t, halo_scalar_t, vec_scalar_t>& A)
     : comm_{A.comm},
       dctx_{A.dctx},
       geom_{A.geom},
@@ -23,8 +23,10 @@ DistMatrixBase::DistMatrixBase(const SparseMatrix<local_scalar_t, halo_scalar_t>
       ind_perm_{A.perm},
       ind_sizes_{A.sizes},
       ind_offsets_{A.offsets},
-      sendBuffer_{dctx_->pinned_host_alloc(totalToBeSent_ * sizeof(halo_scalar_t))},
-      d_sendBuffer_{dctx_->device_alloc(totalToBeSent_ * sizeof(halo_scalar_t))}
+      // Sized for double because a matrix can be used with vectors wider than its vec_scalar_t.
+      // The extra memory is small because the buffers only hold the entries sent to other ranks.
+      sendBuffer_{dctx_->pinned_host_alloc(totalToBeSent_ * sizeof(double))},
+      d_sendBuffer_{dctx_->device_alloc(totalToBeSent_ * sizeof(double))}
 {
     dctx_->copy_host_to_device_sync(elementsToSend_, A.elementsToSend,
                                     totalToBeSent_ * sizeof(local_int_t));
@@ -32,6 +34,10 @@ DistMatrixBase::DistMatrixBase(const SparseMatrix<local_scalar_t, halo_scalar_t>
 
 template DistMatrixBase::DistMatrixBase(const SparseMatrix<double>& A);
 template DistMatrixBase::DistMatrixBase(const SparseMatrix<float>& A);
+#ifdef HPGMP_WITH_HALF
+template DistMatrixBase::DistMatrixBase(const SparseMatrix<half>& A);
+template DistMatrixBase::DistMatrixBase(const SparseMatrix<half, half, float>& A);
+#endif
 template DistMatrixBase::DistMatrixBase(const SparseMatrix<double, float>& A);
 
 DistMatrixBase::~DistMatrixBase()

@@ -40,13 +40,15 @@ using GlobalToLocalMap = std::unordered_map< global_int_t, local_int_t >;
 #include <mpi.h>
 #endif
 
-template<typename local_scalar_t = double, typename halo_scalar_t = local_scalar_t>
+// halo_scalar_t is the type of the off-process nonzeros and vec_scalar_t is the type of the multigrid vectors and send buffers.
+template<typename local_scalar_t = double, typename halo_scalar_t = local_scalar_t, typename vec_scalar_t = halo_scalar_t>
 class SparseMatrix
 {
 public:
     typedef local_scalar_t scalar_type;
     typedef local_scalar_t local_scalar_type;
     typedef halo_scalar_t halo_scalar_type;
+    typedef vec_scalar_t vec_scalar_type;
 
     void initialize(const Geometry* const g, comm_type c, DeviceCtx* const d)
     {
@@ -84,9 +86,9 @@ public:
        This is for storing optimized data structres created in OptimizeProblem and
        used inside optimized ComputeSPMV().
      */
-    mutable SparseMatrix<local_scalar_t, halo_scalar_t>* Ac = nullptr; // Coarse grid matrix
-    mutable MGData<halo_scalar_t>* mgData                   = nullptr; // Pointer to the coarse level data for this fine matrix
-    OptimizationData* optimizationData                      = nullptr; // pointer that can be used to store implementation-specific data
+    mutable SparseMatrix<local_scalar_t, halo_scalar_t, vec_scalar_t>* Ac = nullptr; // Coarse grid matrix
+    mutable MGData<vec_scalar_t>* mgData                                  = nullptr; // Pointer to the coarse level data for this fine matrix
+    OptimizationData* optimizationData                                    = nullptr; // pointer that can be used to store implementation-specific data
 
     // communicator
     comm_type comm;
@@ -98,10 +100,10 @@ public:
     int* neighbors                     = nullptr; //!< neighboring processes
     local_int_t* receiveLength         = nullptr; //!< lenghts of messages received from neighboring processes
     local_int_t* sendLength            = nullptr; //!< lenghts of messages sent to neighboring processes
-    halo_scalar_t* sendBuffer          = nullptr; //!< send buffer for non-blocking sends
+    vec_scalar_t* sendBuffer           = nullptr; //!< send buffer for non-blocking sends
 #if defined(HPGMP_WITH_CUDA) | defined(HPGMP_WITH_HIP)
     local_int_t* d_elementsToSend = nullptr; //!< elements to send to neighboring processes (on GPU)
-    halo_scalar_t* d_sendBuffer   = nullptr; //!< send buffer for non-blocking sends (on GPU)
+    vec_scalar_t* d_sendBuffer    = nullptr; //!< send buffer for non-blocking sends (on GPU)
 #endif
 #endif
 
