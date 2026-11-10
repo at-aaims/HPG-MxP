@@ -90,8 +90,8 @@ int GMRES_IR(const SparseMatrix_type& A, const SparseMatrix_type2& A_lo,
     const global_int_t ione  = 1;
     const global_int_t itwo  = 2;
     const global_int_t ifour = 4;
-    const scalar_type2 one(1.0);
-    const scalar_type2 zero(0.0);
+    const scalar_type2 one   = static_cast<scalar_type2>(1.0);
+    const scalar_type2 zero  = static_cast<scalar_type2>(0.0);
     const project_type one_pr(1.0);
     const project_type two_pr(2.0);
     const project_type zero_pr(0.0);
@@ -309,7 +309,7 @@ int GMRES_IR(const SparseMatrix_type& A, const SparseMatrix_type2& A_lo,
 
                         // Qk = Qk - beta * Qj
                         START_T();
-                        ComputeWAXPBY(nrow, one, Qk, -beta, Qj, Qk, A.isWaxpbyOptimized);
+                        ComputeWAXPBY(nrow, one, Qk, static_cast<scalar_type2>(-beta), Qj, Qk, A.isWaxpbyOptimized);
                         STOP_T(t2);
                         ctrs.ortho.add_memory_traffic<scalar_type2>(3 * A.totalNumberOfRows);
                         alpha += beta;
@@ -545,7 +545,7 @@ int GMRES_IR(const SparseMatrix_type& A, const SparseMatrix_type2& A_lo,
 #endif
         } else {
             // mixed-precision x += Q*t
-            ComputeGEMV(nrow, k - 1, one_hi, Q, t, one_hi, x_hi, A.isGemvOptimized);
+            ComputeGEMV(nrow, k - 1, one, Q, t, one_hi, x_hi, A.isGemvOptimized);
             flops += (itwo * Nrow * (k - ione));
             ctrs.ortho.add_memory_traffic<scalar_type2>(A.totalNumberOfRows * restart_length);
             ctrs.ortho.add_memory_traffic<scalar_type>(2 * A.totalNumberOfRows);

@@ -115,7 +115,7 @@ void Vector<scalar>::fill_random()
 #else
     scalar* vv = values_;
     for (int i = 0; i < localLength_; ++i) {
-        vv[i] = rand() / (scalar)(RAND_MAX) + 1.0;
+        vv[i] = static_cast<scalar>(rand() / static_cast<double>(RAND_MAX) + 1.0);
     }
 #endif
 }
@@ -181,7 +181,7 @@ void Vector<scalar_type>::scale(const scalar_type value)
         cblas_sscal(localLength_, value, (float*)vv, 1);
     }
 #else
-    const scalar_type zero(0.0);
+    const scalar_type zero = static_cast<scalar_type>(0.0);
     if (value == zero) {
         for (int i = 0; i < localLength_; ++i)
             vv[i] = zero;
@@ -692,7 +692,7 @@ void CopyVector(const Vector<scalar_src>& v, Vector<scalar_dst>& w)
 #endif
     {
         for (int i = 0; i < localLength; ++i)
-            wv[i] = vv[i];
+            wv[i] = static_cast<scalar_dst>(vv[i]);
     }
 #endif
 
@@ -753,7 +753,7 @@ void CopyVector(const Vector<scalar_src>& v, Vector<scalar_dst>& w)
 #endif
     }
 #else
-    for (int i = 0; i < localLength; ++i) wv[i] = vv[i];
+    for (int i = 0; i < localLength; ++i) wv[i] = static_cast<scalar_dst>(vv[i]);
 #endif
 }
 

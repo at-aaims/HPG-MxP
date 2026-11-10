@@ -187,23 +187,23 @@ void GenerateNonsymProblem_v1_ref(DeviceCtx* const dctx, SparseMatrix_type& A, V
                                         global_int_t curcol = currentGlobalRow + sz * gnx * gny + sy * gnx + sx;
                                         if (curcol == currentGlobalRow) {
                                             matrixDiagonal[currentLocalRow] = currentValuePointer;
-                                            *currentValuePointer++          = 26.0;
+                                            *currentValuePointer++          = static_cast<matrix_scalar_type>(26.0);
                                             bi += 26.0;
                                         } else {
 //#define NONSYMM_NUMERICAL
 #ifdef NONSYMM_NUMERICAL
                                             if (sy == 0 && sx == 0 && sz == -1) {
-                                                *currentValuePointer++ = -1.5;
+                                                *currentValuePointer++ = static_cast<matrix_scalar_type>(-1.5);
                                                 bi -= 1.5;
                                             } else if (sy == 0 && sx == 0 && sz == 1) {
-                                                *currentValuePointer++ = -0.5;
+                                                *currentValuePointer++ = static_cast<matrix_scalar_type>(-0.5);
                                                 bi -= 0.5;
                                             } else {
-                                                *currentValuePointer++ = -1.0;
+                                                *currentValuePointer++ = static_cast<matrix_scalar_type>(-1.0);
                                                 bi -= 1.0;
                                             }
 #else
-                                            *currentValuePointer++ = -1.0;
+                                            *currentValuePointer++ = static_cast<matrix_scalar_type>(-1.0);
                                             bi -= 1.0;
 #endif
                                         }
@@ -227,7 +227,7 @@ void GenerateNonsymProblem_v1_ref(DeviceCtx* const dctx, SparseMatrix_type& A, V
                 if (init_vect) {
                     bv[currentLocalRow] = static_cast<vector_scalar_type>(bi); //26.0 - ((double) (numberOfNonzerosInRow-1));
                     //xv[currentLocalRow] = 0.0;
-                    xexactv[currentLocalRow] = 1.0;
+                    xexactv[currentLocalRow] = static_cast<vector_scalar_type>(1.0);
                 }
 
 #ifndef HPGMP_REFERENCE

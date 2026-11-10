@@ -41,8 +41,8 @@ int ComputeGEMVT_ref(const local_int_t m, const local_int_t n,
     typedef typename Vector_type::scalar_type scalarX_type;
     typedef typename SerialDenseMatrix_type::scalar_type scalarY_type;
 
-    const scalarA_type one(1.0);
-    const scalarA_type zero(0.0);
+    const scalarA_type one  = static_cast<scalarA_type>(1.0);
+    const scalarA_type zero = static_cast<scalarA_type>(0.0);
 
     assert(x.local_length() >= m); // Test vector lengths
     assert(y.n_rows() >= n);

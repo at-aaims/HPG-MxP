@@ -73,7 +73,7 @@ int ComputeSPMV_ref(const SparseMatrix_type& A, Vector_type& x, Vector_type& y)
 #pragma omp parallel for
 #endif
     for (local_int_t i = 0; i < nrow; i++) {
-        scalar_type sum                          = 0.0;
+        scalar_type sum                          = static_cast<scalar_type>(0.0);
         const matrix_scalar_type* const cur_vals = A.matrixValues[i];
         const local_int_t* const cur_inds        = A.mtxIndL[i];
         const local_int_t cur_nnz                = A.nonzerosInRow[i];
